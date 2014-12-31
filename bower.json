@@ -1,0 +1,28 @@
+{
+  "name": "Octane",
+  "version": "0.0.0",
+  "authors": [
+    "Ethan Ferrari <ethan@ethanferrari.com>"
+  ],
+  "main": "Octane.js",
+  "license": "MIT",
+  "homepage": "www.onefiremedia.com",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.1",
+    "lodash": "~2.4.1",
+    "modernizr": "~2.8.3",
+    "velocity": "~1.1.0",
+    "history.js": "~1.8.0"
+  },
+  "devDependencies": {
+    "bootstrap": "~3.3.1"
+  }
+}

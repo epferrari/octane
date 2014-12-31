@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA,WAAW;EACP,OAAO,EAAE,mBAAmB;;AAGhC,aAAa;EACT,MAAM,EAAE,iBAAiB",
+"sources": ["../scss/devdocs.scss"],
+"names": [],
+"file": "devdocs.css"
+}

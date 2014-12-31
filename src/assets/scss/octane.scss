@@ -1,0 +1,52 @@
+@import '../../modules/router/scss/_router';
+@import '../../modules/router/scss/_view';
+@import '../../modules/translator/scss/_translator';
+
+html,body{
+    height:100%
+}
+
+
+body.octane{
+    overflow-x:hidden;
+    padding-left:0px !important;
+    padding-right:0px !important;
+}
+// override bootstrap
+header.row,
+footer.row,
+div.row{
+    margin-left:0px !important;
+    margin-right:0px !important;
+}
+
+o-container{
+     overflow-x:hidden;
+    overflow-y:hidden;
+    visibility:hidden;
+}
+
+o-canvas{
+	position:relative;
+	display:block;
+	width:100%;
+}
+
+o-view {
+	position:absolute;
+    visibility:hidden;
+    display:none;
+    opacity:0;
+	width:100%;
+    overflow-x:hidden;
+}
+
+
+
+.o-btn {
+	cursor:pointer;
+}
+
+
+
+
