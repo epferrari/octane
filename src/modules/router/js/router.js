@@ -67,72 +67,71 @@ octane.module('router',[],function (cfg) {
 	// 	function's thisArg is bound to the view called
 	// @param ghost [bool]: do not update the history with the view (default false)
 	function route(id,ghost){
-
-        ghost = _.isBoolean(ghost) ? ghost : false;
-		var $view = $Views[id],
-            $def = $.Deferred();
-		
-        // ensure the onscreen view isn't reanimated
-        //////////////////////////////////////////////////////////////////////////////////////
-                                                                                            //
-            if($view instanceof View && $view != currentView){                              //
-                                                                                            //
-            // ensure a route isn't triggered while another route is animating              //
-            //////////////////////////////////////////////////////////////////////////      //
-                                                                                    //      //
-                if(!isRouting){                                                     //      //
-                                                                                    //      //
-                    isRouting = true;                                               //      //
-                                                                                    //      //
-                // exit the current view before calling a new view                  //      //
-                //////////////////////////////////////////////////////////          //      //
-                                                                        //          //      //
-                    if(currentView instanceof View){                    //          //      //
-                        currentView.exit().done(function(){             //          //      // 
-                            loadView($view,$def);                       //          //      //
-                        });                                             //          //      //
-                    }else{                                              //          //      //
-                        loadView($view,$def);                           //          //      // 
-                    }                                                   //          //      //
-                //////////////////////////////////////////////////////////          //      //
-                                                                                    //      //
-                }else{                                                              //      //
-                    if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
-                }                                                                   //      //
-            //////////////////////////////////////////////////////////////////////////      //
-                                                                                            //
-            }else{                                                                          //
-                $def.reject();                                                              //
-            }                                                                               //
-                                                                                            //
-        //////////////////////////////////////////////////////////////////////////////////////
         
-        // helper
-        function loadView($view,$def){
+        return new Promise(function(resolve,reject){
             
-             $view.load().done(function(){
+            ghost = _.isBoolean(ghost) ? ghost : false;
+            var $view = $Views[id];
+           
+            // ensure the onscreen view isn't reanimated
+            //////////////////////////////////////////////////////////////////////////////////////
+                                                                                                //
+                if($view instanceof View && $view != currentView){                              //
+                                                                                                //
+                // ensure a route isn't triggered while another route is animating              //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                        //      //
+                    if(!isRouting){                                                     //      //
+                                                                                        //      //
+                        isRouting = true;                                               //      //
+                                                                                        //      //
+                    // exit the current view before calling a new view                  //      //
+                    //////////////////////////////////////////////////////////          //      //
+                                                                            //          //      //
+                        if(currentView instanceof View){                    //          //      //
+                            currentView.exit().done(function(){             //          //      // 
+                                loadView($view,ghost).done(resolve);        //          //      //
+                            });                                             //          //      //
+                        }else{                                              //          //      //
+                            loadView($view,ghost).done(resolve);            //          //      // 
+                        }                                                   //          //      //
+                    //////////////////////////////////////////////////////////          //      //
+                                                                                        //      //
+                    }else{                                                              //      //
+                        if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
+                    }                                                                   //      //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                                //
+                }else{                                                                          //
+                    resolve();                                                                  //
+                }                                                                               //
+                                                                                                //
+            //////////////////////////////////////////////////////////////////////////////////////
+            
+        });
+    }
+    // helper
+    function loadView($view,ghost){
+
+         return new Promise(function(resolve,reject){
+
+            $view.load().done(function(){
                 !ghost && pushState({view:$view.id});
-
                 $view.doCallbacks();
-                //!ghost && octane.fire('view:loaded',{detail:{id:id}});
-
+                // update the current biew
                 currentView = $view;
-
                 // update current view in global state, jumpstart Circuit                          
                 octane.goose('application',{ currentView : $view.id });
-
+                // flag the route complete
                 isRouting = false;
-
+                // resolve this route
+                resolve();
                 // route next view
                 (routesQueue.length > 0) && route(routesQueue.pop());
-
-                $def.resolve();
+                
              });
-        }
-		
-        // return promise
-		return $def;
-	}
+         });
+   }  
 	
 	// add a callback to be executed when the specified view finishes its loading animation 
 	function routeThen(id,callback){
@@ -150,7 +149,7 @@ octane.module('router',[],function (cfg) {
     
 	function setRoutingButtons(){
 		
-		var btns = document.querySelectorAll('.o-btn');
+		var btns = document.querySelectorAll('[o-route]');
 		var n = btns.length;
 		
 		while(n--){
@@ -169,9 +168,13 @@ octane.module('router',[],function (cfg) {
         
         
     // parse URL for a view  
-    function parseView(api){
-
-        if(api){
+    function parseView(){
+        
+        // for HTML5 vs. HTML4 browsers
+        // detect with modernizr   
+        var html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history');
+        
+        if(html5){
             return __.location().searchObject.view || false;
         } else {
              var hash = window.location.hash,
@@ -193,34 +196,27 @@ octane.module('router',[],function (cfg) {
     
 	function initialize(){
 		
-		var 	//$views = document.getElementsByTagName('o-view'),
-                $views = octane.dom.views(),
-				id, config;
-				
+        var $views = octane.dom.views(),
+            html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+            stateChangeEvent = html5 ? 'popstate' : 'hashchange',
+            id, config;
+		
+        // bind html views to View objects		
 		for(var i=0,n=$views.length; i<n; i++){
 			id = $views[i].id;
 			config = JSON.parse($views[i].getAttribute('o-config'));
 			!$Views[id] && ($Views[id] = new View(id,config));
-		}
-				
-		setRoutingButtons();
-		
-        // for HTML5 vs. HTML4 browsers
-        // detect with modernizr   
-         var features = document.getElementsByTagName('html')[0].getAttribute('class').split(' '),
-            historyAPI = __.inArray(features,'history'),
-            stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';   
-
-            window.addEventListener(stateChangeEvent,function(){
-                   
-                var view = parseView(historyAPI);
-                   view && octane.route(view).done( function(){
-                      } );
-            });
-        
-            octane.handle('translated resize orientationchange',function(){
-                currentView && currentView.setCanvasHeight();
-            });
+		}		
+		setRoutingButtons(); 
+        // change the view with browser's forward/back buttons
+        window.addEventListener(stateChangeEvent,function(){       
+            var view = parseView();
+            view && octane.route(view).done( function(){} );
+        });
+        // resize canvas to proper dimensions
+        octane.handle('translated resize orientationchange',function(){
+            currentView && currentView.setCanvasHeight();
+        });
 	}
     
 	// Router Public API				
@@ -249,7 +245,7 @@ octane.module('router',[],function (cfg) {
 	});
     
     if(octane.hasModule('debug')){
-        this.define({
+        octane.define({
             getViews : function(){
                 return $Views;
             }

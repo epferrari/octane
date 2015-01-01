@@ -1049,9 +1049,7 @@
             initModules(options);
 			octane.name = options.name || octane.name;
             
-            var features = document.getElementsByTagName('html')[0].getAttribute('class').split(' '),
-                hasHistory = __.inArray(features,'history'),
-                view = octane.parseView(hasHistory) || 'home';
+            var view = octane.parseView() || 'home';
             
             octane.fire('octane:ready',{detail:view});
 		}

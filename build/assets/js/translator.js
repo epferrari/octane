@@ -325,9 +325,8 @@ octane.module('translator', function (config){
             translate();
 			
 			/*octane.handle('popstate',function(){
-				$M.findLang();
-				console.log($M.lang);
-				$M.translate();
+				findLang();
+				translate();
 			});*/
 			
 
