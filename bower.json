@@ -20,7 +20,8 @@
     "lodash": "~2.4.1",
     "modernizr": "~2.8.3",
     "velocity": "~1.1.0",
-    "history.js": "~1.8.0"
+    "history.js": "~1.8.0",
+    "bluebird": "~2.5.2"
   },
   "devDependencies": {
     "bootstrap": "~3.3.1"

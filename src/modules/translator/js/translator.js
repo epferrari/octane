@@ -15,7 +15,7 @@
 //      
 //      @option langSupport [array]: supported languages for the translator
 //
-Octane.Module('Translator', function (config){
+octane.module('translator', function (config){
 	
 		// dummy
 		var $M = {};
@@ -109,8 +109,8 @@ Octane.Module('Translator', function (config){
                 }
                 	
 				$M.dropdown.pill.html($M.lang.display+' ');//.append($M.dropdown.caret);
-				Octane.fire('translated');
-			};
+				octane.fire('translated');
+			}
 			
             function translateElement(el){
                  
@@ -168,7 +168,7 @@ Octane.Module('Translator', function (config){
 
 				// apply handlers to new DOM elems
 				applyClickHandlers();
-			};
+			}
 
 
 		// find the language from the url and set $M.lang
@@ -179,7 +179,7 @@ Octane.Module('Translator', function (config){
 				var parsed = __.location().searchObject;
 				
 				$M.lang = supportsLang(parsed.lang) || $M.defaultLang;
-			};
+			}
 			
 			
 			
@@ -188,7 +188,7 @@ Octane.Module('Translator', function (config){
 			
 			function getLang(){
 				return $M.lang.key;
-			};
+			}
 			
 			
 			
@@ -201,14 +201,14 @@ Octane.Module('Translator', function (config){
 				if( supportsLang(lang) ){
 					$M.lang = supportsLang(lang);
                     // update the language in the url
-					//Octane.pushState( {lang:$M.getLang()} );
+					//octane.pushState( {lang:$M.getLang()} );
 					
 					// TODO: replace URL with new language	with history API
 					//window.location.search = '?lang='+$M.lang.key;
 					
 					return getLang();
 				}
-			};
+			}
 			
 			
 			
@@ -234,7 +234,7 @@ Octane.Module('Translator', function (config){
 				}else{
 					return '';
 				}
-			};
+			}
 		
 		
 	/* ------------------------------- */
@@ -268,7 +268,7 @@ Octane.Module('Translator', function (config){
 						$M.dropdown.innerUL.hide();
 					}
 				});			
-			};
+			}
 		
 			
 		// helper
@@ -287,7 +287,7 @@ Octane.Module('Translator', function (config){
 					if($this.regexp && $this.regexp.test && $this.regexp.test(lang)) return $this;
 				}
 				return false;
-			};
+			}
 
 
 	/* ------------------------------- */
@@ -324,10 +324,9 @@ Octane.Module('Translator', function (config){
             renderControls($M.langSupport);
             translate();
 			
-			/*Octane.handle('popstate',function(){
-				$M.findLang();
-				console.log($M.lang);
-				$M.translate();
+			/*octane.handle('popstate',function(){
+				findLang();
+				translate();
 			});*/
 			
 

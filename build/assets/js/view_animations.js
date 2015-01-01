@@ -2,7 +2,7 @@
 		// View Animations
 		/* ------------------------------------------------------- */
 		
-        Octane.Library('viewAnimations',{
+        octane.library('view-animations',{
 		
 			applyLoading : function(){},
 			

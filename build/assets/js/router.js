@@ -1,14 +1,18 @@
 // JavaScript Document
 
-Octane.Module('Router',[],function (cfg) {
+octane.module('router',[],function (cfg) {
 	
+    // octane application's views object and animation library
+	var $Views = {},
+        $animations;
+    
     if(_.isObject(cfg)){
         
         try{
-            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : Octane.lib('viewAnimations');
+            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.checkout('view-animations');
         }catch(e){
-            $animations = Octane.lib('viewAnimations');
-            Octane.hasModule('Debug') && Octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
+            $animations = octane.checkout('view-animations');
+            octane.hasModule('Debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
         }
     }
     
@@ -22,8 +26,7 @@ Octane.Module('Router',[],function (cfg) {
 
 	})(window);
 	
-	// Octane application's views object and animation library
-	var $Views = {};
+	
     
     
 	function pushState(params){
@@ -32,7 +35,7 @@ Octane.Module('Router',[],function (cfg) {
 		// update the language in the url
 		var parsed = __.location().searchObject;	
 		
-		Octane.extend.call(parsed,params);
+		octane.extend.call(parsed,params);
 		
 		var fragment = [];
 		for(var key in parsed){
@@ -44,12 +47,12 @@ Octane.Module('Router',[],function (cfg) {
 		fragment = fragment.join('&');
 		fragment = '?'+fragment;
         
-        var language = Octane.getLang(),
+        var language = octane.translator && octane.translator.getLang(),
             title = __.titleize(params.view) || __.titleize(currentView);
 		
 		History.pushState( 
             { lang: language },
-            Octane.name +' | '+ title,
+            octane.name +' | '+ title,
             fragment
         );
 	}
@@ -64,7 +67,7 @@ Octane.Module('Router',[],function (cfg) {
 	// 	function's thisArg is bound to the view called
 	// @param ghost [bool]: do not update the history with the view (default false)
 	function route(id,ghost){
-		
+
         ghost = _.isBoolean(ghost) ? ghost : false;
 		var $view = $Views[id],
             $def = $.Deferred();
@@ -94,7 +97,7 @@ Octane.Module('Router',[],function (cfg) {
                 //////////////////////////////////////////////////////////          //      //
                                                                                     //      //
                 }else{                                                              //      //
-                    routesQueue.push(id);                                           //      //
+                    if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
                 }                                                                   //      //
             //////////////////////////////////////////////////////////////////////////      //
                                                                                             //
@@ -111,12 +114,12 @@ Octane.Module('Router',[],function (cfg) {
                 !ghost && pushState({view:$view.id});
 
                 $view.doCallbacks();
-                //!ghost && Octane.fire('view:loaded',{detail:{id:id}});
+                //!ghost && octane.fire('view:loaded',{detail:{id:id}});
 
                 currentView = $view;
 
                 // update current view in global state, jumpstart Circuit                          
-                Octane.$model.process({ currentView : $view.id });
+                octane.goose('application',{ currentView : $view.id });
 
                 isRouting = false;
 
@@ -141,7 +144,7 @@ Octane.Module('Router',[],function (cfg) {
 	function remove(id){
 		
 		$Views[id] instanceof View && $Views[id].exit();
-		Octane.$model.process({currentView:''});
+		octane.goose('application',{currentView:''});
 	}
 	
     
@@ -151,17 +154,21 @@ Octane.Module('Router',[],function (cfg) {
 		var n = btns.length;
 		
 		while(n--){
-			var route = btns[n].getAttribute('o-route');
-            
+			  
             // closure to capture the button and route during the loop
-           (function(btn,route){ 
-                btn.addEventListener('click',function(){
-				    return Octane.route(route);
-			     });
-           })(btns[n],route);
+           setRoutingButtonsHelper(btns[n]);
 		}
 	}
-	
+    
+    function setRoutingButtonsHelper(btn,route){
+        var route = btn.getAttribute('o-route');
+	    btn.addEventListener('click',function(){
+            console.log('routing ', route);
+            octane.route(route);
+        });
+     }
+        
+        
     // parse URL for a view  
     function parseView(api){
 
@@ -183,12 +190,12 @@ Octane.Module('Router',[],function (cfg) {
 
            return parsed.view || false;
         }
-     };
+     }
     
 	function initialize(){
 		
 		var 	//$views = document.getElementsByTagName('o-view'),
-                $views = Octane.dom.views(),
+                $views = octane.dom.views(),
 				id, config;
 				
 		for(var i=0,n=$views.length; i<n; i++){
@@ -208,17 +215,17 @@ Octane.Module('Router',[],function (cfg) {
             window.addEventListener(stateChangeEvent,function(){
                    
                 var view = parseView(historyAPI);
-                   view && Octane.route(view).done( function(){
+                   view && octane.route(view).done( function(){
                       } );
             });
         
-            Octane.handle('translated resize orientationchange',function(){
+            octane.handle('translated resize orientationchange',function(){
                 currentView && currentView.setCanvasHeight();
             });
 	}
     
 	// Router Public API				
-	this.define({
+	octane.define({
 		initRouter		: function(){
                                 return initialize();
                             },
@@ -226,7 +233,7 @@ Octane.Module('Router',[],function (cfg) {
                                 return parseView(supportsHistoryAPI);
                             },
 		route			: function(id,ghost){
-								return route(id,ghost).then( Octane.translate );
+								return route(id,ghost).then( octane.translator.translate );
                             },
 		routeThen		: function(id,callback){
 								return routeThen(id,callback);
@@ -242,7 +249,7 @@ Octane.Module('Router',[],function (cfg) {
                             }
 	});
     
-    if(Octane.hasModule('Debug')){
+    if(octane.hasModule('debug')){
         this.define({
             getViews : function(){
                 return $Views;
@@ -251,7 +258,7 @@ Octane.Module('Router',[],function (cfg) {
     }
     
     // update the page title when the view changes
-     Octane.$controller.parser('currentView',function($dirty){
+     octane.controller('application').parser('currentView',function($dirty){
         $dirty.currentViewTitle = __.titleize($dirty.currentView);
 
         return $dirty;
@@ -259,8 +266,8 @@ Octane.Module('Router',[],function (cfg) {
 	
     
     // set-up for Views constructor
-    var Base = Octane.constructor;
-    //var $animations = Octane.library('viewAnimations') || {};
+    var Base = octane.constructor;
+    //var $animations = octane.library('viewAnimations') || {};
     
     
 	/* ------------------------------------------------------- */
@@ -279,10 +286,8 @@ Octane.Module('Router',[],function (cfg) {
 			
 			config = _.isObject(config) ? config : {};
 			
-			var $this = this; 
-			
-			// private properties
-			var	//onscreen	= (config.starts == 'onscreen'),
+			var $this = this,
+			    // private properties
 				positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
                 loadConfig = _.isObject(config.loads),
                 exitConfig = _.isObject(config.exits),
@@ -315,7 +320,7 @@ Octane.Module('Router',[],function (cfg) {
 				id			: id,
 				elem		: document.getElementById(id),
 				$elem 		: $('o-view#'+id),
-				_guid		: Octane.GUID(),
+				_guid		: octane.GUID(),
                 doneLoading : [],
 				addCallback : function(callback){
 								this.doneLoading.push(callback);
@@ -325,7 +330,7 @@ Octane.Module('Router',[],function (cfg) {
             this.setPosition(this.loadsFrom);
 		}
 		
-        View.prototype = new Base('Octane View');
+        View.prototype = new Base('octane View');
     
         View.prototype.define({
             
@@ -455,7 +460,8 @@ Octane.Module('Router',[],function (cfg) {
             },
             
             doCallbacks : function (){
-                    var callbacks = this.doneLoading;
+                    var $this = this,
+                        callbacks = this.doneLoading;
             
                     for (var i=0,n = callbacks.length; i < n; i++){
                         _.isFunction(callbacks[i]) && callbacks[i].bind($this)();

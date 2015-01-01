@@ -1,28 +1,28 @@
 
-    Octane.Module('Debug',function(octane){
+    octane.module('Debug',function(_octane){
         
         this.extend({
 
            getModules : function(){ 
-               return octane.modules;
+               return _octane.modules;
            },
            getModels : function(){
-               return octane.models;
+               return _octane.models;
            },
            getControllers : function(){
-               return octane.controllers;
+               return _octane.controllers;
            },
            getTasks :	function(controller){
                 return controller.tasks.getCases();
             },
            getEvents	: function(){
-               return octane.eventRegister;
+               return _octane.eventRegister;
            },
            log : function(message){
-               octane.errors.log(message);
+               _octane.errors.log(message);
            },
            logfile : function(){ 
-                return octane.errors.logfile;
+                return _octane.errors.logfile;
             }   
         });
     });

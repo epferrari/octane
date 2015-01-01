@@ -120,7 +120,7 @@
 						}
 						
                         // ensure array
-                        cases[key] = !_.isArray(cases[key]) && [];
+                        cases[key] = !_.isArray(cases[key]) ? [] : cases[key];
                         // ensure function
                         _.isFunction(func) && cases[key].push(func);
                         
