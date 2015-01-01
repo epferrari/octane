@@ -26,9 +26,7 @@ octane.module('router',[],function (cfg) {
 
 	})(window);
 	
-	
-    
-    
+	// octane's own pushstate method
 	function pushState(params){
 		
 		params = _.isObject(params) ? params : {};
@@ -117,7 +115,7 @@ octane.module('router',[],function (cfg) {
 
             $view.load().done(function(){
                 !ghost && pushState({view:$view.id});
-                $view.doCallbacks();
+                
                 // update the current biew
                 currentView = $view;
                 // update current view in global state, jumpstart Circuit                          
@@ -137,7 +135,7 @@ octane.module('router',[],function (cfg) {
 	function routeThen(id,callback){
 		
 		$Views[id] instanceof View && $Views[id].addCallback(callback);
-		return this;
+		return octane;
 	}
 	
 	function remove(id){
@@ -221,11 +219,8 @@ octane.module('router',[],function (cfg) {
     
 	// Router Public API				
 	octane.define({
-		initRouter		: function(){
-                                return initialize();
-                            },
-        parseView       : function(supportsHistoryAPI){
-                                return parseView(supportsHistoryAPI);
+        parseView       : function(){
+                                return parseView();
                             },
 		route			: function(id,ghost){
 								return route(id,ghost).then( octane.translator.translate );
@@ -291,20 +286,11 @@ octane.module('router',[],function (cfg) {
                     loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'left',
                     loadEasing      : loadConfig && config.loads.ease || 'swing',
                     loadDuration    : loadConfig && _.isNumber(config.loads.dur) ? config.loads.dur : 500,
-                    onLoadComplete  : function($deferred){
-
-                            // resolve the deferred object we pass in from the loading call
-                            $deferred && $deferred.resolve(id);
-                        },
+                
                     exitsBy         : exitConfig && config.exits.by || 'slide',
                     exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'right',
                     exitEasing      : exitConfig && config.exits.ease || 'swing',
-                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500,
-                    onExitComplete	: function($deferred){
-
-                            // resolve the deferred object we pass in from the exiting call
-                            $deferred && $deferred.resolve(id);
-                        }
+                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
 				};
             
             this.define(cfg);
@@ -318,7 +304,7 @@ octane.module('router',[],function (cfg) {
 				_guid		: octane.GUID(),
                 doneLoading : [],
 				addCallback : function(callback){
-								this.doneLoading.push(callback);
+								_.isFunction(callback) && this.doneLoading.push(callback);
 							}					
 			});
             
@@ -328,6 +314,7 @@ octane.module('router',[],function (cfg) {
         View.prototype = new Base('octane View');
     
         View.prototype.define({
+            constructor : View,
             
             handleEvent : function(e){
 					switch(e.type){
@@ -345,35 +332,38 @@ octane.module('router',[],function (cfg) {
             
             load : function(){
                 
-                // scroll to top of page
-                $('body').velocity('scroll',{duration:200});
-                
-                // make sure the view is visible
-                this.$elem.css({
-                    "visibility":"visible",
-                    'display':'block',
-                    'z-index':9999999999
-                });
-                
-                if(this.loadsBy !== 'fade'){
-                    this.$elem.css({
-                        opacity:1
-                    });
-                }
+                var $this = this;
+                return new Promise(function(resolve){
+                    // scroll to top of page
+                    $('body').velocity('scroll',{duration:350});
 
-                this.setCanvasHeight(); 
-                
-                // animate and return a deferred object
-                var $def = $.Deferred();
-				return $animations.loads[this.loadsBy].bind(this,$def)();
+                    // make sure the view is visible
+                    $this.$elem.css({
+                        "visibility":"visible",
+                        'display':'block',
+                        'z-index':999999999
+                    });
+                    if($this.loadsBy !== 'fade'){
+                        $this.$elem.css({
+                            opacity:1
+                        });
+                    }
+                    // adjust the canvas height and load the view
+                    $this.setCanvasHeight(); 
+                    $animations.loads[$this.loadsBy].bind($this,resolve)();
+                }).then(function(){
+                    $this.doCallbacks();
+                });
             },
                               
             exit : function (){
                 
-                var $this = this,
-                    $def = $.Deferred();
+                var $this = this;
 
-                return $animations.exits[this.exitsBy].bind($this,$def)().done(function(){
+                return new Promise(function(resolve){
+                    
+                    $animations.exits[$this.exitsBy].bind($this,resolve)();
+                }).then(function(){
                     
                     // make sure the view is hidden in its loadFrom position
                     $this.$elem.css({
@@ -383,7 +373,7 @@ octane.module('router',[],function (cfg) {
                             'opacity':0
                         });
                     
-                    $this.setPosition(this.loadsFrom);
+                    $this.setPosition($this.loadsFrom);
                 });
             },
             
@@ -403,55 +393,58 @@ octane.module('router',[],function (cfg) {
                 
                         
             setPosition : function (position){
-                
-                var $view = this.$elem,
-                    anim = new __.Switch({
+                var $this = this;
+                return new Promise(function(resolve){
+                    var $view = $this.$elem,
+                        anim = new __.Switch({
 
-                    'left': function(){
-                                $view.css({
-                                    "left":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    'right' : function() {
-                                $view.css({
-                                    "right":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    'top' : function(){
-                                $view.css({
-                                    "top":-($(window).height()*1.1),
-                                    "left":0,
-                                    "right":0
-                                });
-                    },
-                    'bottom' : function(){
-                                $view.css({"bottom":-($(window).height()*1.1),
-                                    "left":0,
-                                    "right":0
-                                });
-                    },
-                    'onscreen' :function(){
-                                $view.css({
-                                    "left":0,
-                                    "right":0,
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    default : function(){ 
-                                $view.css({
-                                    "left":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    }
+                        'left': function(){
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'right' : function() {
+                                    $view.css({
+                                        "right":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'top' : function(){
+                                    $view.css({
+                                        "top":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'bottom' : function(){
+                                    $view.css({"bottom":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'onscreen' :function(){
+                                    $view.css({
+                                        "left":0,
+                                        "right":0,
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        default : function(){ 
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        }
+                    });
+
+                    anim.run(position);
+                    resolve();
                 });
-
-                anim.run(position);
             },
             
             doCallbacks : function (){

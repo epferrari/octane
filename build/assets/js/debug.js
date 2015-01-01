@@ -1,7 +1,7 @@
 
-    octane.module('Debug',function(_octane){
+    octane.module('debug',function(_octane){
         
-        this.extend({
+        octane.extend({
 
            getModules : function(){ 
                return _octane.modules;

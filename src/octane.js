@@ -885,7 +885,8 @@
                                         if(_octane.models[name]){
                                             return _octane.models[name];
                                         }else{  
-                                             options = _.isObject(options) ? options : {}; 
+                                             options = _.isObject(options) ? options : {};
+                                             options.context = this.name+' module';
                                              return new Model(name,options);
                                         }
 									},
@@ -893,7 +894,7 @@
 										 if(_octane.controllers[model]){
                                             return _octane.controllers[model];
                                         }else{
-                                            return new Controller(model,this.name);
+                                            return new Controller(model,this.name+' module');
                                         }; 
 									}
 			});	
@@ -957,7 +958,7 @@
                         writatble : false,
                         configurable : false
                     });
-
+                    octane[$module.id].name = $module.id;
                     _octane.modules[$module.id].loaded = true;
                     
                     octane.goose('application',{
