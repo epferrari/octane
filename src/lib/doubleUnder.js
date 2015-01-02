@@ -1,6 +1,6 @@
 // utility methods
 	
-(function (__,window){	
+(function (__,window,jQuery){	
 	 
 	// intentionally global
 	var $fn = {
@@ -124,27 +124,6 @@
                         // ensure function
                         _.isFunction(func) && cases[key].push(func);
                         
-						/*// helpers
-						function convertToArray(key,func){
-							var orig = cases[key];
-							cases[key] = [orig,func];
-						}
-						function pushToArray(key,func){
-							cases[key].push(func);
-						}
-						function setVal(key,func){
-							cases[key] = func;
-						}
-						// hash
-						var caseIs = {
-							'function' 	: convertToArray,
-							'array'		: pushToArray,
-							'undefined'	: setVal
-						};
-						
-						var caseType = $fn.typeOf(cases[key]);
-						caseIs[caseType] && caseIs[caseType](key,func);*/
-						
 						return $this;				
 					}
 								
@@ -154,13 +133,13 @@
 						
                         if(!cases['default']){
                             cases['default'] = [function(){ return false; }];
-                        };
+                        }
                         
 						var $this = this;
 						
                         // make sure the arguments are an array
 						args = _.isArray(args) ? args : (_.isString(args) ? args.split(',') : []);
-						
+                        
                         return cases[$case] ? callAll(cases[$case],args) : cases['default'][0](args);
 						
                         // helper
@@ -169,33 +148,22 @@
                             var n = funcArray.length;
                             
                             if(n == 1){
-                                return funcArray[0].apply(null,args);
+                                return _.isFunction(funcArray[0]) && funcArray[0].apply(null,args);
                             }else{
                                 for(var i=0; i<n; i++){
-                                    // set timeout for async
-                                    setTimeout(function(){
-
-                                        funcArray[i].apply(null,args);
-                                    },0);
+                                   // closure to preserve func reference 
+                                   callOne(funcArray[i],args);
                                 }
                             }
 						}
                         
-						/*// call a single function from the hash table
-						function callOne(func,args){
-							return fn(args);
-						}
-						// call all the functions in the hash table successively
-						// are NOT chained by return values
-						
-						// hash
-						var caseIs = {
-							'function'  : callOne,
-							'array'		: callAll
-						};
-						
-						var caseType  = $fn.typeOf(cases[$case]);
-						return types[type] ? types[type].apply($this,[cases[$case],args]) : cases.default();*/
+                        // helper's helper
+                        function callOne(func,args){
+                            // set timeout for async
+                            setTimeout(function(){
+                                _.isFunction(func) && func.apply(null,args);
+                           },0);
+                        }
 					}
 					
 					// public
@@ -209,8 +177,6 @@
 					this.getCases = function(){ 
 						return cases; 
 					};
-					
-			
 				},
 		
 		// a better typeof operation, although slower, it has the benefit of being predicatble
@@ -389,7 +355,7 @@
 	
 	window[__] = $fn;
 	
-})('__',window);
+})('__',window,jQuery);
 		
 
 		
