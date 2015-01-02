@@ -1,7 +1,7 @@
 // JavaScript Document
     
     // application object
-
+    
 	(function($,_,__){
 		
        'use strict';
@@ -192,6 +192,52 @@
 							}	
 		});
 	
+        
+    /* ------------------------------------------------------- */		
+	// Application templating
+	/* ------------------------------------------------------- */
+        
+        _octane.templates = {};
+        
+        function parseTemplate(template,data){
+
+           var  pattern = /\{\{([^{^}]+)\}\}/g,
+            matches = template.match(pattern),
+            key,re;
+
+            for(var i=0,n=matches.length; i<n; i++){
+                key = matches[i].replace(/[{}]+/g,''); // 'something'
+                re = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                template = template.replace(re,data[key]);
+            }
+
+            return template;
+        }
+        
+        octane.define({
+            parse : function(template,data){
+                        return (_.isObject(data) && _.isString(template)) ? parseTemplate(template,data) : '';
+            },
+            addTemplate : function(id,markup){
+                
+                if(_.isString(id) && _.isString(markup)){
+                    _octane.templates[id] = markup;
+                }
+            },
+            getTemplate : function(id){
+                
+                return _octane.templates[id] || '';
+            },
+            template : function(templateID,data){
+                
+                var wrapper = document.createElement('o-template'),
+                    template = octane.getTemplate(templateID),
+                    markup = octane.parse(template,data);
+                wrapper.innerHTML = markup;
+                return wrapper;
+            }            
+        });
+        
 	
 	/* ------------------------------------------------------- */		
 	// Application input Filtering 
@@ -1044,6 +1090,17 @@
         
 		function init (options){
 			
+            var utils = octane.startup_utilities || {};
+            
+            for(var util in utils){
+                if(({}).hasOwnProperty.call(utils,util)){
+                    // hook for the loading message
+                    octane.fire('loading:utility',{detail:util});
+                    // init utility
+                   _.isFunction(utils[util]) && utils[util].call();
+                }
+            }
+            
 			options = options || {};
 			if(_octane.modules['debug']){ options.debug = [_octane]; }
             

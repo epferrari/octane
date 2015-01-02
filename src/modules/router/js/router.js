@@ -16,16 +16,6 @@ octane.module('router',[],function (cfg) {
         }
     }
     
-	// add History.js so we can route
-	(function(window,undefined){
-
-        // Bind to StateChange Event
-        History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
-            var State = History.getState(); // Note: We are using History.getState() instead of event.state
-        });
-
-	})(window);
-	
 	// octane's own pushstate method
 	function pushState(params){
 		

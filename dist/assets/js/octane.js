@@ -1,6 +1,6 @@
 // utility methods
 	
-(function (__,window){	
+(function (__,window,jQuery){	
 	 
 	// intentionally global
 	var $fn = {
@@ -120,31 +120,10 @@
 						}
 						
                         // ensure array
-                        cases[key] = !_.isArray(cases[key]) && [];
+                        cases[key] = !_.isArray(cases[key]) ? [] : cases[key];
                         // ensure function
                         _.isFunction(func) && cases[key].push(func);
                         
-						/*// helpers
-						function convertToArray(key,func){
-							var orig = cases[key];
-							cases[key] = [orig,func];
-						}
-						function pushToArray(key,func){
-							cases[key].push(func);
-						}
-						function setVal(key,func){
-							cases[key] = func;
-						}
-						// hash
-						var caseIs = {
-							'function' 	: convertToArray,
-							'array'		: pushToArray,
-							'undefined'	: setVal
-						};
-						
-						var caseType = $fn.typeOf(cases[key]);
-						caseIs[caseType] && caseIs[caseType](key,func);*/
-						
 						return $this;				
 					}
 								
@@ -154,13 +133,13 @@
 						
                         if(!cases['default']){
                             cases['default'] = [function(){ return false; }];
-                        };
+                        }
                         
 						var $this = this;
 						
                         // make sure the arguments are an array
 						args = _.isArray(args) ? args : (_.isString(args) ? args.split(',') : []);
-						
+                        
                         return cases[$case] ? callAll(cases[$case],args) : cases['default'][0](args);
 						
                         // helper
@@ -169,33 +148,22 @@
                             var n = funcArray.length;
                             
                             if(n == 1){
-                                return funcArray[0].apply(null,args);
+                                return _.isFunction(funcArray[0]) && funcArray[0].apply(null,args);
                             }else{
                                 for(var i=0; i<n; i++){
-                                    // set timeout for async
-                                    setTimeout(function(){
-
-                                        funcArray[i].apply(null,args);
-                                    },0);
+                                   // closure to preserve func reference 
+                                   callOne(funcArray[i],args);
                                 }
                             }
 						}
                         
-						/*// call a single function from the hash table
-						function callOne(func,args){
-							return fn(args);
-						}
-						// call all the functions in the hash table successively
-						// are NOT chained by return values
-						
-						// hash
-						var caseIs = {
-							'function'  : callOne,
-							'array'		: callAll
-						};
-						
-						var caseType  = $fn.typeOf(cases[$case]);
-						return types[type] ? types[type].apply($this,[cases[$case],args]) : cases.default();*/
+                        // helper's helper
+                        function callOne(func,args){
+                            // set timeout for async
+                            setTimeout(function(){
+                                _.isFunction(func) && func.apply(null,args);
+                           },0);
+                        }
 					}
 					
 					// public
@@ -209,8 +177,6 @@
 					this.getCases = function(){ 
 						return cases; 
 					};
-					
-			
 				},
 		
 		// a better typeof operation, although slower, it has the benefit of being predicatble
@@ -389,20 +355,22 @@
 	
 	window[__] = $fn;
 	
-})('__',window);
+})('__',window,jQuery);
 		
 
 		
 		
 	;// JavaScript Document
-
+    
+    // application object
+    
 	(function($,_,__){
 		
-       // 'use strict';
+       'use strict';
 		// check that doubleUnder utility library is included
 		if(!window.__) { return false; }
-		// Octane is already instanced
-		if(window.Octane) { return false; }
+		// octane is already instanced
+		if(window.octane) { return false; }
 		
         document.createElement('o-container');
         document.createElement('o-view-canvas');
@@ -488,21 +456,21 @@
 			
 		
 	/* ------------------------------------------------------- */
-	// define public Octane
+	// define public octane
     // intentionally global
 	/* ------------------------------------------------------- */
-		Octane = $o = new Base('Octane'); // jshint ignore:line
+		var octane = new Base('octane'); 
 		
 	/* ------------------------------------------------------- */
-	// private octanelication object and properties
+	// private _octane application object and properties
 	/* ------------------------------------------------------- */
 		
-		var octane = new Base('Octane protected');
-		octane.define({
+		var _octane = new Base('octane protected');
+		_octane.define({
 				modules		    : {},
 				models		    : {},
 				views		    : {},
-				controllers     : []
+				controllers     : {}
 		});
 	
 	/* ------------------------------------------------------- */
@@ -510,12 +478,12 @@
 	/* ------------------------------------------------------- */		
 		
 		// set a unique identifier for the DOM element so we don't double count it
-		Octane.define({
+		octane.define({
 			GUID : function(){
 				var random4 = function() {
 					return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
 				};
-				return 'Octane'+ random4() +'-'+ random4() +'-'+ random4() + random4();
+				return 'octane'+ random4() +'-'+ random4() +'-'+ random4() + random4();
 			}
 		});
 	
@@ -523,7 +491,7 @@
 	//  Application Error handling
 	/* ------------------------------------------------------- */		
 		
-		octane.errors = {
+		_octane.errors = {
 			logfile : 	[],
 			log 	: 	function(message){
 							this.logfile.push(message);
@@ -540,7 +508,7 @@
 		
             for(var	i=0, n = conditions.length;i<n;i++){
 				if(!conditions[i][0]){
-					octane.errors.log('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
+					_octane.errors.log('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
 					return false;
 				}		
 			}
@@ -553,29 +521,29 @@
 	/* ------------------------------------------------------- */		
 		
         // a custom event for the app to fire when user data changes
-       Octane.define({
+       octane.define({
             trip       :   function(elem){
                 
                                 var rand = Math.random(),
                                     e = __.customEvent('input',{bubbles:true,detail:rand});
-
+                                
                                 elem.dispatchEvent && elem.dispatchEvent(e);
                             }
         });
 		
-        octane.eventRegister = {};
+        _octane.eventRegister = {};
 		
-		Octane.define({
+		octane.define({
 			
 			handle		: 	function(type,handler){
                                 
                                 var types = type ? type.split(' ') : [];
                                 for(var i=0,n=types.length; i<n; i++){
 								    window.addEventListener(types[i],handler,false);
-                                    if( !_.isArray(octane.eventRegister[types[i]]) ){ 
-                                        octane.eventRegister[types[i]] = [];
+                                    if( !_.isArray(_octane.eventRegister[types[i]]) ){ 
+                                        _octane.eventRegister[types[i]] = [];
                                     }
-								    octane.eventRegister[types[i]].push(handler);
+								    _octane.eventRegister[types[i]].push(handler);
                                 }
 							},
 			fire 		: 	function(type,detail){
@@ -585,24 +553,62 @@
 								}
 							}	
 		});
-		
-		// not sure what I'm doing with this now, seems handy
-		function validTag(name){
-				name = name.trim();
-				name = name.replace(/\s+|[_]+/,'-');
-				name = name.replace(/[^A-Za-z0-9]+/,'');
-				return name.toLowerCase();
-		}
 	
+        
+    /* ------------------------------------------------------- */		
+	// Application templating
+	/* ------------------------------------------------------- */
+        
+        _octane.templates = {};
+        
+        function parseTemplate(template,data){
+
+           var  pattern = /\{\{([^{^}]+)\}\}/g,
+            matches = template.match(pattern),
+            key,re;
+
+            for(var i=0,n=matches.length; i<n; i++){
+                key = matches[i].replace(/[{}]+/g,''); // 'something'
+                re = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                template = template.replace(re,data[key]);
+            }
+
+            return template;
+        }
+        
+        octane.define({
+            parse : function(template,data){
+                        return (_.isObject(data) && _.isString(template)) ? parseTemplate(template,data) : '';
+            },
+            addTemplate : function(id,markup){
+                
+                if(_.isString(id) && _.isString(markup)){
+                    _octane.templates[id] = markup;
+                }
+            },
+            getTemplate : function(id){
+                
+                return _octane.templates[id] || '';
+            },
+            template : function(templateID,data){
+                
+                var wrapper = document.createElement('o-template'),
+                    template = octane.getTemplate(templateID),
+                    markup = octane.parse(template,data);
+                wrapper.innerHTML = markup;
+                return wrapper;
+            }            
+        });
+        
 	
 	/* ------------------------------------------------------- */		
 	// Application input Filtering 
 	/* ------------------------------------------------------- */
 		
-		octane.audits = new __.Switch();
+		_octane.filters = new __.Switch();
 		
-		Octane.define({
-			addAudit : function (name,valid,invalid){
+		octane.define({
+			addFilter : function (name,valid,invalid){
                 
                 valid = valid || /.*/;
                 invalid = invalid || /.*/;
@@ -613,42 +619,42 @@
                         case valid.test($data):
                             return {
                                 data 	: $data,
-                                result	: 'valid'
+                                status	: 'valid'
                             };
 
                         case (_.isEmpty($data) || _.isUndefined($data)):
                             return {
                                 data 	: null,
-                                result	: 'undefined'
+                                status	: 'undefined'
                             };
                         case invalid.test($data):
                              return {
                                 data 	: null,
-                                result	: 'invalid'
+                                status	: 'invalid'
                             };
                         default: 
                             return {
                                 data 	: $data,
-                                result	: 'default'
+                                status	: 'default'
                             };
                     }
-                }
+                };
                 
-				octane.audits.addCase(name,func,true);	
+				_octane.filters.addCase(name,func,true);	
 			}
 		});
 		
-		Octane.addAudit('number',/^[-]*\d+$/);
-        Octane.addAudit('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        Octane.addAudit('tel',/^[-0-9\.]{7,12}$/);
+		octane.addFilter('number',/^[-\d]+$/);
+        octane.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
+        octane.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
 	//  Application Utility Libraries
 	/* ------------------------------------------------------- */	
 	
-		octane.libraries = {};
-        octane.dictionaries = {};
+		_octane.libraries = {};
+        _octane.dictionaries = {};
 		
         function Library(name,data){
            
@@ -669,21 +675,21 @@
             var dict = _.isObject(data) ? data : {};
             this.get = function(){
                 return dict;
-            }
+            };
         }
         
-		Octane.define({
-			Library : function(name,lib){
-				octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
+		octane.define({
+			library : function(name,lib){
+				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
-			lib : function(name){
-				return octane.libraries[name] instanceof Library && octane.libraries[name].checkout();
+			checkout : function(name){
+				return _octane.libraries[name] instanceof Library && _octane.libraries[name].checkout();
 			},
-            Dictionary : function(name,data){
-                octane.dictionaries[name] = _.isObject(data) ? new Dictionary(name,data) : {};
+            dictionary : function(name,data){
+                _octane.dictionaries[name] = _.isObject(data) ? new Dictionary(name,data) : {};
             },
-            dict : function(name){
-                return octane.dictionaries[name] instanceof Dictionary && octane.dictionaries[name].get();
+            lookup : function(name){
+                return _octane.dictionaries[name] instanceof Dictionary && _octane.dictionaries[name].get();
             }
 		});
 	
@@ -695,7 +701,7 @@
 		function Model(name,options){
 			
 			options = _.isObject(options) ? options : {};
-			options.context = options.context || 'global';
+			options.context = options.context || 'Application';
             
 			var conditions = [
                     [
@@ -717,18 +723,18 @@
                 context     : options.context,
 				state		: {}
             });
-            var $ViewModel = new ViewModel($this);
+            var vm = new ViewModel($this);
             
 			// public
 			this.define({
 				access		: function(key) { return db[key]; },
-                reScope    : function(){ $ViewModel.parse(); }
+                reScope    : function(){ vm.parse(); }
 			});
 			
 			// initialize
 			(function ($this){
 
-				octane.models[name] = $this;
+				_octane.models[name] = $this;
 				
 				Base.prototype.extend.call(db,options.db);
 				$this.set(options.defaults);
@@ -741,7 +747,6 @@
         Model.prototype.constructor = Model;
 		Model.prototype.define({
 			set	: function(fresh){
-									
 							if(!_.isObject(fresh) || !_.isObject(this.state)) return;
 							
 							// array for state properties changed
@@ -758,29 +763,38 @@
                                     modelUpdated;
                                 
                                 try{
-                                    keyArray.reduce(function(o,x,index){
-                                        
-                                        if(index == (k-1)){
-                                            return o[x] = value;
-                                        }else{
-                                            return o[x] = _.isObject(o[x]) ? o[x] : {};
-                                        }
-                                    },$state);
+                                    keyArray.reduce(parseString,$state);
             
                                     modelUpdated = true;
                                 }catch(e){
                                     modelUpdated = false;
-                                    octane.errors.log('Unable to set model data "'+keyString+'". Error: '+e);
+                                    _octane.errors.log('Unable to set model data "'+keyString+'". Error: '+e);
                                 }
                                 modelUpdated && updated.push(keyString);
                             }
-                
+                            
                             var e = this.name+':statechange';
-                            Octane.fire(e,{detail:updated});
+                            octane.fire(e,{detail:updated});
+                                
+                            // helpers
+                            /* ------------------------------------------------------- */
+                            
+                                function parseString(o,x,index){
+
+                                    if(index == (k-1)){
+                                        return o[x] = value;
+                                    }else{
+                                        return o[x] = _.isObject(o[x]) ? o[x] : {};
+                                    }
+                                }
+                
+                            /* ------------------------------------------------------- */
+                           
 						},
 			get	: 	function(keyString){
                                 
-                                var $this = this;
+                                var $this = this,
+                                    stateData;
                                 
                                 if(keyString){
                                     var keyArray = keyString.split('.');
@@ -791,7 +805,7 @@
                                         },$this.state);
                                     }catch(e){
                                         stateData = '';
-                                        octane.errors.log('Unable to get model data "'+keyString+'". Error: '+e);
+                                        _octane.errors.log('Unable to get model data "'+keyString+'". Error: '+e);
                                     }
                                     return stateData;
                                 } else {
@@ -800,216 +814,28 @@
 						},
             process      : function($dirty){
                                 
-                            var contrls = octane.controllers;
-                            for(var i = 0,n= contrls.length; i<n; i++){
-                                if(contrls[i].model.name == this.name){
-                                    contrls[i].doAudit($dirty);
-                                }
-                            }
+                            _octane.controllers[this.name] && _octane.controllers[this.name].doFilter($dirty);
                 }
 		});
 		
-	/* define Model on Octane - bridge to private properties and methods */
+	/* define Model on octane - bridge to private properties and methods */
 		
-		Octane.define({
-			Model 		: function (name,options){
-							options = _.isObject(options) ? options : {}; 
-							return new Model(name,options);
+		octane.define({
+			model 		: function (name,options){
+                
+                            if(_octane.models[name]){
+                                return _octane.models[name];
+                            }else{  
+							     options = _.isObject(options) ? options : {}; 
+							     return new Model(name,options);
+                            }
 						}
 		});
-	
-	/* ------------------------------------------------------- */
-	//  Application Controllers
-	/* ------------------------------------------------------- */
-		
-		function Controller($model,context){
-			
-            context = context || 'global';
-            
-			// validate context
-			var	conditions = [
-					[
-                        $model instanceof Model,
-                        'defined $model is not an instance of Octane.Model'
-                    ],[
-                        $model.instanced,
-                        '$model passed as argument was not initialized'
-                    ]
-				],
-                loadable = verify(conditions,'Controller',context);
-			if(!loadable) return {instanced:false};
-			
-			var $this = this;
-			// private properties
-					
-			// semi-public	API	
-			this.define({
-				
-                instanced		: true,
-				model			: $model,
-				context         : context,
-                tasks   		: new __.Switch(),
-				audits          : {},
-                parsers         : {},
-			    hooks           : {},
-				
-                
-			});
-			
-			// add this Controller instance to the octane's controllers object
-			(function(){
-				octane.controllers.push($this);
-				
-				var event = $this.model.name+':statechange';
-				Octane.handle(event,$this);
-			})();	
-		}
-		
-	/* prototype Controller */
-		
-		Controller.prototype = new Base();
-        Controller.prototype.constructor = Controller;
-		Controller.prototype.define({
-            
-            // assign an octane check to be run on a 'dirty' data property
-            audit		: function(o_bind,audit){
-                                this.audits[o_bind] = audit;
-                                return this; // chainable
-                        },
-
-
-            // a function to be octanelied in between the checking and the setting of data in the model
-            // if one data value changes depending on another, a parser is the place for that logic
-            // key is the incoming data key to parse for, fn is the function to apply
-            // ALWAYS RETURN THE DATA for the next parser/setting model state
-            parser			: function(o_bind,func){
-
-                                    var $this = this;
-                                    if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
-                                        // make sure 'this' in our hooks refers to this Controller
-                                        this.parsers[o_bind] = func.bind($this);
-                                    }
-                                    return this; // chainable	
-                              },
-
-
-            // add a new Switch instance with a case object to be processed
-            // when a filter is called on the defined property
-            hook			: function(bindKey,caseObject){
-                                this.hooks[bindKey] = new __.Switch(caseObject);
-                                return this; // chainable
-                            },
-            // add as function(keyString,data)
-			task   : 	function(o_bind,func){
-				
-								var $this = this;
-								if(_.isFunction(func)){
-									this.tasks.addCase(o_bind,function(){
-										
-                                        var data = $this.model.get(o_bind);
-                                        // make sure 'this' in our parser refers to this Controller
-										func.bind($this)(o_bind,data);
-									});
-								}
-								return this; // chainable
-							},
-			
-			fetch	: 	function(dbKey){
-				
-								return this.model.access(dbKey);
-							},
-			// filters are called in the order they are defined on your element with the data-filters attribute (filtersArray)
-			// they can be added to your controller in any order
-			doAudit : function($dirty){
-								var $this = this;
-                                
-								// loop through changed, 'dirty' properties passed to applyFilters from ViewModel
-								function validate($data){
-									
-									   // helper
-                                        function v(audit,o_bind,$dirty){
-
-
-                                            // if a filter exists, run it on the data
-                                            // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
-                                            var returned = octane.audits.run(audit,[$dirty[o_bind]]);
-
-                                            // return the filtered data to the data object
-                                            $data[o_bind] = returned.data;
-
-                                            // if hook exists for bindID, execute the hook with the result's audited data
-                                            // else return the audited data
-                                            return $this.hooks[o_bind] ? $this.hooks[o_bind].run(returned.result,[$data]) : $data;
-                                        }
-                                    // end helper
-                                    
-                                    $data = _.isObject($data) ? $data : {};
-									
-									for(var o_bind in $data){
-										if( ({}).hasOwnProperty.call($data,o_bind) ){
-											// look for an audit assigned to this o-bind keystring
-											var $audit = $this.audits[o_bind];
-											// purge the dirty data, execture hooks, and return
-											$this.audits[o_bind] && v($audit,o_bind,$data);
-										}
-									}
-									// return 
-									return $data;
-								}
-								
-                                var $validated =  validate($dirty);
-								
-								// hooks callback
-								this.applyParsers($validated);	
-							},
-			
-			applyParsers	: function($data){
-                                if(_.isObject($data)){
-                                    
-                                    for(var o_bind in $data){
-                                        if( ({}).hasOwnProperty.call($data,o_bind) ){
-                                            $data = this.parsers[o_bind] ? this.parsers[o_bind]($data) : $data;
-                                        }
-                                    }
-                                    this.model.set($data);
-                                }
-							},
-            
-			handleEvent : 	function(e){
-								
-								var $this = this,
-									eventHandler = new __.Switch();
-									
-								eventHandler.addCase(this.model.name+':statechange',loopState);
-								
-                                // passed e.details, which on event "this.model.statechange"
-                                // is an object of updated model states
-								function loopState(dataBindKeys){
-									
-										for(var i=0,n=dataBindKeys.length; i<n; i++){
-                                            var key = dataBindKeys[i];
-                                            setTimeout(function(){
-										          $this.tasks.run(key);
-                                            },0);
-										}
-								}
-								
-								eventHandler.run(e.type,[e.detail]);
-							}
-		});
-	
-	/* define Controller on Octane - bridge to private octane properties and methods */
-		
-		Octane.define({
-			Controller 		: function ($model){ 
-                return new Controller($model);
-            }
-		});
-	
-	/* ------------------------------------------------------- */
-	//  Application ViewModels
+        
+    /* ------------------------------------------------------- */
+	//  Application ViewModel
 	// @param $model [string] Model name this ViewModel uses
-	// @param context [obj] the context of the MVCVM (octane or a module) 
+	// @param context [obj] the context of the MVCVM (_octane or a module) 
 	/* ------------------------------------------------------- */		
 		
 		function ViewModel($model){
@@ -1029,10 +855,12 @@
 			// initialize
 			(function($this){
 				
-                //octane.view_models.push($this);
+                //_octane.view_models.push($this);
 				
 				$this.watcher
 					.addCase('input',function(e){
+                        //console.log('dispatch element: ',e.srcElement);
+                        //console.log('value at event handler: ',e.srcElement.value);
 						$this.uptake(e.srcElement);
 					})
                     .addCase('select',function(e){
@@ -1046,20 +874,8 @@
 						$this.refresh();
 					});
 				
-				Octane.handle('input click '+$this.model.name+':statechange',$this);
-                
-				$this.parse();
-                 
-                // loop bound model datapoint in scope
-                /*for(var key in $this.scope){
-                    if( ({}).hasOwnProperty.call($this.scope,key)){
-                        // loop thru each element bound to the model datapoint
-                        for(var i=0,n=$this.scope[key].length; i<n; i++){
-                           $this.uptake($this.scope[key][i]);
-                        }
-                    }
-                }*/
-                    
+				octane.handle('input click '+$this.model.name+':statechange',$this);
+				$this.parse();    
 				$this.refresh();
 			})($this);
 		}
@@ -1091,14 +907,24 @@
                         // loop elements with this o-model
                         for(var i=0,n=$scope.length;i<n;i++){
                             
-                            var el = $scope[i];
+                            var el = $scope[i],
                                 // remove model name from bind string
                                 $bind = el.getAttribute('o-bind'),
-                                $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
+                                o_update = el.getAttribute('o-update'),
+                                $update= {};
+                                
+                                if(o_update){
+                                    // not a JSON string
+                                    if(o_update.length > 0 && o_update.indexOf("{") !== 0){
+                                        $update[o_update] = 'html';
+                                    } else {
+                                        $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
+                                    }
+                                }
                             
                             // element hasn't been parsed yet
                             if(!el._guid){
-                                el._guid = Octane.GUID();
+                                el._guid = octane.GUID();
                                 el._bind = $bind;
                                 el._update = $update;
                                 el._filters = JSON.parse( el.getAttribute('o-filters') );
@@ -1144,11 +970,11 @@
                                             element.value = this.model.get(pointer);
                                             
                                             // loop thru attributes to update
-                                            for(var key in toUpdate){
-                                                if( ({}).hasOwnProperty.call(toUpdate,key)){
+                                            for(var ukey in toUpdate){
+                                                if( ({}).hasOwnProperty.call(toUpdate,ukey)){
                                                     // remove model name from string
-                                                    pointer = key.split('.').slice(1).join('.');
-                                                    update(element,toUpdate[key],this.model.get(pointer));
+                                                    var upointer = ukey.split('.').slice(1).join('.');
+                                                    update(element,toUpdate[ukey],this.model.get(upointer));
                                                 }
                                             }
                                         }
@@ -1156,37 +982,41 @@
                                 }
                 
 								// helper
-								function update(el,attribute,fresh){
+                                /* ------------------------------------------------------- */
                                     
-                                    var attrs = new __.Switch({
-                                        'html' : function(){
-                                                   
-                                                    el.innerHTML = fresh;
-                                                },
-                                        'text' : function(){
-                                                    el.textContent = fresh;
-                                                },
-                                        'default' : function(){
-                                                    el.setAttribute(attribute,fresh);
-                                                }
-                                    });
-                                    
-                                    attrs.run(attribute);
-								}			
+                                    function update(el,attribute,fresh){
+
+                                        var attrs = new __.Switch({
+                                            'html' : function(){
+
+                                                        el.innerHTML = fresh;
+                                                    },
+                                            'text' : function(){
+                                                        el.textContent = fresh;
+                                                    },
+                                            'default' : function(){
+                                                        el.setAttribute(attribute,fresh);
+                                                    }
+                                        });
+                                        attrs.run(attribute);
+                                    }
+                                
+                                /* ------------------------------------------------------- */
 							},
 			
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(element){
                                 
-								var 	o_bind = element._bind,
-                                        // remove model name from string
-                                        pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
-                                        $dirty={};
+                            var 	o_bind = element._bind,
+                                    // remove model name from string
+                                    pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
+                                    $dirty={};
                 
 								if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
-								
                                     $dirty[pointer] = element.value;
-                                    this.model.process($dirty);  	
+                                    if(_octane.controllers[this.model.name]){
+                                        _octane.controllers[this.model.name].doFilter($dirty);
+                                    }
 								}				
 							},
 			handleEvent	: 	function (e){ 
@@ -1194,6 +1024,250 @@
 							}
 		});
 
+	
+	/* ------------------------------------------------------- */
+	//  Application Controllers
+	/* ------------------------------------------------------- */
+		
+		function Controller(model,context){
+			
+            context = context || 'Application';
+           
+			// validate context
+			var	$model = _octane.models[model] || {},
+                conditions = [
+					[
+                        $model instanceof Model,
+                        'defined model is not an instance of octane.Model'
+                    ],[
+                        $model.instanced,
+                        'model '+model+' passed as argument was not initialized'
+                    ]
+				],
+                loadable = verify(conditions,'Controller',context);
+			if(!loadable) return {instanced:false};
+			
+			var $this = this;
+			// private properties
+					
+			// semi-public	API	
+			this.define({
+                instanced		: true,
+				model			: $model,
+				context         : context,
+                tasks   		: new __.Switch(),
+				filters          : {},
+                parsers         : {},
+			    hooks           : {}    
+			});
+			
+			// add this Controller instance to the _octane's controllers object
+			(function(){
+				_octane.controllers[model] = $this;
+				octane.handle($this.model.name+':statechange',$this);
+			})();	
+		}
+		
+	/* prototype Controller */
+		
+		Controller.prototype = new Base();
+        Controller.prototype.constructor = Controller;
+		Controller.prototype.define({
+            
+            // assign an _octane filter to be run on a 'dirty' data property
+            filter		: function(o_bind,filter){
+                                this.filters[o_bind] = filter;
+                                return this; // chainable
+                        },
+
+            // a function to be applied in between filtering and the setting of data in the model
+            // if one model data value changes depending on another, a parser is the place for that logic
+            // key is the incoming data key to parse for, fn is the function to apply
+            // parser param 'func' can take 2 arguments, the first is the bound dirty data,
+            // the second is an arbitrarily named flag that tells the parser it should be a Promise
+            // remember to resolve the promise or the data won't be set in the model
+            parser			: function(o_bind,func){
+                                    
+                                var funcDeclaration= func.toString().split('{')[0],
+                                    pattern = /\(([^)]+)\)/,
+                                    argsString = pattern.exec(funcDeclaration)[1],
+                                    argsArray = argsString.split(','),
+                                    $this = this;
+                
+                                if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
+
+                                    if(argsArray.length == 2){
+                                        this.parsers[o_bind] = function($dirty){
+                                            return new Promise(function(resolve,reject){
+                                                // create object to resolve/reject promise in our parser function
+                                                var $deferred = {
+                                                    resolve:resolve,
+                                                    reject:reject
+                                                };
+                                                // make sure 'this' in our hooks refers to this Controller
+                                                func.bind($this)($dirty,$deferred);
+                                            });
+                                        };
+                                    
+                                    }else{
+                                        this.parsers[o_bind] = function($dirty){
+                                            // make sure 'this' in our hooks refers to this Controller
+                                            return func.bind($this,$dirty)();
+                                        };
+                                    }
+                                }
+                                return this; // chainable	
+                          },
+
+
+            // add a new Switch instance with a case object to be processed
+            // when a filter is called on the defined property
+            hook			: function(o_bind,caseObject){
+                                this.hooks[o_bind] = new __.Switch(caseObject);
+                                return this; // chainable
+                            },
+            // add as function(keyString,data)
+			task   : 	function(o_bind,func){
+				                
+								var $this = this,
+                                    bind,
+                                    data;
+                               
+								if(_.isFunction(func)){
+                                    if(__.typeOf(o_bind) == 'string'){
+                                        o_bind = o_bind.split(',');
+                                    }
+                                    for(var i=0,n=o_bind.length; i<n; i++){
+                                        // closure to preserve scope
+                                        bindTask(o_bind[i]);
+                                    }
+								}
+								return this; // chainable
+                
+                                // helper
+                                /* ------------------------------------------------------- */
+                                    
+                                    function bindTask(bind){
+                                        bind = bind.trim();
+                                        $this.tasks.addCase(bind,function(){
+                                            var data = $this.model.get(bind);
+                                            func.bind($this)(bind,data);
+                                        });
+                                    }
+                                
+                                /* ------------------------------------------------------- */
+                
+							},
+			
+			fetch	: 	function(dbKey){
+				
+								return this.model.access(dbKey);
+							},
+			
+			doFilter : function($dirty){
+								var $this = this;
+								    
+                                function filterAll($data){
+									
+                                    $data = _.isObject($data) ? $data : {};
+									
+									for(var o_bind in $data){
+										if( ({}).hasOwnProperty.call($data,o_bind) ){
+											// look for an filter assigned to this o-bind keystring
+											var $filter = $this.filters[o_bind];
+											// purge the dirty data, execture hooks, and return
+											$data = $this.filters[o_bind] ? filterOne($filter,o_bind,$data) : $data;
+										}
+									}
+									return $data;   
+								}
+								
+								this.applyParsers( filterAll($dirty) );	
+                
+                                // helper
+                                /* ------------------------------------------------------- */
+
+                                    function filterOne(filter,o_bind,$data){
+                                        // if a filter exists, run it on the data
+                                        // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
+                                        var result = _octane.filters.run(filter,[$data[o_bind]]);
+                                        // return the filtered data to the data object
+                                        $data[o_bind] = result.data;
+
+                                        // if hook exists for bindID, execute the hook with the result's filtered data
+                                        // else return the filtered data
+                                        return $this.hooks[o_bind] ? $this.hooks[o_bind].run(result.status,[$data]) : $data;
+                                    }
+
+                                /* ------------------------------------------------------- */
+                                
+							},
+			
+			applyParsers	: function($data){
+                                var $this = this,
+                                    $maybePromise;
+                
+                                if(_.isObject($data)){
+                                    
+                                    for(var o_bind in $data){
+                                        if( ({}).hasOwnProperty.call($data,o_bind) ){
+                                            
+                                            $maybePromise = $this.parsers[o_bind] && $this.parsers[o_bind]($data);
+                                            //$this.parsers[o_bind] && $this.parsers[o_bind]($data);
+                                            if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
+                                                $maybePromise.then($this.model.set);
+                                            }else{
+                                                $this.model.set($data);
+                                            }  
+                                        }
+                                    }    
+                                }
+							},
+            
+			handleEvent : 	function(e){
+								
+								var $this = this,
+									eventHandler = new __.Switch();
+									
+								eventHandler.addCase($this.model.name+':statechange',loopState);
+								
+                                // passed e.details, which on event "this.model.statechange"
+                                // is an object of updated model states
+								function loopState(dataBindKeys){
+										for(var i=0,n=dataBindKeys.length; i<n; i++){
+                                            // closure to trap current dataBindKey
+                                            loopStateHelper(dataBindKeys[i]);
+										}
+								}
+                                
+                                eventHandler.run(e.type,[e.detail]);
+                                
+                                // helper
+                                /* ------------------------------------------------------- */
+                                    
+                                    function loopStateHelper(key){
+                                        setTimeout(function(){
+                                              $this.tasks.run(key);
+                                        },0);
+                                    }
+                
+                                /* ------------------------------------------------------- */	
+							}
+		});
+	
+	/* define Controller on octane - bridge to private _octane properties and methods */
+		
+		octane.define({
+			controller 		: function (model){ 
+                                if(_octane.controllers[model]){
+                                    return _octane.controllers[model];
+                                }else{
+                                    return new Controller(model,'Application');
+                                }
+            }
+		});
+	
+	
 	/* ------------------------------------------------------- */
 	// base for Application Modules
 	/* ------------------------------------------------------- */
@@ -1209,18 +1283,27 @@
                     ]
                 ],
                 loadable = verify(conditions,'Module','global');
-            if(!loadable){ return {instanced:false}; };
+            if(!loadable){ return {instanced:false}; }
 			
 			this.define({
 				instanced 		:	true,
 				
-				Model			:	function (name,options){
-										options = _.isObject(options) ? options : {};
-										options.context = this.name; 
-										return new Model(name,options);
+				model			:	function (name,options){
+                    
+                                        if(_octane.models[name]){
+                                            return _octane.models[name];
+                                        }else{  
+                                             options = _.isObject(options) ? options : {};
+                                             options.context = this.name+' module';
+                                             return new Model(name,options);
+                                        }
 									},
-				Controller		:	function ($model){ 
-										return new Controller($model,this.name); 
+				controller		:	function (model){ 
+										 if(_octane.controllers[model]){
+                                            return _octane.controllers[model];
+                                        }else{
+                                            return new Controller(model,this.name+' module');
+                                        } 
 									}
 			});	
 		}
@@ -1233,19 +1316,19 @@
 	//  methods for handling modules
 	/* ------------------------------------------------------- */
 		
-		// add a module to Octane before init
+		// add a module to octane before init
 		function addModule (id,dependencies,$module){
 			
             $module = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
             $module.prototype = new Module(id);
             
-            Octane.extend.call($module,{
+            octane.extend.call($module,{
                 dependencies : (__.typeOf(arguments[1]) == 'array') ? arguments[1] : [],
                 id           : id,
                 loaded       : false
             });
             
-			octane.modules[id] = $module;		
+			_octane.modules[id] = $module;		
 		}
 		
 		// called at init
@@ -1255,15 +1338,15 @@
             
             // assign init arguments as properties of the module's constructor function
 			for(var id in options){
-                if( ({}).hasOwnProperty.call(options,id) && octane.modules[id]){
-                   octane.modules[id].initArgs = _.isArray(options[id]) ? options[id] : [];
+                if( ({}).hasOwnProperty.call(options,id) && _octane.modules[id]){
+                   _octane.modules[id].initArgs = _.isArray(options[id]) ? options[id] : [];
                 }
-            };
+            }
             
             // load each module
-			for(var module in octane.modules){
-				if( ({}).hasOwnProperty.call(octane.modules, module) ){
-					loadModule(octane.modules[module]);
+			for(var module in _octane.modules){
+				if( ({}).hasOwnProperty.call(_octane.modules, module) ){
+					loadModule(_octane.modules[module]);
 				}	
 			}
 		}
@@ -1274,19 +1357,24 @@
 			if($module.prototype instanceof Module && dependenciesMet($module)){
                 
                 // prevent the same module from loading twice
-                if($module.loaded){ 
+                if($module.loaded){
+                    _octane.errors.log('Could not load '+$module.name+' Module, already loaded');
                     return;
                 }else{
-                    Octane.extend( $module.__construct($module.initArgs) );
-
-                    octane.modules[$module.id].loaded = true;
+                    Object.defineProperty(octane,$module.id, {
+                        value : $module.__construct($module.initArgs),
+                        writatble : false,
+                        configurable : false
+                    });
+                    octane[$module.id].name = $module.id;
+                    _octane.modules[$module.id].loaded = true;
                     
+                    octane.goose('application',{
+                        loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                    });
                     // hook-in for updating a loading screen
-                    Octane.fire('loaded:module',{
-                        detail:{
-                            message:'Loading Module '+$module.id+'...',
-                            progress: (Math.floor(99 / (Object.keys(octane.modules).length -2)))
-                        }
+                    octane.fire('loaded:module',{
+                        detail:{moduleID: $module.id }
                     });
                 }
 			}	
@@ -1299,10 +1387,10 @@
 
             for(var i=0,n = dependencies.length; i<n; i++){
                 var d = dependencies[i].trim(),
-                    moduleD = octane.modules[d];
+                    moduleD = _octane.modules[d];
 
                 if( !(moduleD && moduleD.prototype instanceof Module) ) {
-                    errors.log('Could not load '+$module.name+' Module, missing dependency '+d);
+                    _octane.errors.log('Could not load '+$module.name+' Module, missing dependency '+d);
                     return false;
                 }else{
                     if(!moduleD.loaded){
@@ -1313,41 +1401,42 @@
             return true;
         }
 
-		Octane.define({
-                Module     : function(name,dependencies,$module){ 
+		octane.define({
+                module     : function(name,dependencies,$module){ 
                                 return addModule(name,dependencies,$module);
                             },
                 hasModule : function (name){ 
-                                return octane.modules[name] ? octane.modules[name].loaded : false; 
+                                return _octane.modules[name] ? _octane.modules[name].loaded : false; 
                             }	
             })
         // artificially start the uptake circuit
            .define({
-                process : function(model,$dirty){
-                            var contrls = octane.controllers;
-                            for(var i = 0,n= contrls.length; i<n; i++){
-                                if(contrls[i].model.name == model){
-                                    contrls[i].sanitize($dirty);
-                                }
-                            }
+                goose : function(model,$dirty){
+                            _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
                 }
             })
         // global model and controller
-            .define({ $model : new Model('Octane')} )	
-            .define({ $ctrl : new Controller(Octane.$model) })
-        // Octane DOM elements
+            .define({ appModel : new Model('application')} )	
+            .define({ $Controller : new Controller('application') })
+        // octane DOM elements
             .define({ dom:{} })
-        // Octane ready handler
-            .handle('Octane:ready',function(e){
+        // octane ready handler
+            .handle('octane:ready',function(e){
                 setTimeout(function (){
-                    // unhide the rest of the octane's content hidden behind the loader
-                    Octane.dom.container().setAttribute('style','visibility:visible;'); 
+                    // unhide the rest of the _octane's content hidden behind the loader
+                    octane.dom.container().setAttribute('style','visibility:visible;'); 
                     // route to url-parsed view|| home
-                    Octane.route(e.detail);
+                    //octane.route(e.detail);
                 },500);
             });
         
-        Octane.define.call(Octane.dom,{
+        octane.controller('application')
+            .parser('loadingProgress',function($data){
+                var currentProgress = this.model.get('loadingProgress') || 0;
+                $data.loadingProgress = currentProgress + $data.loadingProgress;
+            });
+        
+        octane.define.call(octane.dom,{
                 container : function(){
                     return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
                 },
@@ -1363,56 +1452,70 @@
         
 		function init (options){
 			
+            var utils = octane.startup_utilities || {};
+            
+            for(var util in utils){
+                if(({}).hasOwnProperty.call(utils,util)){
+                    // hook for the loading message
+                    octane.fire('loading:utility',{detail:util});
+                    // init utility
+                   _.isFunction(utils[util]) && utils[util].call();
+                }
+            }
+            
 			options = options || {};
-			if(octane.modules['Debug']){ options.Debug = [octane] };
+			if(_octane.modules['debug']){ options.debug = [_octane]; }
             
             initModules(options);
-			Octane.name = options.name || Octane.name;
+			octane.name = options.name || octane.name;
             
-            var features = document.getElementsByTagName('html')[0].getAttribute('class').split(' '),
-                hasHistory = __.inArray(features,'history'),
-                view = Octane.parseView(hasHistory) || 'home';
+            var view = octane.parseView() || 'home';
             
-            Octane.fire('Octane:ready',{detail:view});
+            octane.fire('octane:ready',{detail:view});
 		}
         
        
-		Octane.extend({
+		octane.extend({
 			
-			/* Octane API */
+			/* octane API */
 			
 				init : function(options){ return init(options); }
 				
                 // .trip(element)
 				// .handle(event,handler)
 				// .fire(event,data)
+            
+                // .library(name,data)
+                // .checkout(library)
+                // .dictionary(name,data)
+                // .lookup(dictionary)
 				
-                // .Module(name,Constructor[,dependencies])
-				// .Model(name,options)
-				// .Controller($model)
+                // .module(name,Constructor[,dependencies])
+				// .model(name,options)
+				// .controller($model)
 				
                 // .process($dirty)
 				
-                // .renderTranslator(langs[,container]) 	: extended from Translator Module
+                // .renderControls(langs[,container]) 	: extended from Translator Module
 				// .translate([,data]) 						: extended from Translator Module
 				// .getLang() 								: extended from Translator Module
 				// .setLang(lang) 							: extended from Translator Module
 				// .getLangContent(contentID) 				: extended from Translator Module
 				// .setLangData(data) 						: extended from Translator Module
 				
-                // .errorLog()                              : extended from Testing Module (if active)
-                // .getEvents()                             : extended from Testing Module (if active)
-                // .getModels()                             : extended from Testing Module (if active)
-				// .getControllers()                        : extended from Testing Module (if active)
-				// .getViews()                              : extended from Testing Module (if active)
+                // .errorLog()                              : extended from debug module (if active)
+                // .getEvents()                             : extended from debug module (if active)
+                // .getModels()                             : extended from debug module (if active)
+				// .getControllers()                        : extended from debug module (if active)
+				// .getViews()                              : extended from debug module (if active)
                 
                 // _proto_ .extend({})
 				// _proto_ .define({property:value,...})
 			
 			/* Module methods */
 			     
-                // .Model(name,options)
-                // .Controller($model)
+                // .model(name,options)
+                // .controller($model)
 			
 			/* Model methods */
 			
@@ -1423,12 +1526,12 @@
 			
 			/* Controller methods */
 			     
-				// .audit(prop,filter)
+				// .filter(prop,filter)
                 // .hook(prop,$caseObject)
 				// .parser(prop,fn)
                 // .task(datakey,function(e.detail))
 				
-                // .doAudit($data)
+                // .doFilter($data)
 				// .applyParsers($data)
 			
 			/* ViewModel methods */
@@ -1438,14 +1541,15 @@
 				// .uptake()
 			//		
 		});
-		
+	   
+       window.octane = window.$o = octane;
 
 	})($,_,__);
 
 
     
-	/* TODO - Octane extension methods */
-	// add built in audits
+	/* TODO - octane extension methods */
+	// add built in filters
     // add filters/lenses in refresh
 	// add library injection (for routing animations, language data, etc)
 	// build router with HTML5 history API, callbacks to include .translate() and ViewModel.refresh()
@@ -1455,41 +1559,59 @@
 	
 	
 	
-;// JavaScript Document
+; // init external dependencies/utilities that help octane run
+ 
+ octane.startup_utilities = {
+    
+    fastlickJS : function(){
+        
+        // attach fastclick.js for mobile touch
+        if ('addEventListener' in document) {
+            document.addEventListener('DOMContentLoaded', function() {
+                FastClick.attach(document.body);
+            }, false);
+        }
+    },
+    
+    
+	historyJS : function(){
+        
+        // add History.js so we can route
+        (function(window,undefined){
 
-Octane.Module('Router',[],function (cfg) {
+            // Bind to StateChange Event
+            History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+                var State = History.getState(); // Note: We are using History.getState() instead of event.state
+            });
+
+        })(window);
+    }
+};// JavaScript Document
+
+octane.module('router',[],function (cfg) {
 	
+    // octane application's views object and animation library
+	var $Views = {},
+        $animations;
+    
     if(_.isObject(cfg)){
         
         try{
-            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : Octane.lib('viewAnimations');
+            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.checkout('view-animations');
         }catch(e){
-            $animations = Octane.lib('viewAnimations');
-            Octane.hasModule('Debug') && Octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
+            $animations = octane.checkout('view-animations');
+            octane.hasModule('Debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
         }
     }
     
-	// add History.js so we can route
-	(function(window,undefined){
-
-        // Bind to StateChange Event
-        History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
-            var State = History.getState(); // Note: We are using History.getState() instead of event.state
-        });
-
-	})(window);
-	
-	// Octane application's views object and animation library
-	var $Views = {};
-    
-    
+	// octane's own pushstate method
 	function pushState(params){
 		
 		params = _.isObject(params) ? params : {};
 		// update the language in the url
 		var parsed = __.location().searchObject;	
 		
-		Octane.extend.call(parsed,params);
+		octane.extend.call(parsed,params);
 		
 		var fragment = [];
 		for(var key in parsed){
@@ -1501,12 +1623,12 @@ Octane.Module('Router',[],function (cfg) {
 		fragment = fragment.join('&');
 		fragment = '?'+fragment;
         
-        var language = Octane.getLang(),
+        var language = octane.translator && octane.translator.getLang(),
             title = __.titleize(params.view) || __.titleize(currentView);
 		
 		History.pushState( 
             { lang: language },
-            Octane.name +' | '+ title,
+            octane.name +' | '+ title,
             fragment
         );
 	}
@@ -1521,108 +1643,114 @@ Octane.Module('Router',[],function (cfg) {
 	// 	function's thisArg is bound to the view called
 	// @param ghost [bool]: do not update the history with the view (default false)
 	function route(id,ghost){
-		
-        ghost = _.isBoolean(ghost) ? ghost : false;
-		var $view = $Views[id],
-            $def = $.Deferred();
-		
-        // ensure the onscreen view isn't reanimated
-        //////////////////////////////////////////////////////////////////////////////////////
-                                                                                            //
-            if($view instanceof View && $view != currentView){                              //
-                                                                                            //
-            // ensure a route isn't triggered while another route is animating              //
-            //////////////////////////////////////////////////////////////////////////      //
-                                                                                    //      //
-                if(!isRouting){                                                     //      //
-                                                                                    //      //
-                    isRouting = true;                                               //      //
-                                                                                    //      //
-                // exit the current view before calling a new view                  //      //
-                //////////////////////////////////////////////////////////          //      //
-                                                                        //          //      //
-                    if(currentView instanceof View){                    //          //      //
-                        currentView.exit().done(function(){             //          //      // 
-                            loadView($view,$def);                       //          //      //
-                        });                                             //          //      //
-                    }else{                                              //          //      //
-                        loadView($view,$def);                           //          //      // 
-                    }                                                   //          //      //
-                //////////////////////////////////////////////////////////          //      //
-                                                                                    //      //
-                }else{                                                              //      //
-                    routesQueue.push(id);                                           //      //
-                }                                                                   //      //
-            //////////////////////////////////////////////////////////////////////////      //
-                                                                                            //
-            }else{                                                                          //
-                $def.reject();                                                              //
-            }                                                                               //
-                                                                                            //
-        //////////////////////////////////////////////////////////////////////////////////////
         
-        // helper
-        function loadView($view,$def){
+        return new Promise(function(resolve,reject){
             
-             $view.load().done(function(){
+            ghost = _.isBoolean(ghost) ? ghost : false;
+            var $view = $Views[id];
+           
+            // ensure the onscreen view isn't reanimated
+            //////////////////////////////////////////////////////////////////////////////////////
+                                                                                                //
+                if($view instanceof View && $view != currentView){                              //
+                                                                                                //
+                // ensure a route isn't triggered while another route is animating              //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                        //      //
+                    if(!isRouting){                                                     //      //
+                                                                                        //      //
+                        isRouting = true;                                               //      //
+                                                                                        //      //
+                    // exit the current view before calling a new view                  //      //
+                    //////////////////////////////////////////////////////////          //      //
+                                                                            //          //      //
+                        if(currentView instanceof View){                    //          //      //
+                            currentView.exit().done(function(){             //          //      // 
+                                loadView($view,ghost).done(resolve);        //          //      //
+                            });                                             //          //      //
+                        }else{                                              //          //      //
+                            loadView($view,ghost).done(resolve);            //          //      // 
+                        }                                                   //          //      //
+                    //////////////////////////////////////////////////////////          //      //
+                                                                                        //      //
+                    }else{                                                              //      //
+                        if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
+                    }                                                                   //      //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                                //
+                }else{                                                                          //
+                    resolve();                                                                  //
+                }                                                                               //
+                                                                                                //
+            //////////////////////////////////////////////////////////////////////////////////////
+            
+        });
+    }
+    // helper
+    function loadView($view,ghost){
+
+         return new Promise(function(resolve,reject){
+
+            $view.load().done(function(){
                 !ghost && pushState({view:$view.id});
-
-                $view.doCallbacks();
-                //!ghost && Octane.fire('view:loaded',{detail:{id:id}});
-
+                
+                // update the current biew
                 currentView = $view;
-
                 // update current view in global state, jumpstart Circuit                          
-                Octane.$model.process({ currentView : $view.id });
-
+                octane.goose('application',{ currentView : $view.id });
+                // flag the route complete
                 isRouting = false;
-
+                // resolve this route
+                resolve();
                 // route next view
                 (routesQueue.length > 0) && route(routesQueue.pop());
-
-                $def.resolve();
+                
              });
-        }
-		
-        // return promise
-		return $def;
-	}
+         });
+   }  
 	
 	// add a callback to be executed when the specified view finishes its loading animation 
 	function routeThen(id,callback){
 		
 		$Views[id] instanceof View && $Views[id].addCallback(callback);
-		return this;
+		return octane;
 	}
 	
 	function remove(id){
 		
 		$Views[id] instanceof View && $Views[id].exit();
-		Octane.$model.process({currentView:''});
+		octane.goose('application',{currentView:''});
 	}
 	
     
 	function setRoutingButtons(){
 		
-		var btns = document.querySelectorAll('.o-btn');
+		var btns = document.querySelectorAll('[o-route]');
 		var n = btns.length;
 		
 		while(n--){
-			var route = btns[n].getAttribute('o-route');
-            
+			  
             // closure to capture the button and route during the loop
-           (function(btn,route){ 
-                btn.addEventListener('click',function(){
-				    return Octane.route(route);
-			     });
-           })(btns[n],route);
+           setRoutingButtonsHelper(btns[n]);
 		}
 	}
-	
+    
+    function setRoutingButtonsHelper(btn,route){
+        var route = btn.getAttribute('o-route');
+	    btn.addEventListener('click',function(){
+            octane.route(route);
+        });
+     }
+        
+        
     // parse URL for a view  
-    function parseView(api){
-
-        if(api){
+    function parseView(){
+        
+        // for HTML5 vs. HTML4 browsers
+        // detect with modernizr   
+        var html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history');
+        
+        if(html5){
             return __.location().searchObject.view || false;
         } else {
              var hash = window.location.hash,
@@ -1640,50 +1768,40 @@ Octane.Module('Router',[],function (cfg) {
 
            return parsed.view || false;
         }
-     };
+     }
     
 	function initialize(){
 		
-		var 	//$views = document.getElementsByTagName('o-view'),
-                $views = Octane.dom.views(),
-				id, config;
-				
+        var $views = octane.dom.views(),
+            html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+            stateChangeEvent = html5 ? 'popstate' : 'hashchange',
+            id, config;
+		
+        // bind html views to View objects		
 		for(var i=0,n=$views.length; i<n; i++){
 			id = $views[i].id;
 			config = JSON.parse($views[i].getAttribute('o-config'));
 			!$Views[id] && ($Views[id] = new View(id,config));
-		}
-				
-		setRoutingButtons();
-		
-        // for HTML5 vs. HTML4 browsers
-        // detect with modernizr   
-         var features = document.getElementsByTagName('html')[0].getAttribute('class').split(' '),
-            historyAPI = __.inArray(features,'history'),
-            stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';   
-
-            window.addEventListener(stateChangeEvent,function(){
-                   
-                var view = parseView(historyAPI);
-                   view && Octane.route(view).done( function(){
-                      } );
-            });
-        
-            Octane.handle('translated resize orientationchange',function(){
-                currentView && currentView.setCanvasHeight();
-            });
+		}		
+		setRoutingButtons(); 
+        // change the view with browser's forward/back buttons
+        window.addEventListener(stateChangeEvent,function(){       
+            var view = parseView();
+            view && octane.route(view).done( function(){} );
+        });
+        // resize canvas to proper dimensions
+        octane.handle('translated resize orientationchange',function(){
+            currentView && currentView.setCanvasHeight();
+        });
 	}
     
 	// Router Public API				
-	this.define({
-		initRouter		: function(){
-                                return initialize();
-                            },
-        parseView       : function(supportsHistoryAPI){
-                                return parseView(supportsHistoryAPI);
+	octane.define({
+        parseView       : function(){
+                                return parseView();
                             },
 		route			: function(id,ghost){
-								return route(id,ghost).then( Octane.translate );
+								return route(id,ghost).then( octane.translator.translate );
                             },
 		routeThen		: function(id,callback){
 								return routeThen(id,callback);
@@ -1694,13 +1812,13 @@ Octane.Module('Router',[],function (cfg) {
 		pushState		: function (params){
 							     pushState(params);
                             },
-		getCurrentView : function(){
+		currentView      : function(){
 							return currentView;
                             }
 	});
     
-    if(Octane.hasModule('Debug')){
-        this.define({
+    if(octane.hasModule('debug')){
+        octane.define({
             getViews : function(){
                 return $Views;
             }
@@ -1708,7 +1826,7 @@ Octane.Module('Router',[],function (cfg) {
     }
     
     // update the page title when the view changes
-     Octane.$ctrl.parser('currentView',function($dirty){
+     octane.controller('application').parser('currentView',function($dirty){
         $dirty.currentViewTitle = __.titleize($dirty.currentView);
 
         return $dirty;
@@ -1716,8 +1834,8 @@ Octane.Module('Router',[],function (cfg) {
 	
     
     // set-up for Views constructor
-    var Base = Octane.constructor;
-    //var $animations = Octane.library('viewAnimations') || {};
+    var Base = octane.constructor;
+    //var $animations = octane.library('viewAnimations') || {};
     
     
 	/* ------------------------------------------------------- */
@@ -1736,10 +1854,8 @@ Octane.Module('Router',[],function (cfg) {
 			
 			config = _.isObject(config) ? config : {};
 			
-			var $this = this; 
-			
-			// private properties
-			var	//onscreen	= (config.starts == 'onscreen'),
+			var $this = this,
+			    // private properties
 				positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
                 loadConfig = _.isObject(config.loads),
                 exitConfig = _.isObject(config.exits),
@@ -1748,20 +1864,11 @@ Octane.Module('Router',[],function (cfg) {
                     loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'left',
                     loadEasing      : loadConfig && config.loads.ease || 'swing',
                     loadDuration    : loadConfig && _.isNumber(config.loads.dur) ? config.loads.dur : 500,
-                    onLoadComplete  : function($deferred){
-
-                            // resolve the deferred object we pass in from the loading call
-                            $deferred && $deferred.resolve(id);
-                        },
+                
                     exitsBy         : exitConfig && config.exits.by || 'slide',
                     exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'right',
                     exitEasing      : exitConfig && config.exits.ease || 'swing',
-                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500,
-                    onExitComplete	: function($deferred){
-
-                            // resolve the deferred object we pass in from the exiting call
-                            $deferred && $deferred.resolve(id);
-                        }
+                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
 				};
             
             this.define(cfg);
@@ -1772,19 +1879,20 @@ Octane.Module('Router',[],function (cfg) {
 				id			: id,
 				elem		: document.getElementById(id),
 				$elem 		: $('o-view#'+id),
-				_guid		: Octane.GUID(),
+				_guid		: octane.GUID(),
                 doneLoading : [],
 				addCallback : function(callback){
-								this.doneLoading.push(callback);
+								_.isFunction(callback) && this.doneLoading.push(callback);
 							}					
 			});
             
             this.setPosition(this.loadsFrom);
 		}
 		
-        View.prototype = new Base('Octane View');
+        View.prototype = new Base('octane View');
     
         View.prototype.define({
+            constructor : View,
             
             handleEvent : function(e){
 					switch(e.type){
@@ -1802,35 +1910,38 @@ Octane.Module('Router',[],function (cfg) {
             
             load : function(){
                 
-                // scroll to top of page
-                $('body').velocity('scroll',{duration:200});
-                
-                // make sure the view is visible
-                this.$elem.css({
-                    "visibility":"visible",
-                    'display':'block',
-                    'z-index':9999999999
-                });
-                
-                if(this.loadsBy !== 'fade'){
-                    this.$elem.css({
-                        opacity:1
-                    });
-                }
+                var $this = this;
+                return new Promise(function(resolve){
+                    // scroll to top of page
+                    $('body').velocity('scroll',{duration:350});
 
-                this.setCanvasHeight(); 
-                
-                // animate and return a deferred object
-                var $def = $.Deferred();
-				return $animations.loads[this.loadsBy].bind(this,$def)();
+                    // make sure the view is visible
+                    $this.$elem.css({
+                        "visibility":"visible",
+                        'display':'block',
+                        'z-index':999999999
+                    });
+                    if($this.loadsBy !== 'fade'){
+                        $this.$elem.css({
+                            opacity:1
+                        });
+                    }
+                    // adjust the canvas height and load the view
+                    $this.setCanvasHeight(); 
+                    $animations.loads[$this.loadsBy].bind($this,resolve)();
+                }).then(function(){
+                    $this.doCallbacks();
+                });
             },
                               
             exit : function (){
                 
-                var $this = this,
-                    $def = $.Deferred();
+                var $this = this;
 
-                return $animations.exits[this.exitsBy].bind($this,$def)().done(function(){
+                return new Promise(function(resolve){
+                    
+                    $animations.exits[$this.exitsBy].bind($this,resolve)();
+                }).then(function(){
                     
                     // make sure the view is hidden in its loadFrom position
                     $this.$elem.css({
@@ -1840,7 +1951,7 @@ Octane.Module('Router',[],function (cfg) {
                             'opacity':0
                         });
                     
-                    $this.setPosition(this.loadsFrom);
+                    $this.setPosition($this.loadsFrom);
                 });
             },
             
@@ -1860,59 +1971,63 @@ Octane.Module('Router',[],function (cfg) {
                 
                         
             setPosition : function (position){
-                
-                var $view = this.$elem,
-                    anim = new __.Switch({
+                var $this = this;
+                return new Promise(function(resolve){
+                    var $view = $this.$elem,
+                        anim = new __.Switch({
 
-                    'left': function(){
-                                $view.css({
-                                    "left":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    'right' : function() {
-                                $view.css({
-                                    "right":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    'top' : function(){
-                                $view.css({
-                                    "top":-($(window).height()*1.1),
-                                    "left":0,
-                                    "right":0
-                                });
-                    },
-                    'bottom' : function(){
-                                $view.css({"bottom":-($(window).height()*1.1),
-                                    "left":0,
-                                    "right":0
-                                });
-                    },
-                    'onscreen' :function(){
-                                $view.css({
-                                    "left":0,
-                                    "right":0,
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    },
-                    default : function(){ 
-                                $view.css({
-                                    "left":-($(window).width()*1.1),
-                                    "top":0,
-                                    //"bottom":0
-                                });
-                    }
+                        'left': function(){
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'right' : function() {
+                                    $view.css({
+                                        "right":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'top' : function(){
+                                    $view.css({
+                                        "top":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'bottom' : function(){
+                                    $view.css({"bottom":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'onscreen' :function(){
+                                    $view.css({
+                                        "left":0,
+                                        "right":0,
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        default : function(){ 
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        }
+                    });
+
+                    anim.run(position);
+                    resolve();
                 });
-
-                anim.run(position);
             },
             
             doCallbacks : function (){
-                    var callbacks = this.doneLoading;
+                    var $this = this,
+                        callbacks = this.doneLoading;
             
                     for (var i=0,n = callbacks.length; i < n; i++){
                         _.isFunction(callbacks[i]) && callbacks[i].bind($this)();
@@ -1965,135 +2080,122 @@ Octane.Module('Router',[],function (cfg) {
 		// View Animations
 		/* ------------------------------------------------------- */
 		
-        Octane.Library('viewAnimations',{
+        octane.library('view-animations',{
 		
-			applyLoading : function(){},
+			applyLoading : function(resolve){},
 			
-			removeLoading : function(){},
+			removeLoading : function(resolve){},
 				
 			loads : {	
-				slide : function ($deferred){
-				
-							var $this = this;
-							var $view = $this.$elem;
-                            var $config = {
-                                duration    : $this.loadDuration,
-                                easing      : $this.loadEasing,
-                                complete    : function(){
-                                    $this.onLoadComplete($deferred);
-                                }
-                            };
-							var anim = new __.Switch({
-								
-								'left': function(){
-									$view.velocity(
-										{"left":"0%"},
-										$config
-									);
-								},
-								'right': function (){
-									$view.velocity(
-										{"right":"0%"},
-										$config
-									);
-								},
-								'top':	function(){	
-									$view.velocity(
-										{"top":"0%"},
-										$config
-									);
-								},
-								'bottom':function(){
-									$view.velocity(
-										{"bottom":"0%"},
-										$config
-									);
-								}
-							});
+				slide : function (resolve){
+							var $this = this,
+                                $view = $this.$elem,
+                                $config = {
+                                    duration    : $this.loadDuration,
+                                    easing      : $this.loadEasing,
+                                    complete    : resolve
+                                },
+                                anim = new __.Switch({
+                                    'left': function(){
+                                        $view.velocity(
+                                            {"left":"0%"},
+                                            $config
+                                        );
+                                    },
+                                    'right': function (){
+                                        $view.velocity(
+                                            {"right":"0%"},
+                                            $config
+                                        );
+                                    },
+                                    'top':	function(){	
+                                        $view.velocity(
+                                            {"top":"0%"},
+                                            $config
+                                        );
+                                    },
+                                    'bottom':function(){
+                                        $view.velocity(
+                                            {"bottom":"0%"},
+                                            $config
+                                        );
+                                    }
+                                });
 				
 							anim.run($this.loadsFrom);
-							return $deferred;
 						}, // end load.slide
 						
-				fade	: function($deferred){
+				fade	: function(resolve){
 	
 							var $this = this,
 								$view = $this.$elem;
 								
-								$this.setPosition('onscreen');
-								$view.velocity(
-                                   'fadeIn',
-									{
-										display   : 'block',
-										easing    : $this.loadEasing,
-										duration  : $this.loadDuration,
-										complete  : function(){
-											$this.onLoadComplete($deferred);
-										}
-									});
-								return $deferred;
+								$this.setPosition('onscreen').then(function(){
+                                    $view.velocity(
+                                       'fadeIn',
+                                        {
+                                            display   : 'block',
+                                            easing    : $this.loadEasing,
+                                            duration  : $this.loadDuration,
+                                            complete  : resolve
+                                        });
+                                });
 						} // end loads.fade()
 					}, // end load animations
 			exits : {
 				
-				slide : function ($deferred){
+				slide : function (resolve){
 							
-							//console.log('slideOut called on '+this.id+', exiting to: ',config.exits.to);
-							
-							var $this = this;
-							var $view = $this.$elem;
-                            var $config = {
-                                duration: $this.exitDuration,
-                                easing: $this.exitEasing,
-                                complete:function(){
-                                    $this.onExitComplete($deferred);
-                                }
-                            }
-							var anim = new __.Switch({
-								'left':function(){
-									$view.velocity(
-										{
-											"left":-($(window).width()*1.1),
-											"right":$(window).width()*2.2
-										},
-                                        $config
-									);
-								},
-								'right':function(){
-									$view.velocity(
-										{
-											"right":-($(window).width()*1.1),
-											"left":$(window).width()*2.2
-										},
-										$config
-									);
-								},
-								'top':function(){	
-									$view.velocity(
-										{
-											"top":-($(window).height()*1.1),
-											"bottom":$(window).height()*2.2
-										},
-										$config
-									);
-								},
-								'bottom':function(){
-									$view.velocity(
-										{
-											"bottom":-($(window).height()*1.1),
-											"top":$(window).height()*2.2
-										},
-										$config
-									);
-								}
-							});
+							var $this = this,
+                                $view = $this.$elem,
+                                $config = {
+                                    duration    : $this.exitDuration,
+                                    easing      : $this.exitEasing,
+                                    complete    : resolve
+                                },
+                                anim = new __.Switch({
+                                    'left':function(){
+                                        $view.velocity(
+                                            {
+                                                "left":-($(window).width()*1.1),
+                                                "right":$(window).width()*2.2
+                                            },
+                                            $config
+                                        );
+                                    },
+                                    'right':function(){
+                                        $view.velocity(
+                                            {
+                                                "right":-($(window).width()*1.1),
+                                                "left":$(window).width()*2.2
+                                            },
+                                            $config
+                                        );
+                                    },
+                                    'top':function(){	
+                                        $view.velocity(
+                                            {
+                                                "top":-($(window).height()*1.1),
+                                                "bottom":$(window).height()*2.2
+                                            },
+                                            $config
+                                        );
+                                    },
+                                    'bottom':function(){
+                                        $view.velocity(
+                                            {
+                                                "bottom":-($(window).height()*1.1),
+                                                "top":$(window).height()*2.2
+                                            },
+                                            $config
+                                        );
+                                    }
+                                });
 							
 							anim.run($this.exitsTo);
-							
-							return $deferred;
 						}, // end exits.slide()
 			
-				fade : function($deferred){
+				fade : function(resolve){
 							
 							var $this = this,
 								$view = $this.$elem;
@@ -2101,14 +2203,11 @@ Octane.Module('Router',[],function (cfg) {
 								$view.velocity(
 									'fadeOut',
 									{
-										display:'none',
-                                        easing: $this.exitEasing,
-										duration: $this.exitDuration,
-										complete:function(){
-											$this.onExitComplete($deferred);
-										}
-									});	
-							return $deferred;			
+										display   :'none',
+                                        easing    : $this.exitEasing,
+										duration  : $this.exitDuration,
+										complete  : resolve
+									});		
 						} // end exits.fade()
 			} // end exit animations
 	}); // end library
@@ -2137,7 +2236,7 @@ Octane.Module('Router',[],function (cfg) {
 //      
 //      @option langSupport [array]: supported languages for the translator
 //
-Octane.Module('Translator', function (config){
+octane.module('translator', function (config){
 	
 		// dummy
 		var $M = {};
@@ -2231,8 +2330,8 @@ Octane.Module('Translator', function (config){
                 }
                 	
 				$M.dropdown.pill.html($M.lang.display+' ');//.append($M.dropdown.caret);
-				Octane.fire('translated');
-			};
+				octane.fire('translated');
+			}
 			
             function translateElement(el){
                  
@@ -2290,7 +2389,7 @@ Octane.Module('Translator', function (config){
 
 				// apply handlers to new DOM elems
 				applyClickHandlers();
-			};
+			}
 
 
 		// find the language from the url and set $M.lang
@@ -2301,7 +2400,7 @@ Octane.Module('Translator', function (config){
 				var parsed = __.location().searchObject;
 				
 				$M.lang = supportsLang(parsed.lang) || $M.defaultLang;
-			};
+			}
 			
 			
 			
@@ -2310,7 +2409,7 @@ Octane.Module('Translator', function (config){
 			
 			function getLang(){
 				return $M.lang.key;
-			};
+			}
 			
 			
 			
@@ -2323,14 +2422,14 @@ Octane.Module('Translator', function (config){
 				if( supportsLang(lang) ){
 					$M.lang = supportsLang(lang);
                     // update the language in the url
-					//Octane.pushState( {lang:$M.getLang()} );
+					//octane.pushState( {lang:$M.getLang()} );
 					
 					// TODO: replace URL with new language	with history API
 					//window.location.search = '?lang='+$M.lang.key;
 					
 					return getLang();
 				}
-			};
+			}
 			
 			
 			
@@ -2356,7 +2455,7 @@ Octane.Module('Translator', function (config){
 				}else{
 					return '';
 				}
-			};
+			}
 		
 		
 	/* ------------------------------- */
@@ -2390,7 +2489,7 @@ Octane.Module('Translator', function (config){
 						$M.dropdown.innerUL.hide();
 					}
 				});			
-			};
+			}
 		
 			
 		// helper
@@ -2409,7 +2508,7 @@ Octane.Module('Translator', function (config){
 					if($this.regexp && $this.regexp.test && $this.regexp.test(lang)) return $this;
 				}
 				return false;
-			};
+			}
 
 
 	/* ------------------------------- */
@@ -2446,10 +2545,9 @@ Octane.Module('Translator', function (config){
             renderControls($M.langSupport);
             translate();
 			
-			/*Octane.handle('popstate',function(){
-				$M.findLang();
-				console.log($M.lang);
-				$M.translate();
+			/*octane.handle('popstate',function(){
+				findLang();
+				translate();
 			});*/
 			
 

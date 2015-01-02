@@ -25,8 +25,9 @@ module.exports = function(grunt) {
             	],
 			bower: "src/assets/js/_bower.js",
 			concatMe: [
-                "src/lib/*.js",
+                "src/lib/doubleUnder.js",
                 "src/octane.js",
+                "src/lib/startup_utilities.js",
                 "src/modules/**/*.js",
                 "!src/modules/debug/**"
             ],
