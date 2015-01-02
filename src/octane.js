@@ -4,7 +4,7 @@
 
 	(function($,_,__){
 		
-       // 'use strict';
+       'use strict';
 		// check that doubleUnder utility library is included
 		if(!window.__) { return false; }
 		// octane is already instanced
@@ -164,7 +164,7 @@
                 
                                 var rand = Math.random(),
                                     e = __.customEvent('input',{bubbles:true,detail:rand});
-
+                                
                                 elem.dispatchEvent && elem.dispatchEvent(e);
                             }
         });
@@ -197,10 +197,10 @@
 	// Application input Filtering 
 	/* ------------------------------------------------------- */
 		
-		_octane.audits = new __.Switch();
+		_octane.filters = new __.Switch();
 		
 		octane.define({
-			addAudit : function (name,valid,invalid){
+			addFilter : function (name,valid,invalid){
                 
                 valid = valid || /.*/;
                 invalid = invalid || /.*/;
@@ -211,34 +211,34 @@
                         case valid.test($data):
                             return {
                                 data 	: $data,
-                                result	: 'valid'
+                                status	: 'valid'
                             };
 
                         case (_.isEmpty($data) || _.isUndefined($data)):
                             return {
                                 data 	: null,
-                                result	: 'undefined'
+                                status	: 'undefined'
                             };
                         case invalid.test($data):
                              return {
                                 data 	: null,
-                                result	: 'invalid'
+                                status	: 'invalid'
                             };
                         default: 
                             return {
                                 data 	: $data,
-                                result	: 'default'
+                                status	: 'default'
                             };
                     }
                 };
                 
-				_octane.audits.addCase(name,func,true);	
+				_octane.filters.addCase(name,func,true);	
 			}
 		});
 		
-		octane.addAudit('number',/^[-]*\d+$/);
-        octane.addAudit('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        octane.addAudit('tel',/^[-0-9\.]{7,12}$/);
+		octane.addFilter('number',/^[-\d]+$/);
+        octane.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
+        octane.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
@@ -355,14 +355,7 @@
                                     modelUpdated;
                                 
                                 try{
-                                    keyArray.reduce(function(o,x,index){
-                                        
-                                        if(index == (k-1)){
-                                            return o[x] = value;
-                                        }else{
-                                            return o[x] = _.isObject(o[x]) ? o[x] : {};
-                                        }
-                                    },$state);
+                                    keyArray.reduce(parseString,$state);
             
                                     modelUpdated = true;
                                 }catch(e){
@@ -371,9 +364,24 @@
                                 }
                                 modelUpdated && updated.push(keyString);
                             }
-                
+                            
                             var e = this.name+':statechange';
                             octane.fire(e,{detail:updated});
+                                
+                            // helpers
+                            /* ------------------------------------------------------- */
+                            
+                                function parseString(o,x,index){
+
+                                    if(index == (k-1)){
+                                        return o[x] = value;
+                                    }else{
+                                        return o[x] = _.isObject(o[x]) ? o[x] : {};
+                                    }
+                                }
+                
+                            /* ------------------------------------------------------- */
+                           
 						},
 			get	: 	function(keyString){
                                 
@@ -398,12 +406,7 @@
 						},
             process      : function($dirty){
                                 
-                            var contrls = _octane.controllers;
-                            for(var i = 0,n= contrls.length; i<n; i++){
-                                if(contrls[i].model.name == this.name){
-                                    contrls[i].doAudit($dirty);
-                                }
-                            }
+                            _octane.controllers[this.name] && _octane.controllers[this.name].doFilter($dirty);
                 }
 		});
 		
@@ -448,6 +451,8 @@
 				
 				$this.watcher
 					.addCase('input',function(e){
+                        //console.log('dispatch element: ',e.srcElement);
+                        //console.log('value at event handler: ',e.srcElement.value);
 						$this.uptake(e.srcElement);
 					})
                     .addCase('select',function(e){
@@ -462,19 +467,7 @@
 					});
 				
 				octane.handle('input click '+$this.model.name+':statechange',$this);
-                
-				$this.parse();
-                 
-                // loop bound model datapoint in scope
-                /*for(var key in $this.scope){
-                    if( ({}).hasOwnProperty.call($this.scope,key)){
-                        // loop thru each element bound to the model datapoint
-                        for(var i=0,n=$this.scope[key].length; i<n; i++){
-                           $this.uptake($this.scope[key][i]);
-                        }
-                    }
-                }*/
-                    
+				$this.parse();    
 				$this.refresh();
 			})($this);
 		}
@@ -581,37 +574,41 @@
                                 }
                 
 								// helper
-								function update(el,attribute,fresh){
+                                /* ------------------------------------------------------- */
                                     
-                                    var attrs = new __.Switch({
-                                        'html' : function(){
-                                                   
-                                                    el.innerHTML = fresh;
-                                                },
-                                        'text' : function(){
-                                                    el.textContent = fresh;
-                                                },
-                                        'default' : function(){
-                                                    el.setAttribute(attribute,fresh);
-                                                }
-                                    });
-                                    
-                                    attrs.run(attribute);
-								}			
+                                    function update(el,attribute,fresh){
+
+                                        var attrs = new __.Switch({
+                                            'html' : function(){
+
+                                                        el.innerHTML = fresh;
+                                                    },
+                                            'text' : function(){
+                                                        el.textContent = fresh;
+                                                    },
+                                            'default' : function(){
+                                                        el.setAttribute(attribute,fresh);
+                                                    }
+                                        });
+                                        attrs.run(attribute);
+                                    }
+                                
+                                /* ------------------------------------------------------- */
 							},
 			
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(element){
                                 
-								var 	o_bind = element._bind,
-                                        // remove model name from string
-                                        pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
-                                        $dirty={};
+                            var 	o_bind = element._bind,
+                                    // remove model name from string
+                                    pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
+                                    $dirty={};
                 
 								if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
-								
                                     $dirty[pointer] = element.value;
-                                    this.model.process($dirty);  	
+                                    if(_octane.controllers[this.model.name]){
+                                        _octane.controllers[this.model.name].doFilter($dirty);
+                                    }
 								}				
 							},
 			handleEvent	: 	function (e){ 
@@ -647,24 +644,19 @@
 					
 			// semi-public	API	
 			this.define({
-				
                 instanced		: true,
 				model			: $model,
 				context         : context,
                 tasks   		: new __.Switch(),
-				audits          : {},
+				filters          : {},
                 parsers         : {},
-			    hooks           : {},
-				
-                
+			    hooks           : {}    
 			});
 			
 			// add this Controller instance to the _octane's controllers object
 			(function(){
 				_octane.controllers[model] = $this;
-				
-				var event = $this.model.name+':statechange';
-				octane.handle(event,$this);
+				octane.handle($this.model.name+':statechange',$this);
 			})();	
 		}
 		
@@ -674,54 +666,56 @@
         Controller.prototype.constructor = Controller;
 		Controller.prototype.define({
             
-            // assign an _octane check to be run on a 'dirty' data property
-            audit		: function(o_bind,audit){
-                                this.audits[o_bind] = audit;
+            // assign an _octane filter to be run on a 'dirty' data property
+            filter		: function(o_bind,filter){
+                                this.filters[o_bind] = filter;
                                 return this; // chainable
                         },
 
-
-            // a function to be _octanelied in between the checking and the setting of data in the model
-            // if one data value changes depending on another, a parser is the place for that logic
+            // a function to be applied in between filtering and the setting of data in the model
+            // if one model data value changes depending on another, a parser is the place for that logic
             // key is the incoming data key to parse for, fn is the function to apply
-            // ALWAYS RETURN THE DATA for the next parser/setting model state
+            // parser param 'func' can take 2 arguments, the first is the bound dirty data,
+            // the second is an arbitrarily named flag that tells the parser it should be a Promise
+            // remember to resolve the promise or the data won't be set in the model
             parser			: function(o_bind,func){
                                     
-                                    var funcDeclaration= func.toString().split('{')[0];
-                                    var pattern = /\(([^)]+)\)/;
-                                    var argsString = pattern.exec(funcDeclaration)[1];
-                                    var argsArray = argsString.split(',');
-                                    
-                                    var $this = this;
-                                    if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
-                                       
-                                        if(argsArray.length == 2){
-                                            this.parsers[o_bind] = function($dirty){
-                                                return new Promise(function(resolve,reject){
-                                                    // create object to resolve/reject promise in our parser function
-                                                    var $deferred = {
-                                                        resolve:resolve,
-                                                        reject:reject
-                                                    };
-                                                    // make sure 'this' in our hooks refers to this Controller
-                                                    func.bind($this)($dirty,$deferred);
-                                                });
-                                            }
-                                        }else{
-                                            this.parsers[o_bind] = function($dirty){
+                                var funcDeclaration= func.toString().split('{')[0],
+                                    pattern = /\(([^)]+)\)/,
+                                    argsString = pattern.exec(funcDeclaration)[1],
+                                    argsArray = argsString.split(','),
+                                    $this = this;
+                
+                                if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
+
+                                    if(argsArray.length == 2){
+                                        this.parsers[o_bind] = function($dirty){
+                                            return new Promise(function(resolve,reject){
+                                                // create object to resolve/reject promise in our parser function
+                                                var $deferred = {
+                                                    resolve:resolve,
+                                                    reject:reject
+                                                };
                                                 // make sure 'this' in our hooks refers to this Controller
-                                                return func.bind($this,$dirty)();
-                                            };
-                                        }
+                                                func.bind($this)($dirty,$deferred);
+                                            });
+                                        };
+                                    
+                                    }else{
+                                        this.parsers[o_bind] = function($dirty){
+                                            // make sure 'this' in our hooks refers to this Controller
+                                            return func.bind($this,$dirty)();
+                                        };
                                     }
-                                    return this; // chainable	
-                              },
+                                }
+                                return this; // chainable	
+                          },
 
 
             // add a new Switch instance with a case object to be processed
             // when a filter is called on the defined property
-            hook			: function(bindKey,caseObject){
-                                this.hooks[bindKey] = new __.Switch(caseObject);
+            hook			: function(o_bind,caseObject){
+                                this.hooks[o_bind] = new __.Switch(caseObject);
                                 return this; // chainable
                             },
             // add as function(keyString,data)
@@ -736,71 +730,74 @@
                                         o_bind = o_bind.split(',');
                                     }
                                     for(var i=0,n=o_bind.length; i<n; i++){
-                                        bind = o_bind[i].trim();
-                                        
-                                        this.tasks.addCase(bind,function(){
+                                        // closure to preserve scope
+                                        bindTask(o_bind[i]);
+                                    }
+								}
+								return this; // chainable
+                
+                                // helper
+                                /* ------------------------------------------------------- */
+                                    
+                                    function bindTask(bind){
+                                        bind = bind.trim();
+                                        $this.tasks.addCase(bind,function(){
                                             var data = $this.model.get(bind);
                                             func.bind($this)(bind,data);
                                         });
-                                        //
                                     }
-                                    //console.log(this.tasks.getCases());
-								}
-								return this; // chainable
+                                
+                                /* ------------------------------------------------------- */
+                
 							},
 			
 			fetch	: 	function(dbKey){
 				
 								return this.model.access(dbKey);
 							},
-			// filters are called in the order they are defined on your element with the data-filters attribute (filtersArray)
-			// they can be added to your controller in any order
-			doAudit : function($dirty){
+			
+			doFilter : function($dirty){
 								var $this = this;
-                                
-								// loop through changed, 'dirty' properties passed to applyFilters from ViewModel
-								function validate($data){
+								    
+                                function filterAll($data){
 									
-									   // helper
-                                        function v(audit,o_bind,$dirty){
-
-
-                                            // if a filter exists, run it on the data
-                                            // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
-                                            var returned = _octane.audits.run(audit,[$dirty[o_bind]]);
-
-                                            // return the filtered data to the data object
-                                            $data[o_bind] = returned.data;
-
-                                            // if hook exists for bindID, execute the hook with the result's audited data
-                                            // else return the audited data
-                                            return $this.hooks[o_bind] ? $this.hooks[o_bind].run(returned.result,[$data]) : $data;
-                                        }
-                                    // end helper
-                                    
                                     $data = _.isObject($data) ? $data : {};
 									
 									for(var o_bind in $data){
 										if( ({}).hasOwnProperty.call($data,o_bind) ){
-											// look for an audit assigned to this o-bind keystring
-											var $audit = $this.audits[o_bind];
+											// look for an filter assigned to this o-bind keystring
+											var $filter = $this.filters[o_bind];
 											// purge the dirty data, execture hooks, and return
-											$this.audits[o_bind] && v($audit,o_bind,$data);
+											$data = $this.filters[o_bind] ? filterOne($filter,o_bind,$data) : $data;
 										}
 									}
-									// return 
-									return $data;
+									return $data;   
 								}
 								
-                                var $validated =  validate($dirty);
-								
-								// hooks callback
-								this.applyParsers($validated);	
+								this.applyParsers( filterAll($dirty) );	
+                
+                                // helper
+                                /* ------------------------------------------------------- */
+
+                                    function filterOne(filter,o_bind,$data){
+                                        // if a filter exists, run it on the data
+                                        // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
+                                        var result = _octane.filters.run(filter,[$data[o_bind]]);
+                                        // return the filtered data to the data object
+                                        $data[o_bind] = result.data;
+
+                                        // if hook exists for bindID, execute the hook with the result's filtered data
+                                        // else return the filtered data
+                                        return $this.hooks[o_bind] ? $this.hooks[o_bind].run(result.status,[$data]) : $data;
+                                    }
+
+                                /* ------------------------------------------------------- */
+                                
 							},
 			
 			applyParsers	: function($data){
                                 var $this = this,
-                                    executed;
+                                    $maybePromise;
                 
                                 if(_.isObject($data)){
                                     
@@ -810,16 +807,12 @@
                                             $maybePromise = $this.parsers[o_bind] && $this.parsers[o_bind]($data);
                                             //$this.parsers[o_bind] && $this.parsers[o_bind]($data);
                                             if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
-                                                $maybePromise.then(function($data){   
-                                                    $this.model.set($data);
-                                                });
+                                                $maybePromise.then($this.model.set);
                                             }else{
                                                 $this.model.set($data);
-                                            }
-                                           
+                                            }  
                                         }
-                                    }
-                                    
+                                    }    
                                 }
 							},
             
@@ -828,22 +821,29 @@
 								var $this = this,
 									eventHandler = new __.Switch();
 									
-								eventHandler.addCase(this.model.name+':statechange',loopState);
+								eventHandler.addCase($this.model.name+':statechange',loopState);
 								
                                 // passed e.details, which on event "this.model.statechange"
                                 // is an object of updated model states
 								function loopState(dataBindKeys){
 										for(var i=0,n=dataBindKeys.length; i<n; i++){
-                                           
                                             // closure to trap current dataBindKey
-                                            (function(key){
-                                                setTimeout(function(){
-                                                      $this.tasks.run(key);
-                                                },0)
-                                            })(dataBindKeys[i]);
+                                            loopStateHelper(dataBindKeys[i]);
 										}
 								}
-								eventHandler.run(e.type,[e.detail]);
+                                
+                                eventHandler.run(e.type,[e.detail]);
+                                
+                                // helper
+                                /* ------------------------------------------------------- */
+                                    
+                                    function loopStateHelper(key){
+                                        setTimeout(function(){
+                                              $this.tasks.run(key);
+                                        },0);
+                                    }
+                
+                                /* ------------------------------------------------------- */	
 							}
 		});
 	
@@ -895,7 +895,7 @@
                                             return _octane.controllers[model];
                                         }else{
                                             return new Controller(model,this.name+' module');
-                                        }; 
+                                        } 
 									}
 			});	
 		}
@@ -1004,7 +1004,7 @@
         // artificially start the uptake circuit
            .define({
                 goose : function(model,$dirty){
-                            _octane.controllers[model] && _octane.controllers[model].doAudit($dirty);
+                            _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
                 }
             })
         // global model and controller
@@ -1107,12 +1107,12 @@
 			
 			/* Controller methods */
 			     
-				// .audit(prop,filter)
+				// .filter(prop,filter)
                 // .hook(prop,$caseObject)
 				// .parser(prop,fn)
                 // .task(datakey,function(e.detail))
 				
-                // .doAudit($data)
+                // .doFilter($data)
 				// .applyParsers($data)
 			
 			/* ViewModel methods */
@@ -1130,7 +1130,7 @@
 
     
 	/* TODO - octane extension methods */
-	// add built in audits
+	// add built in filters
     // add filters/lenses in refresh
 	// add library injection (for routing animations, language data, etc)
 	// build router with HTML5 history API, callbacks to include .translate() and ViewModel.refresh()
