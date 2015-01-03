@@ -360,9 +360,75 @@
 
 		
 		
-	;// JavaScript Document
+	;    /* ------------------------------------------------------- */
+	/*                 OCTANE MVC FRAMEWORK                    */
+	/* ------------------------------------------------------- */
     
-    // application object
+                    // @author Ethan Ferrari
+                    // ethanferrari.com/octane
+                    // onefiremedia.com
+                    // version 0.0.2
+                    // January 2015
+            
+                /* API Methods */
+
+                    // .trip(element)
+                    // .handle(event,handler)
+                    // .fire(event,data)
+                    // .goose(model,$dirty)
+
+                    // .library(name)
+                    // .addLibrary(name,data)
+
+                    // .module(name[,dependencies],Constructor)
+                    // .model(name,options)
+                    // .controller(model)
+                    // .hasModule(module)
+
+                    // .route(id[,ghost])                       : extended from Router Module
+                    // .routeThen(id,callback)                  : extended from Router Module
+                    // .parseView()                             : extended from Router Module
+                    // .pushState(params)                       : extended from Router Module
+                    // .currentView()                           : extended from Router Module
+
+                    // .log()                                   : extended from debug module (if active)
+                    // .getLog()                                : extended from debug module (if active)
+                    // .getEvents()                             : extended from debug module (if active)
+                    // .getModels()                             : extended from debug module (if active)
+                    // .getControllers()                        : extended from debug module (if active)
+                    // .getViews()                              : extended from debug module (if active)
+
+                    // _proto_ .extend({})
+                    // _proto_ .define({property:value,...})
+
+                /* Module methods */
+
+                    // .model(name,options)
+                    // .controller($model)
+
+                /* Model methods */
+
+                    // .set({key:value,...})	
+                    // .get([stateKey])
+                    // .access(dbKey)
+                    // .reScope()
+
+                /* Controller methods */
+
+                    // .filter(o-bind,filter)
+                    // .hook(o-bind,$caseObject)
+                    // .parser(o-bind,func(data[,async]))
+                    // .task(o-bind,func(o-bind,data))
+
+                    // .doFilter($data)
+                    // .applyParsers($data)
+
+                /* ViewModel methods */
+
+                    // .parse()
+                    // .refresh()
+                    // .uptake()
+	
     
 	(function($,_,__){
 		
@@ -371,16 +437,9 @@
 		if(!window.__) { return false; }
 		// octane is already instanced
 		if(window.octane) { return false; }
-		
-        document.createElement('o-container');
-        document.createElement('o-view-canvas');
-        document.createElement('o-view');
-        document.createElement('o-model');
-        document.createElement('o-lang'); 
-		
-		
+        
 	/* ------------------------------------------------------- */
-	// basic extension utility constructor
+	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
 		function Base(name){ this.name = _.isString(name) && name; }	
@@ -456,13 +515,12 @@
 			
 		
 	/* ------------------------------------------------------- */
-	// define public octane
-    // intentionally global
+	// define public octane object
 	/* ------------------------------------------------------- */
 		var octane = new Base('octane'); 
 		
 	/* ------------------------------------------------------- */
-	// private _octane application object and properties
+	// internal application object and properties
 	/* ------------------------------------------------------- */
 		
 		var _octane = new Base('octane protected');
@@ -470,11 +528,13 @@
 				modules		    : {},
 				models		    : {},
 				views		    : {},
-				controllers     : {}
+				controllers     : {},
+                eventRegister   : {}
 		});
+       
 	
 	/* ------------------------------------------------------- */
-	//  Application Unique IDs
+	/*                       GUID                              */
 	/* ------------------------------------------------------- */		
 		
 		// set a unique identifier for the DOM element so we don't double count it
@@ -488,7 +548,7 @@
 		});
 	
 	/* ------------------------------------------------------- */
-	//  Application Error handling
+	/*                       LOGGING                           */
 	/* ------------------------------------------------------- */		
 		
 		_octane.log = {
@@ -517,24 +577,12 @@
 	
         
 	/* ------------------------------------------------------- */
-	//  Application Event Handling
+	/*                          EVENTS                         */
 	/* ------------------------------------------------------- */		
 		
-        // a custom event for the app to fire when user data changes
+       
        octane.define({
-            trip       :   function(elem){
-                
-                                var rand = Math.random(),
-                                    e = __.customEvent('input',{bubbles:true,detail:rand});
-                                
-                                elem.dispatchEvent && elem.dispatchEvent(e);
-                            }
-        });
-		
-        _octane.eventRegister = {};
-		
-		octane.define({
-			
+           
 			handle		: 	function(type,handler){
                                 
                                 var types = type ? type.split(' ') : [];
@@ -555,8 +603,8 @@
 		});
 	
         
-    /* ------------------------------------------------------- */		
-	// Application templating
+    /* ------------------------------------------------------- */
+	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
         
         _octane.templates = {};
@@ -618,8 +666,8 @@
         });
         
 	
-	/* ------------------------------------------------------- */		
-	// Application input Filtering 
+	/* ------------------------------------------------------- */
+	/*                       FILTERS                           */
 	/* ------------------------------------------------------- */
 		
 		_octane.filters = new __.Switch();
@@ -667,11 +715,10 @@
                     
 	
 	/* ------------------------------------------------------- */
-	//  Application Utility Libraries
+	/*                       LIBRARIES                         */
 	/* ------------------------------------------------------- */	
 	
 		_octane.libraries = {};
-        _octane.dictionaries = {};
 		
         function Library(name,data){
            
@@ -687,32 +734,18 @@
             };
         }
         
-        function Dictionary(name,data){
-            
-            var dict = _.isObject(data) ? data : {};
-            this.get = function(){
-                return dict;
-            };
-        }
-        
 		octane.define({
 			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
 			library : function(name){
 				return _octane.libraries[name] instanceof Library && _octane.libraries[name].checkout();
-			},
-            addDictionary : function(name,data){
-                _octane.dictionaries[name] = _.isObject(data) ? new Dictionary(name,data) : {};
-            },
-            dictionary : function(name){
-                return _octane.dictionaries[name] instanceof Dictionary && _octane.dictionaries[name].get();
-            }
+			}
 		});
 	
 	
 	/* ------------------------------------------------------- */
-	//  Application Models
+	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 	
 		function Model(name,options){
@@ -850,9 +883,7 @@
 		});
         
     /* ------------------------------------------------------- */
-	//  Application ViewModel
-	// @param $model [string] Model name this ViewModel uses
-	// @param context [obj] the context of the MVCVM (_octane or a module) 
+	/*                      VIEW MODELS                        */
 	/* ------------------------------------------------------- */		
 		
 		function ViewModel($model){
@@ -1043,7 +1074,7 @@
 
 	
 	/* ------------------------------------------------------- */
-	//  Application Controllers
+	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 		
 		function Controller(model,context){
@@ -1272,21 +1303,19 @@
 							}
 		});
 	
-	/* define Controller on octane - bridge to private _octane properties and methods */
-		
 		octane.define({
-			controller 		: function (model){ 
+			controller 	: function (model){ 
                                 if(_octane.controllers[model]){
                                     return _octane.controllers[model];
                                 }else{
                                     return new Controller(model,'Application');
                                 }
-            }
+                            }
 		});
 	
 	
 	/* ------------------------------------------------------- */
-	// base for Application Modules
+	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 		
 		function Module (name) { 
@@ -1325,13 +1354,10 @@
 			});	
 		}
 		
-		
 		Module.prototype = new Base();
         Module.prototype.constructor = Module;
 		
-	/* ------------------------------------------------------- */
-	//  methods for handling modules
-	/* ------------------------------------------------------- */
+	
 		
 		// add a module to octane before init
 		function addModule (id,dependencies,$module){
@@ -1419,64 +1445,80 @@
         }
 
 		octane.define({
-                module     : function(name,dependencies,$module){ 
-                                return addModule(name,dependencies,$module);
-                            },
-                hasModule : function (name){ 
-                                return _octane.modules[name] ? _octane.modules[name].loaded : false; 
-                            }	
-            });
+            
+            module     : function(name,dependencies,$module){ 
+                            return addModule(name,dependencies,$module);
+                        },
+            hasModule : function (name){ 
+                            return _octane.modules[name] ? _octane.modules[name].loaded : false; 
+                        }	
+        });
         
     /* ------------------------------------------------------- */
-	//  misc
+	/*                         CIRCUIT                         */
 	/* ------------------------------------------------------- */
-        // artificially start the uptake circuit
+        
         octane.define({
-                goose : function(model,$dirty){
-                            _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
-                }
-            })
+            // artificially start the uptake circuit
+             goose : function(model,$dirty){
+                        _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
+                    },
+            // a custom event for the app to fire when user data changes 
+            trip       :   function(elem){
+
+                        var rand = Math.random(),
+                            e = __.customEvent('input',{bubbles:true,detail:rand});
+
+                        elem.dispatchEvent && elem.dispatchEvent(e);
+                    },
+         })
+        
+    /* ------------------------------------------------------- */
+	/*                          MISC                           */
+	/* ------------------------------------------------------- */
+        
         // global model and controller
+        // octane DOM elements
             .define({ 
                 appModel : new Model('application'),
                 $Controller : new Controller('application'),
-        // octane DOM elements
                 dom:{} 
-            })
-        // octane ready handler
-            .handle('octane:ready',function(e){
-                setTimeout(function (){
-                    // unhide the rest of the _octane's content hidden behind the loader
-                    octane.dom.container().setAttribute('style','visibility:visible;'); 
-                    // route to url-parsed view|| home
-                    //octane.route(e.detail);
-                },500);
             });
         
-        octane.controller('application')
+        
+        octane.define.call(octane.dom,{
+            container : function(){
+                return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
+            },
+            canvas  : function(){
+                return document.getElementsByTagName('o-canvas')[0] || document.createElement('o-canvas');
+
+            },
+            views    : function(){
+                return document.getElementsByTagName('o-view') || [];
+            }
+        });
+        
+         octane.controller('application')
             .parser('loadingProgress',function($data){
                 var currentProgress = this.model.get('loadingProgress') || 0;
                 $data.loadingProgress = currentProgress + $data.loadingProgress;
             });
         
-        octane.define.call(octane.dom,{
-                container : function(){
-                    return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
-                },
-                canvas  : function(){
-                    return document.getElementsByTagName('o-canvas')[0] || document.createElement('o-canvas');
-                    
-                },
-                views    : function(){
-                    return document.getElementsByTagName('o-view') || [];
-                }
-            });
+    
+    /* ------------------------------------------------------- */
+	/*                          INIT                           */
+	/* ------------------------------------------------------- */
         
+        octane.define({
+            initialize : function(options){ return init(options); }		
+		});
         
 		function init (options){
-			
-            var utils = octane.library('startup-utilities') || {};
+			options = options || {};
             
+            // initialize utilities
+            var utils = octane.library('startup-utilities') || {};
             for(var util in utils){
                 if(({}).hasOwnProperty.call(utils,util)){
                     // hook for the loading message
@@ -1485,86 +1527,20 @@
                    _.isFunction(utils[util]) && utils[util].call();
                 }
             }
-            
-			options = options || {};
+            // add debugging support if module included, pass internal _octane app object
 			if(_octane.modules['debug']){ options.debug = [_octane]; }
-            
             initModules(options);
-			octane.name = options.name || octane.name;
-            
-            var view = octane.parseView() || 'home';
-            
-            octane.fire('octane:ready',{detail:view});
+			octane.name = options.name || octane.name; 
+            // unhide the rest of content hidden behind the loader
+            setTimeout(function(){
+                octane.dom.container().setAttribute('style','visibility:visible;'); 
+            },1000);
+            // route to url-parsed view|| home
+            // var view = octane.parseView() || 'home';
+            //octane.route(view);
+            octane.fire('octane:ready');
 		}
         
-       
-		octane.extend({
-			
-			/* octane API */
-			
-				init : function(options){ return init(options); }
-				
-                // .trip(element)
-				// .handle(event,handler)
-				// .fire(event,data)
-            
-                // .library(name,data)
-                // .checkout(library)
-                // .dictionary(name,data)
-                // .lookup(dictionary)
-				
-                // .module(name,Constructor[,dependencies])
-				// .model(name,options)
-				// .controller($model)
-				
-                // .process($dirty)
-				
-                // .renderControls(langs[,container]) 	: extended from Translator Module
-				// .translate([,data]) 						: extended from Translator Module
-				// .getLang() 								: extended from Translator Module
-				// .setLang(lang) 							: extended from Translator Module
-				// .getLangContent(contentID) 				: extended from Translator Module
-				// .setLangData(data) 						: extended from Translator Module
-				
-                // .errorLog()                              : extended from debug module (if active)
-                // .getEvents()                             : extended from debug module (if active)
-                // .getModels()                             : extended from debug module (if active)
-				// .getControllers()                        : extended from debug module (if active)
-				// .getViews()                              : extended from debug module (if active)
-                
-                // _proto_ .extend({})
-				// _proto_ .define({property:value,...})
-			
-			/* Module methods */
-			     
-                // .model(name,options)
-                // .controller($model)
-			
-			/* Model methods */
-			
-				// .set({key:value,...})	
-				// .get([stateKey])
-				// .access(dbKey)
-                // .reScope()
-			
-			/* Controller methods */
-			     
-				// .filter(prop,filter)
-                // .hook(prop,$caseObject)
-				// .parser(prop,fn)
-                // .task(datakey,function(e.detail))
-				
-                // .doFilter($data)
-				// .applyParsers($data)
-			
-			/* ViewModel methods */
-			
-				// .parse()
-				// .refresh()
-				// .uptake()
-			//		
-		});
-	   
        window.octane = window.$o = octane;
 
 	})($,_,__);
@@ -1574,10 +1550,6 @@
 	/* TODO - octane extension methods */
 	// add built in filters
     // add filters/lenses in refresh
-	// add library injection (for routing animations, language data, etc)
-	// build router with HTML5 history API, callbacks to include .translate() and ViewModel.refresh()
-	// build selector module
-	// build calculator in selector module using controller hooks and reactors
 	// build modal view and routing
 	
 	
@@ -2242,338 +2214,337 @@ octane.module('router',[],function (cfg) {
 			
 			
 			
-			;// JavaScript Document
+			;
 
-// translatorModule module for Selection tools
+        //  Octane Translator Module
+        /* ------------------------------- */
+        /*          PUBLIC API             */
+        /* ------------------------------- */
 
-// @param table [JSON]: the translation table
-// 	JSON format, linked as separate .js file ahead of this script	
-//
-// @param config [object]: a language object
-//
-// 		@option paginated [bool]: 
-//				true:		the translation table is split into [page][contentID]
-//				false:	the translation table is a dictionary of only [contentID]s *default*
-//
-// 		@option defaultLang [string]
-//      
-//      @option langSupport [array]: supported languages for the translator
-//
-octane.module('translator', function (config){
-	
-		// dummy
-		var $M = {};
-		
-		config = config || {};
+        //  .renderControls(langs[,container])
+        //  .translate([,data])
+        //  .getLang()
+        //  .setLang(lang)
+        //  .getLangContent(contentID)
+        //  .setLangData(data)
 
-	/* ------------------------------- */
-	// private protected properties
-	/* ------------------------------- */
-			
-			// set by param
-			$M.rosettaStone = ( _.isObject(config.langData) ) 	? config.langData 	  : {};
-			// set by config
-			$M.isPaginated	= ( _.isBoolean(config.paginated) ) ? config.paginated 	  : false;
-            $M.langSupport  = ( _.isArray(config.langSupport) ) ? config.langSupport  : ['English'];
-			// immutable
-			$M.dropdown		= 	{
-									wrapper 	: $('o-control#translator'),
-									outerUL 	: $('<ul class="nav nav-pills"></ul>'),
-									outerLI 	: $('<li class="dropdown"></li>'),
-									pill 		: $('<a id="selected-language" class="dropdown-toggle closed" data-toggle="dropdown"></a>'),
-									caret 		: $('<span class="caret"></span>'),
-									innerUL 	: $('<ul class="dropdown-menu" role="menu"></ul>'),
-									classKey 	: 'language-selector',
-									dataKey 	: 'language-selected'
-								};
-			$M.languages 	= [
-								{
-									key:'English',
-									display:'English',
-									abbr:'en',
-									regexp:/^_?(english|eng|en)$/i
-								},{
-									key:'Russian',
-									display:'Русский',
-									abbr:'ru',
-									regexp:/^_?(russian|rus|ru|Русский)$/i
-								},{
-									key:'Spanish',
-									display:'Español',
-									abbr:'es',
-									regexp:/^_?(spanish|espanol|esp|es|español)$/i
-								},{
-									key:'French',
-									display:'Françias',
-									abbr:'fr',
-									regexp:/^_?(french|francias|françias|fra|fr)$/i
-								},{
-									key:'German',
-									display:'Deutsch',
-									abbr:'de',
-									regexp:/^_?(german|deutsch|ger|de)$/i
-								},{
-									key:'Chinese',
-									display:'简体中文',
-									abbr:'zh',
-									regexp:/^_?(chinese|zh|简体中文)$/i
-								},{
-									key:'Portugese',
-									display:'Portugese',
-									abbr:'pt',
-									regexp:/^_?(portugese|port|pt)$/i
-								},{
-									key:'Japanese',
-									display:'日本語',
-									abbr:'ja',
-									regexp:/^_?(japanese|jap|ja|日本語|nihongo)$/i
-								}
-							];
-// helpers
-            
-            // also set by config   
-            $M.defaultLang	= supportsLang(config.defaultLang) || $M.languages[0];
-										
-	/* ------------------------------- */
-	// private protected methods
-	/* ------------------------------- */
-			
-			
-		// set translation spans with the language text
-		/* --------------------------------------------------------------------- */
-			
-			function translate (data){
-	           
-				if( _.isObject(data) ) $M.rosettaStone = data;
-				
-				var elems = document.querySelectorAll('[o-lang]');
-				
-				for(var i=0, n = elems.length; i<n; i++){
-					translateElement(elems[i]);
+        /* ------------------------------- */
+        /*              CONFIG             */
+        /* ------------------------------- */
+
+        
+        //  @config langData [obj]: language data in JSON format
+        //  @config paginated [bool]: 
+       	//      true:	the translation table is split into [page][contentID]
+        //      false:	the translation table is a dictionary of only [contentID]s (default)
+        //  @config defaultLang [string]: a default language or (default:English)
+        //  @config langSupport [array]: supported languages for the translator (default:['English'])
+
+    octane.module('translator', function (config){
+
+            // dummy
+            var $M = {};
+
+            config = config || {};
+
+        /* ------------------------------- */
+        // private protected properties
+        /* ------------------------------- */
+
+                // set by param
+                $M.rosettaStone = ( _.isObject(config.langData) ) 	? config.langData 	  : {};
+                // set by config
+                $M.isPaginated	= ( _.isBoolean(config.paginated) ) ? config.paginated 	  : false;
+                $M.langSupport  = ( _.isArray(config.langSupport) ) ? config.langSupport  : ['English'];
+                // immutable
+                $M.dropdown		= 	{
+                                        wrapper 	: $('o-control#translator'),
+                                        outerUL 	: $('<ul class="nav nav-pills"></ul>'),
+                                        outerLI 	: $('<li class="dropdown"></li>'),
+                                        pill 		: $('<a id="selected-language" class="dropdown-toggle closed" data-toggle="dropdown"></a>'),
+                                        caret 		: $('<span class="caret"></span>'),
+                                        innerUL 	: $('<ul class="dropdown-menu" role="menu"></ul>'),
+                                        classKey 	: 'language-selector',
+                                        dataKey 	: 'language-selected'
+                                    };
+                $M.languages 	= [
+                                    {
+                                        key:'English',
+                                        display:'English',
+                                        abbr:'en',
+                                        regexp:/^_?(english|eng|en)$/i
+                                    },{
+                                        key:'Russian',
+                                        display:'Русский',
+                                        abbr:'ru',
+                                        regexp:/^_?(russian|rus|ru|Русский)$/i
+                                    },{
+                                        key:'Spanish',
+                                        display:'Español',
+                                        abbr:'es',
+                                        regexp:/^_?(spanish|espanol|esp|es|español)$/i
+                                    },{
+                                        key:'French',
+                                        display:'Françias',
+                                        abbr:'fr',
+                                        regexp:/^_?(french|francias|françias|fra|fr)$/i
+                                    },{
+                                        key:'German',
+                                        display:'Deutsch',
+                                        abbr:'de',
+                                        regexp:/^_?(german|deutsch|ger|de)$/i
+                                    },{
+                                        key:'Chinese',
+                                        display:'简体中文',
+                                        abbr:'zh',
+                                        regexp:/^_?(chinese|zh|简体中文)$/i
+                                    },{
+                                        key:'Portugese',
+                                        display:'Portugese',
+                                        abbr:'pt',
+                                        regexp:/^_?(portugese|port|pt)$/i
+                                    },{
+                                        key:'Japanese',
+                                        display:'日本語',
+                                        abbr:'ja',
+                                        regexp:/^_?(japanese|jap|ja|日本語|nihongo)$/i
+                                    }
+                                ];
+                // also set by config   
+                $M.defaultLang	= supportsLang(config.defaultLang) || $M.languages[0];
+
+        /* ------------------------------- */
+        // private protected methods
+        /* ------------------------------- */
+
+
+            // set elements with o-lang attribute with language text
+            /* --------------------------------------------------------------------- */
+
+                function translate (data){
+
+                    if( _.isObject(data) ) $M.rosettaStone = data;
+
+                    var elems = document.querySelectorAll('[o-lang]');
+
+                    for(var i=0, n = elems.length; i<n; i++){
+                        translateElement(elems[i]);
+                    }
+
+                    $M.dropdown.pill.html($M.lang.display+' ');//.append($M.dropdown.caret);
+                    octane.fire('translated');
                 }
-                	
-				$M.dropdown.pill.html($M.lang.display+' ');//.append($M.dropdown.caret);
-				octane.fire('translated');
-			}
-			
-            function translateElement(el){
-                 
-                var contentID = el.getAttribute('o-lang'),
-                    content = fetch(contentID);
-                // create or replace text node
-                if(el.firstChild && el.firstChild.nodeType == 3){
-                    el.firstChild.data = content;
-                }else{
-                    el.insertBefore(document.createTextNode(content),el.firstChild);
+
+                function translateElement(el){
+
+                    var contentID = el.getAttribute('o-lang'),
+                        content = fetch(contentID);
+                    // create or replace text node
+                    if(el.firstChild && el.firstChild.nodeType == 3){
+                        el.firstChild.data = content;
+                    }else{
+                        el.insertBefore(document.createTextNode(content),el.firstChild);
+                    }
                 }
-            }
-			
-		// @param langs [array] array of languages for the dropdown
-		// @param container [string || $ object] containing elem for the dropdown
-		/* --------------------------------------------------------------------- */
-			
-			function renderControls(langs,container){
-						
-				var	$d 	= $M.dropdown;
-					
-				// set the wrapper to a diffrent elem if passed
-				switch (true){
-					case ( _.isString(container) ):
-						$d.wrapper = $(container);
-						break;
-					case ( __.is$(container) ):
-						$d.wrapper = container;
-						break;
-				}
-				
-				$d.outerUL.appendTo($d.wrapper);
-				$d.outerLI
-					.append($d.pill)
-					.append($d.innerUL)
-					.appendTo($d.outerUL);
-				//$d.caret.appendTo($d.pill);
-				
-				langs	= _.isArray(langs) ? langs : [];
-                
-				var	n = langs.length,
-					i, supported,innerLI;
-				
-				for(i=0; i < n; i++){
-					supported = supportsLang(langs[i]);
-					if(supported){
-						innerLI = $('<li></li>');
-						innerLI
-							.addClass($d.classKey)
-							.attr('data-'+$d.dataKey,supported.key)
-							.html(supported.display)
-							.appendTo($d.innerUL);
-					}
-				}
 
-				// apply handlers to new DOM elems
-				applyClickHandlers();
-			}
+            // @param langs [array] array of languages for the dropdown
+            // @param container [string || $ object] containing elem for the dropdown
+            /* --------------------------------------------------------------------- */
 
+                function renderControls(langs,container){
 
-		// find the language from the url and set $M.lang
-		/* --------------------------------------------------------------------- */
-			
-			function findLang (){
-				
-				var parsed = __.location().searchObject;
-				
-				$M.lang = supportsLang(parsed.lang) || $M.defaultLang;
-			}
-			
-			
-			
-		// return the module's language
-		/* --------------------------------------------------------------------- */
-			
-			function getLang(){
-				return $M.lang.key;
-			}
-			
-			
-			
-		// define a language and re-translate
-		// @param lang [string]: a language
-		/* --------------------------------------------------------------------- */
-			
-			function setLang (lang){
-				
-				if( supportsLang(lang) ){
-					$M.lang = supportsLang(lang);
-                    // update the language in the url
-					//octane.pushState( {lang:$M.getLang()} );
-					
-					// TODO: replace URL with new language	with history API
-					//window.location.search = '?lang='+$M.lang.key;
-					
-					return getLang();
-				}
-			}
-			
-			
-			
-		// return a specific content bit by its id
-		// @param contentID [string]: content-id
-		/* --------------------------------------------------------------------- */
-			
-			function fetch(contentID){
-				
-				var id,page,section,content;
-				
-				if($M.isPaginated){
-						id = ( _.isString(contentID) ) ? contentID.split('-') : [];
-						page = id[0];
-						section = id[1];
-						content = ($M.rosettaStone[page] && $M.rosettaStone[page][section]) ? $M.rosettaStone[page][section] : null;
-				}else{
-						content = $M.rosettaStone[contentID] ? $M.rosettaStone[contentID] : null;
-				}
-				
-                if(content){
-					return content[$M.lang.abbr] ? content[$M.lang.abbr] : content[$M.defaultLang.abbr];
-				}else{
-					return '';
-				}
-			}
-		
-		
-	/* ------------------------------- */
-	// private helpers
-	/* ------------------------------- */
-			
-			
-		// helper
-		/* --------------------------------------------------------------------- */
-			
-			function applyClickHandlers(){
-				var $this, lang;
-				
-				$('li.'+$M.dropdown.classKey).on('click',function (){
-					$this = $(this);
-					lang = $this.data($M.dropdown.dataKey);
-					setLang(lang);
-                    translate();
-					$M.dropdown.pill.trigger('click');
-						
-				});
-				
-				$M.dropdown.pill.on('click',function (){
-					var pill = $(this);
-					if(pill.hasClass('closed')){
-						pill.removeClass('closed').addClass('open');
-						$M.dropdown.innerUL.show();
-					}
-					else if (pill.hasClass('open')){
-						pill.removeClass('open').addClass('closed');
-						$M.dropdown.innerUL.hide();
-					}
-				});			
-			}
-		
-			
-		// helper
-		// determines if a language is supported
-		// returns language object from $M.languages or false
-		// @param lang [string]
-		/* --------------------------------------------------------------------- */
-			
-			function supportsLang (lang){
-				
-				var 	n = $M.languages.length,
-						i,$this;
-				
-				for(i = 0; i < n; i++){
-					$this = $M.languages[i];
-					if($this.regexp && $this.regexp.test && $this.regexp.test(lang)) return $this;
-				}
-				return false;
-			}
+                    var	$d 	= $M.dropdown;
+
+                    // set the wrapper to a diffrent elem if passed
+                    switch (true){
+                        case ( _.isString(container) ):
+                            $d.wrapper = $(container);
+                            break;
+                        case ( __.is$(container) ):
+                            $d.wrapper = container;
+                            break;
+                    }
+
+                    $d.outerUL.appendTo($d.wrapper);
+                    $d.outerLI
+                        .append($d.pill)
+                        .append($d.innerUL)
+                        .appendTo($d.outerUL);
+                    //$d.caret.appendTo($d.pill);
+
+                    langs	= _.isArray(langs) ? langs : [];
+
+                    var	n = langs.length,
+                        i, supported,innerLI;
+
+                    for(i=0; i < n; i++){
+                        supported = supportsLang(langs[i]);
+                        if(supported){
+                            innerLI = $('<li></li>');
+                            innerLI
+                                .addClass($d.classKey)
+                                .attr('data-'+$d.dataKey,supported.key)
+                                .html(supported.display)
+                                .appendTo($d.innerUL);
+                        }
+                    }
+
+                    // apply handlers to new DOM elems
+                    applyClickHandlers();
+                }
 
 
-	/* ------------------------------- */
-	// create public methods
-	/* ------------------------------- */
-		
-			
-			this.define({
-				
-				renderTranslator		: 	function(langs,container){
-												return renderControls(langs,container);
-											},
-				translate 				: 	function(data){
-												return translate(data);
-											},
-                translateElement        :   function(el){
-                                                translateElement(el);
-                                            },
-				getLang 				: 	function(){
-												return getLang();
-											},
-				setLang 				: 	function(lang){
-												return setLang(lang);
-											}
-			});
-			
-			
+            // find the language from the url and set $M.lang
+            /* --------------------------------------------------------------------- */
 
-	/* ------------------------------- */
-	// init
-	/* ------------------------------- */
-			
-			findLang();
-            renderControls($M.langSupport);
-            translate();
-			
-			/*octane.handle('popstate',function(){
-				findLang();
-				translate();
-			});*/
-			
+                function findLang (){
 
-});
+                    var parsed = __.location().searchObject;
+
+                    $M.lang = supportsLang(parsed.lang) || $M.defaultLang;
+                }
+
+
+
+            // return the module's language
+            /* --------------------------------------------------------------------- */
+
+                function getLang(){
+                    return $M.lang.key;
+                }
+
+
+
+            // define a language and re-translate
+            // @param lang [string]: a language
+            /* --------------------------------------------------------------------- */
+
+                function setLang (lang){
+
+                    if( supportsLang(lang) ){
+                        $M.lang = supportsLang(lang);
+                        // update the language in the url
+                        //octane.pushState( {lang:$M.getLang()} );
+
+                        // TODO: replace URL with new language	with history API
+                        //window.location.search = '?lang='+$M.lang.key;
+
+                        return getLang();
+                    }
+                }
+
+
+
+            // return a specific content bit by its id
+            // @param contentID [string]: content-id
+            /* --------------------------------------------------------------------- */
+
+                function fetch(contentID){
+
+                    var id,page,section,content;
+
+                    if($M.isPaginated){
+                            id = ( _.isString(contentID) ) ? contentID.split('-') : [];
+                            page = id[0];
+                            section = id[1];
+                            content = ($M.rosettaStone[page] && $M.rosettaStone[page][section]) ? $M.rosettaStone[page][section] : null;
+                    }else{
+                            content = $M.rosettaStone[contentID] ? $M.rosettaStone[contentID] : null;
+                    }
+
+                    if(content){
+                        return content[$M.lang.abbr] ? content[$M.lang.abbr] : content[$M.defaultLang.abbr];
+                    }else{
+                        return '';
+                    }
+                }
+
+
+        /* ------------------------------- */
+        // private helpers
+        /* ------------------------------- */
+
+
+            // helper
+            /* --------------------------------------------------------------------- */
+
+                function applyClickHandlers(){
+                    var $this, lang;
+
+                    $('li.'+$M.dropdown.classKey).on('click',function (){
+                        $this = $(this);
+                        lang = $this.data($M.dropdown.dataKey);
+                        setLang(lang);
+                        translate();
+                        $M.dropdown.pill.trigger('click');
+
+                    });
+
+                    $M.dropdown.pill.on('click',function (){
+                        var pill = $(this);
+                        if(pill.hasClass('closed')){
+                            pill.removeClass('closed').addClass('open');
+                            $M.dropdown.innerUL.show();
+                        }
+                        else if (pill.hasClass('open')){
+                            pill.removeClass('open').addClass('closed');
+                            $M.dropdown.innerUL.hide();
+                        }
+                    });			
+                }
+
+
+            // helper
+            // determines if a language is supported
+            // returns language object from $M.languages or false
+            // @param lang [string]
+            /* --------------------------------------------------------------------- */
+
+                function supportsLang (lang){
+
+                    var 	n = $M.languages.length,
+                            i,$this;
+
+                    for(i = 0; i < n; i++){
+                        $this = $M.languages[i];
+                        if($this.regexp && $this.regexp.test && $this.regexp.test(lang)) return $this;
+                    }
+                    return false;
+                }
+
+
+        /* ------------------------------- */
+        // create public methods
+        /* ------------------------------- */
+
+                this.define({
+
+                    renderTranslator		: 	function(langs,container){
+                                                    return renderControls(langs,container);
+                                                },
+                    translate 				: 	function(data){
+                                                    return translate(data);
+                                                },
+                    translateElement        :   function(el){
+                                                    translateElement(el);
+                                                },
+                    getLang 				: 	function(){
+                                                    return getLang();
+                                                },
+                    setLang 				: 	function(lang){
+                                                    return setLang(lang);
+                                                }
+                });
+
+
+
+        /* ------------------------------- */
+        // init
+        /* ------------------------------- */
+
+                findLang();
+                renderControls($M.langSupport);
+                translate();
+    });
 
 	

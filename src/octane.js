@@ -1,6 +1,72 @@
-// JavaScript Document
+    /* ------------------------------------------------------- */
+	/*                 OCTANE MVC FRAMEWORK                    */
+	/* ------------------------------------------------------- */
     
-    // application object
+                    // @author Ethan Ferrari
+                    // ethanferrari.com/octane
+                    // onefiremedia.com
+                    // version 0.0.2
+                    // January 2015
+            
+                /* API Methods */
+
+                    // .trip(element)
+                    // .handle(event,handler)
+                    // .fire(event,data)
+                    // .goose(model,$dirty)
+
+                    // .library(name)
+                    // .addLibrary(name,data)
+
+                    // .module(name[,dependencies],Constructor)
+                    // .model(name,options)
+                    // .controller(model)
+                    // .hasModule(module)
+
+                    // .route(id[,ghost])                       : extended from Router Module
+                    // .routeThen(id,callback)                  : extended from Router Module
+                    // .parseView()                             : extended from Router Module
+                    // .pushState(params)                       : extended from Router Module
+                    // .currentView()                           : extended from Router Module
+
+                    // .log()                                   : extended from debug module (if active)
+                    // .getLog()                                : extended from debug module (if active)
+                    // .getEvents()                             : extended from debug module (if active)
+                    // .getModels()                             : extended from debug module (if active)
+                    // .getControllers()                        : extended from debug module (if active)
+                    // .getViews()                              : extended from debug module (if active)
+
+                    // _proto_ .extend({})
+                    // _proto_ .define({property:value,...})
+
+                /* Module methods */
+
+                    // .model(name,options)
+                    // .controller($model)
+
+                /* Model methods */
+
+                    // .set({key:value,...})	
+                    // .get([stateKey])
+                    // .access(dbKey)
+                    // .reScope()
+
+                /* Controller methods */
+
+                    // .filter(o-bind,filter)
+                    // .hook(o-bind,$caseObject)
+                    // .parser(o-bind,func(data[,async]))
+                    // .task(o-bind,func(o-bind,data))
+
+                    // .doFilter($data)
+                    // .applyParsers($data)
+
+                /* ViewModel methods */
+
+                    // .parse()
+                    // .refresh()
+                    // .uptake()
+	
     
 	(function($,_,__){
 		
@@ -9,16 +75,9 @@
 		if(!window.__) { return false; }
 		// octane is already instanced
 		if(window.octane) { return false; }
-		
-        document.createElement('o-container');
-        document.createElement('o-view-canvas');
-        document.createElement('o-view');
-        document.createElement('o-model');
-        document.createElement('o-lang'); 
-		
-		
+        
 	/* ------------------------------------------------------- */
-	// basic extension utility constructor
+	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
 		function Base(name){ this.name = _.isString(name) && name; }	
@@ -94,13 +153,12 @@
 			
 		
 	/* ------------------------------------------------------- */
-	// define public octane
-    // intentionally global
+	// define public octane object
 	/* ------------------------------------------------------- */
 		var octane = new Base('octane'); 
 		
 	/* ------------------------------------------------------- */
-	// private _octane application object and properties
+	// internal application object and properties
 	/* ------------------------------------------------------- */
 		
 		var _octane = new Base('octane protected');
@@ -108,11 +166,13 @@
 				modules		    : {},
 				models		    : {},
 				views		    : {},
-				controllers     : {}
+				controllers     : {},
+                eventRegister   : {}
 		});
+       
 	
 	/* ------------------------------------------------------- */
-	//  Application Unique IDs
+	/*                       GUID                              */
 	/* ------------------------------------------------------- */		
 		
 		// set a unique identifier for the DOM element so we don't double count it
@@ -126,7 +186,7 @@
 		});
 	
 	/* ------------------------------------------------------- */
-	//  Application Error handling
+	/*                       LOGGING                           */
 	/* ------------------------------------------------------- */		
 		
 		_octane.log = {
@@ -155,24 +215,12 @@
 	
         
 	/* ------------------------------------------------------- */
-	//  Application Event Handling
+	/*                          EVENTS                         */
 	/* ------------------------------------------------------- */		
 		
-        // a custom event for the app to fire when user data changes
+       
        octane.define({
-            trip       :   function(elem){
-                
-                                var rand = Math.random(),
-                                    e = __.customEvent('input',{bubbles:true,detail:rand});
-                                
-                                elem.dispatchEvent && elem.dispatchEvent(e);
-                            }
-        });
-		
-        _octane.eventRegister = {};
-		
-		octane.define({
-			
+           
 			handle		: 	function(type,handler){
                                 
                                 var types = type ? type.split(' ') : [];
@@ -193,8 +241,8 @@
 		});
 	
         
-    /* ------------------------------------------------------- */		
-	// Application templating
+    /* ------------------------------------------------------- */
+	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
         
         _octane.templates = {};
@@ -256,8 +304,8 @@
         });
         
 	
-	/* ------------------------------------------------------- */		
-	// Application input Filtering 
+	/* ------------------------------------------------------- */
+	/*                       FILTERS                           */
 	/* ------------------------------------------------------- */
 		
 		_octane.filters = new __.Switch();
@@ -305,11 +353,10 @@
                     
 	
 	/* ------------------------------------------------------- */
-	//  Application Utility Libraries
+	/*                       LIBRARIES                         */
 	/* ------------------------------------------------------- */	
 	
 		_octane.libraries = {};
-        _octane.dictionaries = {};
 		
         function Library(name,data){
            
@@ -325,32 +372,18 @@
             };
         }
         
-        function Dictionary(name,data){
-            
-            var dict = _.isObject(data) ? data : {};
-            this.get = function(){
-                return dict;
-            };
-        }
-        
 		octane.define({
 			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
 			library : function(name){
 				return _octane.libraries[name] instanceof Library && _octane.libraries[name].checkout();
-			},
-            addDictionary : function(name,data){
-                _octane.dictionaries[name] = _.isObject(data) ? new Dictionary(name,data) : {};
-            },
-            dictionary : function(name){
-                return _octane.dictionaries[name] instanceof Dictionary && _octane.dictionaries[name].get();
-            }
+			}
 		});
 	
 	
 	/* ------------------------------------------------------- */
-	//  Application Models
+	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 	
 		function Model(name,options){
@@ -488,9 +521,7 @@
 		});
         
     /* ------------------------------------------------------- */
-	//  Application ViewModel
-	// @param $model [string] Model name this ViewModel uses
-	// @param context [obj] the context of the MVCVM (_octane or a module) 
+	/*                      VIEW MODELS                        */
 	/* ------------------------------------------------------- */		
 		
 		function ViewModel($model){
@@ -681,7 +712,7 @@
 
 	
 	/* ------------------------------------------------------- */
-	//  Application Controllers
+	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 		
 		function Controller(model,context){
@@ -910,21 +941,19 @@
 							}
 		});
 	
-	/* define Controller on octane - bridge to private _octane properties and methods */
-		
 		octane.define({
-			controller 		: function (model){ 
+			controller 	: function (model){ 
                                 if(_octane.controllers[model]){
                                     return _octane.controllers[model];
                                 }else{
                                     return new Controller(model,'Application');
                                 }
-            }
+                            }
 		});
 	
 	
 	/* ------------------------------------------------------- */
-	// base for Application Modules
+	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 		
 		function Module (name) { 
@@ -963,13 +992,10 @@
 			});	
 		}
 		
-		
 		Module.prototype = new Base();
         Module.prototype.constructor = Module;
 		
-	/* ------------------------------------------------------- */
-	//  methods for handling modules
-	/* ------------------------------------------------------- */
+	
 		
 		// add a module to octane before init
 		function addModule (id,dependencies,$module){
@@ -1057,64 +1083,80 @@
         }
 
 		octane.define({
-                module     : function(name,dependencies,$module){ 
-                                return addModule(name,dependencies,$module);
-                            },
-                hasModule : function (name){ 
-                                return _octane.modules[name] ? _octane.modules[name].loaded : false; 
-                            }	
-            });
+            
+            module     : function(name,dependencies,$module){ 
+                            return addModule(name,dependencies,$module);
+                        },
+            hasModule : function (name){ 
+                            return _octane.modules[name] ? _octane.modules[name].loaded : false; 
+                        }	
+        });
         
     /* ------------------------------------------------------- */
-	//  misc
+	/*                         CIRCUIT                         */
 	/* ------------------------------------------------------- */
-        // artificially start the uptake circuit
+        
         octane.define({
-                goose : function(model,$dirty){
-                            _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
-                }
-            })
+            // artificially start the uptake circuit
+             goose : function(model,$dirty){
+                        _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
+                    },
+            // a custom event for the app to fire when user data changes 
+            trip       :   function(elem){
+
+                        var rand = Math.random(),
+                            e = __.customEvent('input',{bubbles:true,detail:rand});
+
+                        elem.dispatchEvent && elem.dispatchEvent(e);
+                    },
+         })
+        
+    /* ------------------------------------------------------- */
+	/*                          MISC                           */
+	/* ------------------------------------------------------- */
+        
         // global model and controller
+        // octane DOM elements
             .define({ 
                 appModel : new Model('application'),
                 $Controller : new Controller('application'),
-        // octane DOM elements
                 dom:{} 
-            })
-        // octane ready handler
-            .handle('octane:ready',function(e){
-                setTimeout(function (){
-                    // unhide the rest of the _octane's content hidden behind the loader
-                    octane.dom.container().setAttribute('style','visibility:visible;'); 
-                    // route to url-parsed view|| home
-                    //octane.route(e.detail);
-                },500);
             });
         
-        octane.controller('application')
+        
+        octane.define.call(octane.dom,{
+            container : function(){
+                return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
+            },
+            canvas  : function(){
+                return document.getElementsByTagName('o-canvas')[0] || document.createElement('o-canvas');
+
+            },
+            views    : function(){
+                return document.getElementsByTagName('o-view') || [];
+            }
+        });
+        
+         octane.controller('application')
             .parser('loadingProgress',function($data){
                 var currentProgress = this.model.get('loadingProgress') || 0;
                 $data.loadingProgress = currentProgress + $data.loadingProgress;
             });
         
-        octane.define.call(octane.dom,{
-                container : function(){
-                    return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
-                },
-                canvas  : function(){
-                    return document.getElementsByTagName('o-canvas')[0] || document.createElement('o-canvas');
-                    
-                },
-                views    : function(){
-                    return document.getElementsByTagName('o-view') || [];
-                }
-            });
+    
+    /* ------------------------------------------------------- */
+	/*                          INIT                           */
+	/* ------------------------------------------------------- */
         
+        octane.define({
+            initialize : function(options){ return init(options); }		
+		});
         
 		function init (options){
-			
-            var utils = octane.library('startup-utilities') || {};
+			options = options || {};
             
+            // initialize utilities
+            var utils = octane.library('startup-utilities') || {};
             for(var util in utils){
                 if(({}).hasOwnProperty.call(utils,util)){
                     // hook for the loading message
@@ -1123,86 +1165,20 @@
                    _.isFunction(utils[util]) && utils[util].call();
                 }
             }
-            
-			options = options || {};
+            // add debugging support if module included, pass internal _octane app object
 			if(_octane.modules['debug']){ options.debug = [_octane]; }
-            
             initModules(options);
-			octane.name = options.name || octane.name;
-            
-            var view = octane.parseView() || 'home';
-            
-            octane.fire('octane:ready',{detail:view});
+			octane.name = options.name || octane.name; 
+            // unhide the rest of content hidden behind the loader
+            setTimeout(function(){
+                octane.dom.container().setAttribute('style','visibility:visible;'); 
+            },1000);
+            // route to url-parsed view|| home
+            // var view = octane.parseView() || 'home';
+            //octane.route(view);
+            octane.fire('octane:ready');
 		}
         
-       
-		octane.extend({
-			
-			/* octane API */
-			
-				init : function(options){ return init(options); }
-				
-                // .trip(element)
-				// .handle(event,handler)
-				// .fire(event,data)
-            
-                // .library(name,data)
-                // .checkout(library)
-                // .dictionary(name,data)
-                // .lookup(dictionary)
-				
-                // .module(name,Constructor[,dependencies])
-				// .model(name,options)
-				// .controller($model)
-				
-                // .process($dirty)
-				
-                // .renderControls(langs[,container]) 	: extended from Translator Module
-				// .translate([,data]) 						: extended from Translator Module
-				// .getLang() 								: extended from Translator Module
-				// .setLang(lang) 							: extended from Translator Module
-				// .getLangContent(contentID) 				: extended from Translator Module
-				// .setLangData(data) 						: extended from Translator Module
-				
-                // .errorLog()                              : extended from debug module (if active)
-                // .getEvents()                             : extended from debug module (if active)
-                // .getModels()                             : extended from debug module (if active)
-				// .getControllers()                        : extended from debug module (if active)
-				// .getViews()                              : extended from debug module (if active)
-                
-                // _proto_ .extend({})
-				// _proto_ .define({property:value,...})
-			
-			/* Module methods */
-			     
-                // .model(name,options)
-                // .controller($model)
-			
-			/* Model methods */
-			
-				// .set({key:value,...})	
-				// .get([stateKey])
-				// .access(dbKey)
-                // .reScope()
-			
-			/* Controller methods */
-			     
-				// .filter(prop,filter)
-                // .hook(prop,$caseObject)
-				// .parser(prop,fn)
-                // .task(datakey,function(e.detail))
-				
-                // .doFilter($data)
-				// .applyParsers($data)
-			
-			/* ViewModel methods */
-			
-				// .parse()
-				// .refresh()
-				// .uptake()
-			//		
-		});
-	   
        window.octane = window.$o = octane;
 
 	})($,_,__);
@@ -1212,10 +1188,6 @@
 	/* TODO - octane extension methods */
 	// add built in filters
     // add filters/lenses in refresh
-	// add library injection (for routing animations, language data, etc)
-	// build router with HTML5 history API, callbacks to include .translate() and ViewModel.refresh()
-	// build selector module
-	// build calculator in selector module using controller hooks and reactors
 	// build modal view and routing
 	
 	
