@@ -491,9 +491,9 @@
 	//  Application Error handling
 	/* ------------------------------------------------------- */		
 		
-		_octane.errors = {
+		_octane.log = {
 			logfile : 	[],
-			log 	: 	function(message){
+			entry 	: 	function(message){
 							this.logfile.push(message);
 						},
 			get		: 	function(){
@@ -508,7 +508,7 @@
 		
             for(var	i=0, n = conditions.length;i<n;i++){
 				if(!conditions[i][0]){
-					_octane.errors.log('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
+					_octane.log.entry('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
 					return false;
 				}		
 			}
@@ -562,40 +562,57 @@
         _octane.templates = {};
         
         function parseTemplate(template,data){
-
-           var  pattern = /\{\{([^{^}]+)\}\}/g,
-            matches = template.match(pattern),
-            key,re;
-
-            for(var i=0,n=matches.length; i<n; i++){
-                key = matches[i].replace(/[{}]+/g,''); // 'something'
-                re = new RegExp("(\\{\\{"+key+"\\}\\})","g");
-                template = template.replace(re,data[key]);
+            
+            template = _.isString(template) ? template : '',
+            data = _.isObject(data) ? data : {};
+            
+            var  pattern = /\{\{([^{^}]+)\}\}/g,
+                matches = template.match(pattern),
+                key,re;
+            
+            if(_.isArray(matches)){
+                for(var i=0,n=matches.length; i<n; i++){
+                    key = matches[i].replace(/[{}]+/g,''); // 'something'
+                    re = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                    template = template.replace(re,data[key]);
+                }
             }
-
             return template;
         }
         
+        function getTemplates(){
+            var tmpls = document.querySelectorAll('[type="text/octane"]');
+            for(var i=0,t=tmpls.length; i<t; i++){
+                setTemplate(tmpls[i]);
+            }
+            
+            // helper
+            function setTemplate(template){
+                if(!_octane.templates[template.id]){
+                    _octane.templates[template.id] = template.innerHTML;
+                }else{
+                    _octane.log.entry('Could not create template '+template.id+'. Already exists');
+                }
+            }
+                
+        }
+                                  
         octane.define({
-            parse : function(template,data){
-                        return (_.isObject(data) && _.isString(template)) ? parseTemplate(template,data) : '';
-            },
+            
             addTemplate : function(id,markup){
                 
                 if(_.isString(id) && _.isString(markup)){
-                    _octane.templates[id] = markup;
+                    if(!_octane.templates[id]){
+                        _octane.templates[id] = markup;
+                    }else{
+                        _octane.log.entry('Could not create template '+id+'. Already exists');
+                    }
                 }
             },
-            getTemplate : function(id){
+            template : function(id,data){
                 
-                return _octane.templates[id] || '';
-            },
-            template : function(templateID,data){
-                
-                var wrapper = document.createElement('o-template'),
-                    template = octane.getTemplate(templateID),
-                    markup = octane.parse(template,data);
-                wrapper.innerHTML = markup;
+                var wrapper = document.createElement('o-template');
+                wrapper.innerHTML = parseTemplate(_octane.templates[id],data);
                 return wrapper;
             }            
         });
@@ -679,16 +696,16 @@
         }
         
 		octane.define({
-			library : function(name,lib){
+			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
-			checkout : function(name){
+			library : function(name){
 				return _octane.libraries[name] instanceof Library && _octane.libraries[name].checkout();
 			},
-            dictionary : function(name,data){
+            addDictionary : function(name,data){
                 _octane.dictionaries[name] = _.isObject(data) ? new Dictionary(name,data) : {};
             },
-            lookup : function(name){
+            dictionary : function(name){
                 return _octane.dictionaries[name] instanceof Dictionary && _octane.dictionaries[name].get();
             }
 		});
@@ -768,7 +785,7 @@
                                     modelUpdated = true;
                                 }catch(e){
                                     modelUpdated = false;
-                                    _octane.errors.log('Unable to set model data "'+keyString+'". Error: '+e);
+                                    _octane.log.entry('Unable to set model data "'+keyString+'". Error: '+e);
                                 }
                                 modelUpdated && updated.push(keyString);
                             }
@@ -805,7 +822,7 @@
                                         },$this.state);
                                     }catch(e){
                                         stateData = '';
-                                        _octane.errors.log('Unable to get model data "'+keyString+'". Error: '+e);
+                                        _octane.log.entry('Unable to get model data "'+keyString+'". Error: '+e);
                                     }
                                     return stateData;
                                 } else {
@@ -1358,7 +1375,7 @@
                 
                 // prevent the same module from loading twice
                 if($module.loaded){
-                    _octane.errors.log('Could not load '+$module.name+' Module, already loaded');
+                    _octane.log.entry('Could not load '+$module.name+' Module, already loaded');
                     return;
                 }else{
                     Object.defineProperty(octane,$module.id, {
@@ -1390,7 +1407,7 @@
                     moduleD = _octane.modules[d];
 
                 if( !(moduleD && moduleD.prototype instanceof Module) ) {
-                    _octane.errors.log('Could not load '+$module.name+' Module, missing dependency '+d);
+                    _octane.log.entry('Could not load '+$module.name+' Module, missing dependency '+d);
                     return false;
                 }else{
                     if(!moduleD.loaded){
@@ -1408,18 +1425,24 @@
                 hasModule : function (name){ 
                                 return _octane.modules[name] ? _octane.modules[name].loaded : false; 
                             }	
-            })
+            });
+        
+    /* ------------------------------------------------------- */
+	//  misc
+	/* ------------------------------------------------------- */
         // artificially start the uptake circuit
-           .define({
+        octane.define({
                 goose : function(model,$dirty){
                             _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
                 }
             })
         // global model and controller
-            .define({ appModel : new Model('application')} )	
-            .define({ $Controller : new Controller('application') })
+            .define({ 
+                appModel : new Model('application'),
+                $Controller : new Controller('application'),
         // octane DOM elements
-            .define({ dom:{} })
+                dom:{} 
+            })
         // octane ready handler
             .handle('octane:ready',function(e){
                 setTimeout(function (){
@@ -1452,7 +1475,7 @@
         
 		function init (options){
 			
-            var utils = octane.startup_utilities || {};
+            var utils = octane.library('startup-utilities') || {};
             
             for(var util in utils){
                 if(({}).hasOwnProperty.call(utils,util)){
@@ -1561,7 +1584,7 @@
 	
 ; // init external dependencies/utilities that help octane run
  
- octane.startup_utilities = {
+ octane.addLibrary('startup-utilities',{
     
     fastlickJS : function(){
         
@@ -1586,7 +1609,7 @@
 
         })(window);
     }
-};// JavaScript Document
+});;// JavaScript Document
 
 octane.module('router',[],function (cfg) {
 	
@@ -1597,9 +1620,9 @@ octane.module('router',[],function (cfg) {
     if(_.isObject(cfg)){
         
         try{
-            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.checkout('view-animations');
+            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.library('view-animations');
         }catch(e){
-            $animations = octane.checkout('view-animations');
+            $animations = octane.library('view-animations');
             octane.hasModule('Debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
         }
     }
@@ -2080,7 +2103,7 @@ octane.module('router',[],function (cfg) {
 		// View Animations
 		/* ------------------------------------------------------- */
 		
-        octane.library('view-animations',{
+        octane.addLibrary('view-animations',{
 		
 			applyLoading : function(resolve){},
 			

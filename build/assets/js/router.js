@@ -9,9 +9,9 @@ octane.module('router',[],function (cfg) {
     if(_.isObject(cfg)){
         
         try{
-            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.checkout('view-animations');
+            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.library('view-animations');
         }catch(e){
-            $animations = octane.checkout('view-animations');
+            $animations = octane.library('view-animations');
             octane.hasModule('Debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
         }
     }

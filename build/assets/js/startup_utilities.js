@@ -1,6 +1,6 @@
  // init external dependencies/utilities that help octane run
  
- octane.startup_utilities = {
+ octane.addLibrary('startup-utilities',{
     
     fastlickJS : function(){
         
@@ -25,4 +25,4 @@
 
         })(window);
     }
-}
+});

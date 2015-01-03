@@ -13,16 +13,16 @@
                return _octane.controllers;
            },
            getTasks :	function(controller){
-                return controller.tasks.getCases();
+                return controller.tasks && controller.tasks.getCases();
             },
            getEvents	: function(){
                return _octane.eventRegister;
            },
            log : function(message){
-               _octane.errors.log(message);
+               _octane.log.entry(message);
            },
-           logfile : function(){ 
-                return _octane.errors.logfile;
+           getLog : function(){ 
+                return _octane.log.get();
             }   
         });
     });
