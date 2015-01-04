@@ -450,16 +450,20 @@
 			value: function  (obj,overwrite){
 			
 						overwrite = _.isBoolean(overwrite) ? overwrite : true;
-				        var i;
+				        var
+                        i,
+                        keys,
+                        key;
+                
 						if(_.isObject(obj)){
-							for(i in obj){
-								if(({}).hasOwnProperty.call(obj,i)){
-										if(overwrite){ // do overwrite
-											this[i] = obj[i];	
-										}else { // only write undefined properties
-											if(!(this[i])) { this[i] = obj[i]; }	
-										}
-								}
+                            keys = Object.keys(obj);
+							for(i=0,n=keys.length; i<n; i++){
+                                key = obj[keys[i]];
+                                if(overwrite){ // do overwrite
+                                    this[key] = obj[key];	
+                                }else { // only write undefined properties
+                                    if(!(this[key])) { this[key] = obj[key]; }	
+                                }
 							}
 						}
 						return this; // chainable
@@ -486,7 +490,10 @@
 							
 							switch(true){
 								case _.isObject(prop):
-									var keys = Object.keys(prop),key;
+									var
+                                    keys = Object.keys(prop),
+                                    key;
+                                    
 									for (var i=0,n = keys.length; i<n; i++){
 										key = keys[i];
 										Object.defineProperty(this,key,{
@@ -614,9 +621,10 @@
             template = _.isString(template) ? template : '',
             data = _.isObject(data) ? data : {};
             
-            var  pattern = /\{\{([^{^}]+)\}\}/g,
-                matches = template.match(pattern),
-                key,re;
+            var
+            pattern = /\{\{([^{^}]+)\}\}/g,
+            matches = template.match(pattern),
+            key,re;
             
             if(_.isArray(matches)){
                 for(var i=0,n=matches.length; i<n; i++){
@@ -686,7 +694,6 @@
                                 data 	: $data,
                                 status	: 'valid'
                             };
-
                         case (_.isEmpty($data) || _.isUndefined($data)):
                             return {
                                 data 	: null,
@@ -702,7 +709,7 @@
                                 data 	: $data,
                                 status	: 'default'
                             };
-                    }
+                        }
                 };
                 
 				_octane.filters.addCase(name,func,true);	
@@ -739,7 +746,7 @@
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
 			library : function(name){
-				return _octane.libraries[name] instanceof Library && _octane.libraries[name].checkout();
+				return _octane.libraries[name];
 			}
 		});
 	
@@ -753,19 +760,21 @@
 			options = _.isObject(options) ? options : {};
 			options.context = options.context || 'Application';
             
-			var conditions = [
-                    [
-                        _.isString(name),
-                        'Model name must be a string.'
-                    ]
-                ],
-                loadable = verify(conditions,'Model',options.context);
+			var
+            conditions = [
+                [
+                    _.isString(name),
+                    'Model name must be a string.'
+                ]
+            ],
+            loadable = verify(conditions,'Model',options.context);
                 
 			if(!loadable) return {instanced:false};
 			
 			// RESTful
-			var db = {};
-			var $this = this;
+			var 
+            db = {},    
+            $this = this;
             
             this.define({
 				instanced	: true,
@@ -800,17 +809,19 @@
 							if(!_.isObject(fresh) || !_.isObject(this.state)) return;
 							
 							// array for state properties changed
-							var updated = [],
-                                $state 	= this.state,
-                                keyStringsToParse = Object.keys(fresh);
+							var
+                            updated = [],
+                            $state 	= this.state,
+                            keyStringsToParse = Object.keys(fresh);
                             
                             for(var i=0,n=keyStringsToParse.length; i<n; i++){
                                 
-                                var keyString = keyStringsToParse[i],
-                                    keyArray = keyString.split('.'),
-                                    value = fresh[keyString],
-                                    k = keyArray.length,
-                                    modelUpdated;
+                                var
+                                keyString = keyStringsToParse[i],
+                                keyArray = keyString.split('.'),
+                                value = fresh[keyString],
+                                k = keyArray.length,
+                                modelUpdated;
                                 
                                 try{
                                     keyArray.reduce(parseString,$state);
@@ -843,8 +854,9 @@
 						},
 			get	: 	function(keyString){
                                 
-                                var $this = this,
-                                    stateData;
+                                var
+                                $this = this,
+                                stateData;
                                 
                                 if(keyString){
                                     var keyArray = keyString.split('.');
@@ -937,10 +949,11 @@
             // find bound elements on the DOM
 			parse	: function(){
 						
-						var $this = this,
-                            $bindScope = document.querySelectorAll('[o-bind^="'+this.model.name+'."]'),
-                            $updateScope = document.querySelectorAll('[o-update*="'+this.model.name+'."]'),
-                            $scope = [];
+						var
+                        $this = this,
+                        $bindScope = document.querySelectorAll('[o-bind^="'+this.model.name+'."]'),
+                        $updateScope = document.querySelectorAll('[o-update*="'+this.model.name+'."]'),
+                        $scope = [];
                         
                         // union the two node lists
                         for(var b=0,B=$bindScope.length; b<B; b++){
@@ -955,20 +968,21 @@
                         // loop elements with this o-model
                         for(var i=0,n=$scope.length;i<n;i++){
                             
-                            var el = $scope[i],
-                                // remove model name from bind string
-                                $bind = el.getAttribute('o-bind'),
-                                o_update = el.getAttribute('o-update'),
-                                $update= {};
-                                
-                                if(o_update){
-                                    // not a JSON string
-                                    if(o_update.length > 0 && o_update.indexOf("{") !== 0){
-                                        $update[o_update] = 'html';
-                                    } else {
-                                        $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
-                                    }
+                            var
+                            el = $scope[i],
+                            // remove model name from bind string
+                            $bind = el.getAttribute('o-bind'),
+                            o_update = el.getAttribute('o-update'),
+                            $update= {};
+
+                            if(o_update){
+                                // not a JSON string
+                                if(o_update.length > 0 && o_update.indexOf("{") !== 0){
+                                    $update[o_update] = 'html';
+                                } else {
+                                    $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
                                 }
+                            }
                             
                             // element hasn't been parsed yet
                             if(!el._guid){
@@ -990,12 +1004,15 @@
                             }
                             
                             // push element to scope[key] for updates if not already in for its data-bind
-                            for(var key in $update){
-                                if( ({}).hasOwnProperty.call($update,key) ){
-                                    if(!_.isArray(this.scope[key]) ) { this.scope[key] = []; }
-                                    if(!__.inArray(this.scope[key],el) ){
-                                        this.scope[key].push(el);
-                                    }
+                            var
+                            $updateKeys = Object.keys($update),
+                            key;
+                            
+                            for(var j=0,m=$updateKeys.length; j<m; j++){
+                                key = $updateKeys[j];
+                                if(!_.isArray(this.scope[key]) ) { this.scope[key] = []; }
+                                if(!__.inArray(this.scope[key],el) ){
+                                    this.scope[key].push(el);
                                 }
                             }
                         }
@@ -1005,26 +1022,32 @@
 			refresh 	: 	function (e){
 								
                                 // loop bound model datapoint in scope
-                                for(var key in this.scope){
-                                    if( ({}).hasOwnProperty.call(this.scope,key)){
-                                        // loop thru each element bound to the model datapoint
-                                        for(var i=0,n=this.scope[key].length; i<n; i++){
+                                var
+                                scopeKeys = Object.keys(this.scope),
+                                key;
+                
+                                for(var j=0,J=scopeKeys.length; j<J; j++){
+                                    key = scopeKeys[j];
+                                    // loop thru each element bound to the model datapoint
+                                    for(var i=0,I=this.scope[key].length; i<I; i++){
 
-                                            var element = this.scope[key][i],
-                                                // remove model name from string
-                                                pointer = element._bind ? element._bind.split('.').slice(1).join('.') : '',
-                                                toUpdate = element._update;
+                                        var
+                                        element = this.scope[key][i],
+                                        // remove model name from string
+                                        pointer = element._bind ? element._bind.split('.').slice(1).join('.') : '',
+                                        toUpdate = element._update,
+                                        toUpdateKeys = Object.keys(toUpdate),
+                                        ukey,
+                                        upointer;;
 
-                                            element.value = this.model.get(pointer);
-                                            
-                                            // loop thru attributes to update
-                                            for(var ukey in toUpdate){
-                                                if( ({}).hasOwnProperty.call(toUpdate,ukey)){
-                                                    // remove model name from string
-                                                    var upointer = ukey.split('.').slice(1).join('.');
-                                                    update(element,toUpdate[ukey],this.model.get(upointer));
-                                                }
-                                            }
+                                        element.value = this.model.get(pointer);
+
+                                        // loop thru attributes to update
+                                        for(var u=0,U = toUpdateKeys.length; u<U; u++){
+                                            ukey = toUpdateKeys[u];
+                                            // remove model name from string
+                                            upointer = ukey.split('.').slice(1).join('.');
+                                            update(element,toUpdate[ukey],this.model.get(upointer));
                                         }
                                     }
                                 }
@@ -1055,17 +1078,18 @@
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(element){
                                 
-                            var 	o_bind = element._bind,
-                                    // remove model name from string
-                                    pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
-                                    $dirty={};
-                
-								if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
+                                var 
+                                o_bind = element._bind,
+                                // remove model name from string
+                                pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
+                                $dirty={};
+
+                                if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
                                     $dirty[pointer] = element.value;
                                     if(_octane.controllers[this.model.name]){
                                         _octane.controllers[this.model.name].doFilter($dirty);
                                     }
-								}				
+                                }				
 							},
 			handleEvent	: 	function (e){ 
 								this.watcher.run(e.type,[e]);
@@ -1136,11 +1160,12 @@
             // remember to resolve the promise or the data won't be set in the model
             parser			: function(o_bind,func){
                                     
-                                var funcDeclaration= func.toString().split('{')[0],
-                                    pattern = /\(([^)]+)\)/,
-                                    argsString = pattern.exec(funcDeclaration)[1],
-                                    argsArray = argsString.split(','),
-                                    $this = this;
+                                var 
+                                funcDeclaration= func.toString().split('{')[0],
+                                pattern = /\(([^)]+)\)/,
+                                argsString = pattern.exec(funcDeclaration)[1],
+                                argsArray = argsString.split(','),
+                                $this = this;
                 
                                 if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
 
@@ -1177,9 +1202,10 @@
             // add as function(keyString,data)
 			task   : 	function(o_bind,func){
 				                
-								var $this = this,
-                                    bind,
-                                    data;
+								var 
+                                $this = this,
+                                bind,
+                                data;
                                
 								if(_.isFunction(func)){
                                     if(__.typeOf(o_bind) == 'string'){
@@ -1219,14 +1245,18 @@
 									
                                     $data = _.isObject($data) ? $data : {};
 									
-									for(var o_bind in $data){
-										if( ({}).hasOwnProperty.call($data,o_bind) ){
-											// look for an filter assigned to this o-bind keystring
-											var $filter = $this.filters[o_bind];
-											// purge the dirty data, execture hooks, and return
-											$data = $this.filters[o_bind] ? filterOne($filter,o_bind,$data) : $data;
-										}
-									}
+                                    var 
+                                    dataKeys = Object.keys($data),
+                                    o_bind,
+                                    $filter;
+                                    
+									for(var i=0,I=dataKeys.length; i<I; i++){
+                                        o_bind = dataKeys[i];
+                                        // look for an filter assigned to this o-bind keystring
+                                        $filter = $this.filters[o_bind];
+                                        // purge the dirty data, execture hooks, and return
+                                        $data = $this.filters[o_bind] ? filterOne($filter,o_bind,$data) : $data;
+                                    }
 									return $data;   
 								}
 								
@@ -1252,30 +1282,36 @@
 							},
 			
 			applyParsers	: function($data){
-                                var $this = this,
-                                    $maybePromise;
+                                
+                                var
+                                $this = this,
+                                $maybePromise;
                 
                                 if(_.isObject($data)){
                                     
-                                    for(var o_bind in $data){
-                                        if( ({}).hasOwnProperty.call($data,o_bind) ){
+                                    var 
+                                    dataKeys = Object.keys($data),
+                                    o_bind,$filter;
+									
+                                    for(var i=0,I=dataKeys.length; i<I; i++){
+                                        o_bind = dataKeys[i];
                                             
-                                            $maybePromise = $this.parsers[o_bind] && $this.parsers[o_bind]($data);
-                                            //$this.parsers[o_bind] && $this.parsers[o_bind]($data);
-                                            if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
-                                                $maybePromise.then($this.model.set);
-                                            }else{
-                                                $this.model.set($data);
-                                            }  
-                                        }
-                                    }    
+                                        $maybePromise = $this.parsers[o_bind] && $this.parsers[o_bind]($data);
+                                        //$this.parsers[o_bind] && $this.parsers[o_bind]($data);
+                                        if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
+                                            $maybePromise.then($this.model.set);
+                                        }else{
+                                            $this.model.set($data);
+                                        }  
+                                    }   
                                 }
 							},
             
 			handleEvent : 	function(e){
 								
-								var $this = this,
-									eventHandler = new __.Switch();
+								var 
+                                $this = this,
+								eventHandler = new __.Switch();
 									
 								eventHandler.addCase($this.model.name+':statechange',loopState);
 								
@@ -1322,13 +1358,15 @@
 			
 			this.name = name;
             
-            var conditions = [
+            var 
+            conditions = [
                     [
                        ( _.isString(this.name) && !__.isBlank(this.name) ),
                         'Module name is undefined'
                     ]
                 ],
-                loadable = verify(conditions,'Module','global');
+            loadable = verify(conditions,'Module','global');
+            
             if(!loadable){ return {instanced:false}; }
 			
 			this.define({
@@ -1355,10 +1393,33 @@
 		}
 		
 		Module.prototype = new Base();
-        Module.prototype.constructor = Module;
-		
-	
-		
+        Module.prototype.define({
+            
+            constructor : Module,
+            checkDependencies : function(){
+                
+                var 
+                dependencies = this.dependencies || {},
+                mods = dependencies[modules] || [],
+                libs = dependencies[libraries] || [],
+                results = [],
+                loadable = true;
+
+                if(_.isString(mods)) { mods = mods.split(',') };
+                if(_.isString(libs)) { libs = libs.split(',') };
+
+                for(var i=0,n = mods.length; i<n; i++){
+                    results.push( checkModuleDependency($module,mods[i]) );               
+                }
+
+                for(var j=0,m = libs.length; j<m; j++){
+                   results.push( checkLibraryDependency($module,libs[j]) ); 
+                }
+                
+                return Promise.all(results);
+            }
+        });
+        
 		// add a module to octane before init
 		function addModule (id,dependencies,$module){
 			
@@ -1366,7 +1427,7 @@
             $module.prototype = new Module(id);
             
             octane.extend.call($module,{
-                dependencies : (__.typeOf(arguments[1]) == 'array') ? arguments[1] : [],
+                dependencies : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
                 id           : id,
                 loaded       : false
             });
@@ -1374,75 +1435,145 @@
 			_octane.modules[id] = $module;		
 		}
 		
-		// called at init
+		// called at octane.initialize()
 		function initModules(options){
 			
 			options = options || {};
             
             // assign init arguments as properties of the module's constructor function
-			for(var id in options){
-                if( ({}).hasOwnProperty.call(options,id) && _octane.modules[id]){
-                   _octane.modules[id].initArgs = _.isArray(options[id]) ? options[id] : [];
+            var 
+            optionsKeys = Object.keys(options),
+            id;
+			
+            for(var i=0,n=optionKeys.length;i<n;i++){
+			    id = optionKeys[i];
+                if( _octane.modules[id]){
+                   _octane.modules[id].cfg = _.isArray(options[id]) ? options[id] : [];
                 }
             }
             
             // load each module
-			for(var module in _octane.modules){
-				if( ({}).hasOwnProperty.call(_octane.modules, module) ){
-					loadModule(_octane.modules[module]);
-				}	
+            var 
+            moduleKeys = Object.keys(_octane.modules),
+            modulesLoaded = [],
+            module;
+            
+			for(var j=0,m=moduleKeys.length; j<m; j++){
+				module = _octane.modules[ moduleKeys[i] ];
+				modulesLoaded.push( loadModule(module) );
 			}
 		}
 		
 		// helper for initModules
 		function loadModule($module){
-            
-			if($module.prototype instanceof Module && dependenciesMet($module)){
+            return new Promise(function(loaded,notLoaded){
                 
-                // prevent the same module from loading twice
-                if($module.loaded){
-                    _octane.log.entry('Could not load '+$module.name+' Module, already loaded');
-                    return;
-                }else{
-                    Object.defineProperty(octane,$module.id, {
-                        value : $module.__construct($module.initArgs),
-                        writatble : false,
-                        configurable : false
-                    });
-                    octane[$module.id].name = $module.id;
-                    _octane.modules[$module.id].loaded = true;
-                    
-                    octane.goose('application',{
-                        loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                    });
-                    // hook-in for updating a loading screen
-                    octane.fire('loaded:module',{
-                        detail:{moduleID: $module.id }
-                    });
+                var 
+                message1 = 'Could not load '+$module.name+' Module, already loaded',
+                message2 = 'Module '+$module.id+' could not be loaded, an unknown error occured';
+                
+                if($module.prototype instanceof Module){
+                   checkDependencies($module).then(function(){
+                        
+                        if($module.loaded){
+                            // prevent the same module from loading twice
+                           _octane.log.entry(message1);
+                        }else{
+                            // attach the module to octane                       
+                            Object.defineProperty(octane,$module.id, {
+                                value : $module.__construct($module.initArgs),
+                                writatble : false,
+                                configurable : false
+                            });
+                            octane[$module.id].name = $module.id;
+                            _octane.modules[$module.id].loaded = true;
+
+                            octane.goose('application',{
+                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                            });
+                            // hook-in for updating a loading screen
+                            octane.fire('loaded:module',{
+                                detail:{moduleID: $module.id }
+                            });
+                        }
+                        loaded();
+                   },notLoaded);
+                } else {
+                    notLoaded(message2);
                 }
-			}	
+            });
 		}
 		
 		// helper for loadModules
-		function dependenciesMet($module){
-				
-            var dependencies = _.isString($module.dependencies) ? $module.dependencies.split(',') : (_.isArray($module.dependencies) ? $module.dependencies : []);
+		function checkDependencies($module){
+			   
+                var 
+                dependencies = $module.dependencies || {},
+                mods = dependencies[modules] || [],
+                libs = dependencies[libraries] || [],
+                results = [],
+                loadable = true;
 
-            for(var i=0,n = dependencies.length; i<n; i++){
-                var d = dependencies[i].trim(),
-                    moduleD = _octane.modules[d];
+                if(_.isString(mods)) { mods = mods.split(',') };
+                if(_.isString(libs)) { libs = libs.split(',') };
 
-                if( !(moduleD && moduleD.prototype instanceof Module) ) {
-                    _octane.log.entry('Could not load '+$module.name+' Module, missing dependency '+d);
-                    return false;
-                }else{
-                    if(!moduleD.loaded){
-                         loadModule(moduleD);
-                    }
-                }           
-            }
-            return true;
+                for(var i=0,n = mods.length; i<n; i++){
+                    results.push( checkModuleDependency($module,mods[i]) );               
+                }
+
+                for(var j=0,m = libs.length; j<m; j++){
+                   results.push( checkLibraryDependency($module,libs[j]) ); 
+                }
+                
+                return Promise.all(results);
         }
+        
+        // helper for checkDependencies
+        function checkModuleDependency($module,dependency){
+            return new Promise(function(resolve,reject){
+
+                var  
+                dependencyID = dependency.trim(),   
+                mod = _octane.modules[moduleID],
+                message = 'Could not load '+$module.id+' Module, missing module dependency '+dependencyID ;
+
+                if( !(mod && mod.prototype instanceof Module) ) {
+                    // module is not present
+                    _octane.log.entry(message);
+                    reject(message);
+                }else{
+                    // module is not loaded, try to load it
+                     loadModule(mod).then(
+                         function(){
+                             // recheck dependencies
+                             checkDependencies($module).then(resolve,reject);
+                         },
+                         function(err){
+                             //_octane.log.entry(err);
+                             reject(err);
+                         });
+                }
+           });
+        }
+
+        // helper for checkDependencies   
+        function checkLibraryDependency($module,dependency){
+            return new Promise(function(resolve,reject){
+                var dependencyID = dependency.trim(),   
+                    lib = _octane.libraries[libID],
+                    message = 'Could not load '+$module.id+' Module, missing library dependency '+dependencyID;
+
+                if( !(lib && lib instanceof Library) ) {
+                    // library is not present
+                    //_octane.log.entry(message);
+                    reject(message);
+                }
+                else{
+                    resolve();
+                }
+            });
+        }
+
 
 		octane.define({
             
@@ -1518,14 +1649,17 @@
 			options = options || {};
             
             // initialize utilities
-            var utils = octane.library('startup-utilities') || {};
-            for(var util in utils){
-                if(({}).hasOwnProperty.call(utils,util)){
-                    // hook for the loading message
-                    octane.fire('loading:utility',{detail:util});
-                    // init utility
-                   _.isFunction(utils[util]) && utils[util].call();
-                }
+            var 
+            utils = octane.library('startup-utilities') || {},
+            utilsKeys = Object.keys(utils),
+            util;
+                
+            for(var u=0,U=utilsKeys.length; u<U; u++){
+                util = utilsKeys[u];    
+                // hook for the loading message
+                octane.fire('loading:utility',{detail:util});
+                // init utility
+               _.isFunction(utils[util]) && utils[util].call();
             }
             // add debugging support if module included, pass internal _octane app object
 			if(_octane.modules['debug']){ options.debug = [_octane]; }

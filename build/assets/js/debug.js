@@ -19,10 +19,10 @@
                return _octane.eventRegister;
            },
            log : function(message){
-               _octane.log.entry(message);
+               _octane.log(message);
            },
            getLog : function(){ 
-                return _octane.log.get();
+                return _octane.getLogfile();
             }   
         });
     });
