@@ -14,11 +14,12 @@ octane.module('router',{
 		
 		octane.extend.call(parsed,params);
 		
-		var fragment = [];
-		for(var key in parsed){
-			if( ({}).hasOwnProperty.call(parsed,key) ){	
-				fragment.push(key+'='+parsed[key]);
-			}
+		var fragment = [],
+            parsedKeys = Object.keys(parsed),
+            key;
+		for(var k=0,K=parsedKeys.length; k<K; k++){
+			key = parsedKeys[k];
+            fragment.push(key+'='+parsed[key]);
 		}
 		
 		fragment = fragment.join('&');
@@ -53,7 +54,7 @@ octane.module('router',{
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
                                                                                                 //
-                if( $view && $view != currentView){                                     //
+                if( $view && $view != currentView){                                             //
                                                                                                 //
                 // ensure a route isn't triggered while another route is animating              //
                 //////////////////////////////////////////////////////////////////////////      //

@@ -1081,8 +1081,7 @@
         }
         
 		function Module (cfg) { 
-			
-			this.extend(cfg);	
+			this.extend(cfg);
 		}
         
 		Module.prototype = new Base();
@@ -1209,30 +1208,30 @@
                                     
                                     if(!this.loaded){
                                         bootLog(message[0]);
-                                        this.constructor.prototype = new Module();
-                                            this.define({
-                                                loaded : true,
-                                                name    : this.name
-                                            }).define(this.constructor.__construct(this.cfg));
+                                        this.constructor.prototype = new Module({name:this.name});
+                                            
+                                        this.define({
+                                            loaded : true,
+                                            name    : this.name,
+                                        }).define(this.constructor.__construct(this.cfg));
 
-                                            Object.defineProperty(octane,$this.name, {
-                                                value :$this,
-                                                writatble : false,
-                                                configurable : false
-                                            });
-                                            bootLog(message[1]);
-                                            octane.goose('application',{
-                                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                                            });
-                                            // hook-in for updating a loading screen
-                                            octane.fire('loaded:module',{
-                                                detail:{moduleID: this.name }
-                                            });
+                                        Object.defineProperty(octane,$this.name, {
+                                            value :$this,
+                                            writatble : false,
+                                            configurable : false
+                                        });
+                                        bootLog(message[1]);
+                                        octane.goose('application',{
+                                            loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                        });
+                                        // hook-in for updating a loading screen
+                                        octane.fire('loaded:module',{
+                                            detail:{moduleID: this.name }
+                                        });
                                     }
                                     return Promise.resolve(this);
                                 },
             model			:	function (name,options){
-                    
                                         if(_octane.models[name]){
                                             return _octane.models[name];
                                         }else{  
