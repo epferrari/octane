@@ -451,14 +451,13 @@
 			
 						overwrite = _.isBoolean(overwrite) ? overwrite : true;
 				        var
-                        i,
                         keys,
                         key;
                 
 						if(_.isObject(obj)){
                             keys = Object.keys(obj);
-							for(i=0,n=keys.length; i<n; i++){
-                                key = obj[keys[i]];
+							for(var i=0,n=keys.length; i<n; i++){
+                                key = keys[i];
                                 if(overwrite){ // do overwrite
                                     this[key] = obj[key];	
                                 }else { // only write undefined properties
@@ -519,6 +518,69 @@
 			configuarable : false
 		});
 		
+        // simple promise implementation
+        function Pact(){}    
+        Pact.prototype = new Base('Simple Promise');
+        Pact.prototype.extend({
+            state : 'pending',
+            result : null,
+            error : null
+        });
+        Pact.prototype.define({
+            constructor : Pact,
+            _isResolved : function(){
+                return this.state == 'resolved';
+            },
+            _isRejected : function(){
+                return this.state == 'rejected';
+            },
+            _isPending : function() {
+                return this.state == 'pending';
+            },
+            resolveCallbacks : [],
+            rejectCallbacks : [],
+            then : function(resolve,reject){
+            
+                resolve = _.isFunction(resolve) ? resolve : function(){};
+                reject = _.isFunction(reject) ? reject : function(){};
+                //!_.isFunction(resolve.then) && resolve.prototype = new Pact();
+                //!_.isFunction(reject.then) && reject.prototype = new Pact();
+                
+                this.resolveCallbacks.push(resolve);
+                this.rejectCallbacks.push(reject);
+                
+                if(this.state == 'resolved'){
+                    return resolve(this.result);
+                }
+                if(this.state == 'rejected'){
+                    return reject(this.error);
+                }
+            },
+            resolve : function(data){
+                
+                var callbacks = this.resolveCallbacks;
+                this.state = 'resolved';
+                this.result = data;
+                for(var i=0,n=callbacks.length; i<n; i++){
+                
+                    setTimeout(function(){
+                        callbacks[i].call && callbacks[i].call(null,data);
+                    },0);
+                }
+             },
+            reject : function(error){
+                
+                var callbacks = this.rejectCallbacks;
+                this.state = 'rejected';
+                this.error = error;
+                for(var i=0,n=callbacks.length; i<n; i++){
+
+                    setTimeout(function(){
+                        callbacks[i].call && callbacks[i].call(null,error);
+                    },0);
+                }
+            }
+        });
 			
 		
 	/* ------------------------------------------------------- */
@@ -558,15 +620,15 @@
 	/*                       LOGGING                           */
 	/* ------------------------------------------------------- */		
 		
-		_octane.log = {
-			logfile : 	[],
-			entry 	: 	function(message){
-							this.logfile.push(message);
-						},
-			get		: 	function(){
-							return this.logfile;
-						}
-		};
+		_octane.extend({
+			logfile    : [],
+			log 	   : function(message){
+							 _octane.logfile.push(message);
+						  },
+			getLogfile : function(){
+							 return _octane.logfile;
+						  }
+		});
 		
 		// helper for dependencies, etc	
 		function verify(conditions,constructor,$context){
@@ -575,7 +637,7 @@
 		
             for(var	i=0, n = conditions.length;i<n;i++){
 				if(!conditions[i][0]){
-					_octane.log.entry('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
+					_octane.log('Context: '+$context+'. A '+constructor+' failed; '+conditions[i][1] );
 					return false;
 				}		
 			}
@@ -647,7 +709,7 @@
                 if(!_octane.templates[template.id]){
                     _octane.templates[template.id] = template.innerHTML;
                 }else{
-                    _octane.log.entry('Could not create template '+template.id+'. Already exists');
+                    _octane.log('Could not create template '+template.id+'. Already exists');
                 }
             }
                 
@@ -661,7 +723,7 @@
                     if(!_octane.templates[id]){
                         _octane.templates[id] = markup;
                     }else{
-                        _octane.log.entry('Could not create template '+id+'. Already exists');
+                        _octane.log('Could not create template '+id+'. Already exists');
                     }
                 }
             },
@@ -728,25 +790,41 @@
 		_octane.libraries = {};
 		
         function Library(name,data){
-           
-            var lib = _.isObject(data) ? data : {};
-            this.name = name;
-            this.checkout = function(){
-                return lib;
-            };
-            this.contrib = function(prop,data){
-                if(!lib[prop]){
-                    lib[prop] = data;
-                }
-            };
+            
+            if(!_.isObject(data)){
+                this.reject('invalid library data, not an object');
+            } else {
+                var lib = _.isObject(data) ? data : {};
+                this.name = name;
+                this.checkout = function(){
+                    return lib;
+                };
+                this.contrib = function(prop,data){
+                    if(!lib[prop]){
+                        lib[prop] = data;
+                    }
+                };
+                this.resolve(lib);
+            }
         }
-        
+        Library.prototype = new Pact();
+       
 		octane.define({
 			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
-			library : function(name){
-				return _octane.libraries[name];
+            library : function(name){
+                return octane.hasLibrary(name).then(function(data){
+                    return data;
+                });
+            },
+			hasLibrary : function(name){
+                var lib = _octane.libraries[name];
+                if(lib instanceof Library){
+                    return lib;
+                } else {
+                    return Promise.reject('Error: Library '+name+' does not exist');
+                }
 			}
 		});
 	
@@ -829,7 +907,7 @@
                                     modelUpdated = true;
                                 }catch(e){
                                     modelUpdated = false;
-                                    _octane.log.entry('Unable to set model data "'+keyString+'". Error: '+e);
+                                    _octane.log('Unable to set model data "'+keyString+'". Error: '+e);
                                 }
                                 modelUpdated && updated.push(keyString);
                             }
@@ -867,7 +945,7 @@
                                         },$this.state);
                                     }catch(e){
                                         stateData = '';
-                                        _octane.log.entry('Unable to get model data "'+keyString+'". Error: '+e);
+                                        _octane.log('Unable to get model data "'+keyString+'". Error: '+e);
                                     }
                                     return stateData;
                                 } else {
@@ -1038,7 +1116,7 @@
                                         toUpdate = element._update,
                                         toUpdateKeys = Object.keys(toUpdate),
                                         ukey,
-                                        upointer;;
+                                        upointer;
 
                                         element.value = this.model.get(pointer);
 
@@ -1267,7 +1345,8 @@
 
                                     function filterOne(filter,o_bind,$data){
                                         // if a filter exists, run it on the data
-                                        // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
+                                        // return object filtered data and detail about its filtration
+                                        // 'valid','invalid', or 'undefined'
                                         var result = _octane.filters.run(filter,[$data[o_bind]]);
                                         // return the filtered data to the data object
                                         $data[o_bind] = result.data;
@@ -1354,25 +1433,167 @@
 	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 		
-		function Module (name) { 
+        _octane.bootlog = [];
+        function bootLog(message){
+            _octane.bootlog.push(message);
+            octane.model('bootlog').set({
+                bootlog:_octane.bootlog,
+                status:message
+            });
+        }
+        
+		function Module (cfg) { 
 			
-			this.name = name;
+			this.extend(cfg);	
+		}
+        
+		Module.prototype = new Base();
+        Module.prototype.define({
+               
+            checkDependencies : function(){
+                                    
+                                    var 
+                                    dependencies = this.dependencies || {},
+                                    mods = dependencies.modules || [],
+                                    libs = dependencies.libraries || [],
+                                    results = [],
+                                    message = [
+                                        this.name+': checking dependencies...',
+                                        this.name+': no dependencies, preparing to initialize...'
+                                    ];
+                
+                                   bootLog(message[0]);
+                                    
+                                    if(_.isString(mods)) { mods = mods.split(','); }
+                                    if(_.isString(libs)) { libs = libs.split(','); }
+                                    
+                                    if(mods.length === 0 && libs.length === 0){
+                                        bootLog(message[1]);
+                                        return Promise.resolve();
+                                        
+                                    } else {
+                                        for(var i=0,n = mods.length; i<n; i++){
+                                            results.push( this.checkModuleDependency(mods[i]) );               
+                                        }
+
+                                        for(var j=0,m = libs.length; j<m; j++){
+                                           results.push( this.checkLibDependency(libs[j]) ); 
+                                        }    
+                                    }
+                                    return Promise.all(results);
+                                },
             
-            var 
-            conditions = [
-                    [
-                       ( _.isString(this.name) && !__.isBlank(this.name) ),
-                        'Module name is undefined'
-                    ]
-                ],
-            loadable = verify(conditions,'Module','global');
+            checkModuleDependency : function(d){
+                                        
+                                        
+                                        d = d ? d.trim() : '';
+                                        var
+                                        $this = this,
+                                        mod = _octane.modules[d],
+                                        message = [
+                                            this.name+': no dependencies, preparing to initialize...',
+                                            this.name+': Could not load module, missing module dependency "'+d+'"',
+                                            this.name+': dependency "'+d+'" loaded and initialized, continuing...',
+                                            this.name+': dependency "'+d+'" not yet loaded, loading now...'
+                                        ];
+                                       
+                                        if(!d || d.length === 0) {
+                                            bootLog(message[0]);
+                                            return Promise.resolve();
+                                        }
+
+                                       if( !(mod && mod instanceof Module) ) {
+                                            // module is not present
+                                            bootLog(message[1]);
+                                            return Promise.reject(message[1]);
+                                        } else if( mod && mod.loaded){
+                                            bootLog(message[2]);
+                                            return Promise.resolve();
+                                        } else {
+                                            // module is not loaded, try to load it
+                                             if(!mod.loaded){
+                                                 bootLog(message[3]);
+                                                 return mod._load().then(function(){
+                                                     // recheck dependencies
+                                                     return $this.checkDependencies();
+                                                })
+                                                .catch(function(err){
+                                                    bootLog(err);
+                                                    Promise.reject(err);
+                                                });
+                                             }
+                                        }    
+                                },
+                
+            checkLibDependency : function(lib){
+                                    
+                                    var message = [
+                                            this.name+': library dependency "'+lib+'" found, continuing...',
+                                            this.name+': could not load module, missing library "'+lib+'"'
+                                        ];
+                
+                                     return octane.hasLibrary(lib).then(function(){
+                                            bootLog(message[0]);
+                                            return Promise.resolve();
+                                        }).catch(function(err){
+                                            bootLog(err);
+                                            return Promise.reject(message[1]);
+                                        });        
+                                },
             
-            if(!loadable){ return {instanced:false}; }
-			
-			this.define({
-				instanced 		:	true,
-				
-				model			:	function (name,options){
+            _load               : function(){
+                                    var $this = this;
+                                    if(!this.loaded){
+                                        return this.checkDependencies().then(function(){
+                                            return $this._initialize();
+                                        }).catch(function(err){
+                                            bootLog(err);
+                                            return $this._abort();
+                                        });   
+                                    } else {
+                                        Promise.resolve($this);
+                                    }
+                                },
+            _abort              : function(){
+                                    this.define({loaded:false});
+                                    delete octane[this.name];
+                                    return Promise.reject(this.name+': failed to initialize!');
+                                },
+            _initialize         : function(){
+                                    
+                                    var
+                                    $this = this,
+                                    message = [
+                                            this.name+': initializing...',
+                                            this.name+': successfully initialized!',
+                                            this.name+': already initialized, continuing...'
+                                        ];
+                                    
+                                    if(!this.loaded){
+                                        bootLog(message[0]);
+                                        this.constructor.prototype = new Module();
+                                            this.define({
+                                                loaded : true,
+                                                name    : this.name
+                                            }).define(this.constructor.__construct(this.cfg));
+
+                                            Object.defineProperty(octane,$this.name, {
+                                                value :$this,
+                                                writatble : false,
+                                                configurable : false
+                                            });
+                                            bootLog(message[1]);
+                                            octane.goose('application',{
+                                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                            });
+                                            // hook-in for updating a loading screen
+                                            octane.fire('loaded:module',{
+                                                detail:{moduleID: this.name }
+                                            });
+                                    }
+                                    return Promise.resolve(this);
+                                },
+            model			:	function (name,options){
                     
                                         if(_octane.models[name]){
                                             return _octane.models[name];
@@ -1382,199 +1603,63 @@
                                              return new Model(name,options);
                                         }
 									},
-				controller		:	function (model){ 
-										 if(_octane.controllers[model]){
-                                            return _octane.controllers[model];
-                                        }else{
-                                            return new Controller(model,this.name+' module');
-                                        } 
-									}
-			});	
-		}
-		
-		Module.prototype = new Base();
-        Module.prototype.define({
-            
-            constructor : Module,
-            checkDependencies : function(){
-                
-                var 
-                dependencies = this.dependencies || {},
-                mods = dependencies[modules] || [],
-                libs = dependencies[libraries] || [],
-                results = [],
-                loadable = true;
-
-                if(_.isString(mods)) { mods = mods.split(',') };
-                if(_.isString(libs)) { libs = libs.split(',') };
-
-                for(var i=0,n = mods.length; i<n; i++){
-                    results.push( checkModuleDependency($module,mods[i]) );               
-                }
-
-                for(var j=0,m = libs.length; j<m; j++){
-                   results.push( checkLibraryDependency($module,libs[j]) ); 
-                }
-                
-                return Promise.all(results);
-            }
+            controller		:	function (model){ 
+                                     if(_octane.controllers[model]){
+                                        return _octane.controllers[model];
+                                    }else{
+                                        return new Controller(model,this.name+' module');
+                                    } 
+                                }
         });
         
 		// add a module to octane before init
-		function addModule (id,dependencies,$module){
-			
-            $module = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
-            $module.prototype = new Module(id);
+		function addModule (name,dependencies,constructor){
+            constructor = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
             
-            octane.extend.call($module,{
-                dependencies : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
-                id           : id,
-                loaded       : false
+			_octane.modules[name] = new Module({
+                name            : name,
+                constructor     : constructor,
+                dependencies    : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
+                loaded          : false
             });
-            
-			_octane.modules[id] = $module;		
 		}
 		
 		// called at octane.initialize()
 		function initModules(options){
 			
 			options = options || {};
-            
-            // assign init arguments as properties of the module's constructor function
-            var 
-            optionsKeys = Object.keys(options),
-            id;
-			
-            for(var i=0,n=optionKeys.length;i<n;i++){
-			    id = optionKeys[i];
-                if( _octane.modules[id]){
-                   _octane.modules[id].cfg = _.isArray(options[id]) ? options[id] : [];
-                }
-            }
-            
-            // load each module
+
             var 
             moduleKeys = Object.keys(_octane.modules),
             modulesLoaded = [],
-            module;
+            module,name;
             
-			for(var j=0,m=moduleKeys.length; j<m; j++){
-				module = _octane.modules[ moduleKeys[i] ];
-				modulesLoaded.push( loadModule(module) );
-			}
-		}
-		
-		// helper for initModules
-		function loadModule($module){
-            return new Promise(function(loaded,notLoaded){
+            // load router module first
+            return _octane.modules['router']._load().then(function(){
                 
-                var 
-                message1 = 'Could not load '+$module.name+' Module, already loaded',
-                message2 = 'Module '+$module.id+' could not be loaded, an unknown error occured';
-                
-                if($module.prototype instanceof Module){
-                   checkDependencies($module).then(function(){
-                        
-                        if($module.loaded){
-                            // prevent the same module from loading twice
-                           _octane.log.entry(message1);
-                        }else{
-                            // attach the module to octane                       
-                            Object.defineProperty(octane,$module.id, {
-                                value : $module.__construct($module.initArgs),
-                                writatble : false,
-                                configurable : false
-                            });
-                            octane[$module.id].name = $module.id;
-                            _octane.modules[$module.id].loaded = true;
-
-                            octane.goose('application',{
-                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                            });
-                            // hook-in for updating a loading screen
-                            octane.fire('loaded:module',{
-                                detail:{moduleID: $module.id }
-                            });
-                        }
-                        loaded();
-                   },notLoaded);
-                } else {
-                    notLoaded(message2);
+                // load each module
+                for(var j=0,m=moduleKeys.length; j<m; j++){
+                    name = moduleKeys[j];
+                    module = _octane.modules[name];
+                    // don't reload the same module
+                    if(!module.loaded){
+                        // capture closure
+                        (function(module){
+                            // set init arguments to properties of the module's constructor function
+                            module.cfg = _.isArray(options[name]) ? options[name] : [];
+                            bootLog(module.name+': not loaded, loading...');
+                            modulesLoaded.push( module._load() );
+                        })(module);
+                    }
                 }
+                return Promise.all(modulesLoaded);
+            })
+            .catch(function(err){
+                console.log(err);
             });
 		}
 		
-		// helper for loadModules
-		function checkDependencies($module){
-			   
-                var 
-                dependencies = $module.dependencies || {},
-                mods = dependencies[modules] || [],
-                libs = dependencies[libraries] || [],
-                results = [],
-                loadable = true;
-
-                if(_.isString(mods)) { mods = mods.split(',') };
-                if(_.isString(libs)) { libs = libs.split(',') };
-
-                for(var i=0,n = mods.length; i<n; i++){
-                    results.push( checkModuleDependency($module,mods[i]) );               
-                }
-
-                for(var j=0,m = libs.length; j<m; j++){
-                   results.push( checkLibraryDependency($module,libs[j]) ); 
-                }
-                
-                return Promise.all(results);
-        }
         
-        // helper for checkDependencies
-        function checkModuleDependency($module,dependency){
-            return new Promise(function(resolve,reject){
-
-                var  
-                dependencyID = dependency.trim(),   
-                mod = _octane.modules[moduleID],
-                message = 'Could not load '+$module.id+' Module, missing module dependency '+dependencyID ;
-
-                if( !(mod && mod.prototype instanceof Module) ) {
-                    // module is not present
-                    _octane.log.entry(message);
-                    reject(message);
-                }else{
-                    // module is not loaded, try to load it
-                     loadModule(mod).then(
-                         function(){
-                             // recheck dependencies
-                             checkDependencies($module).then(resolve,reject);
-                         },
-                         function(err){
-                             //_octane.log.entry(err);
-                             reject(err);
-                         });
-                }
-           });
-        }
-
-        // helper for checkDependencies   
-        function checkLibraryDependency($module,dependency){
-            return new Promise(function(resolve,reject){
-                var dependencyID = dependency.trim(),   
-                    lib = _octane.libraries[libID],
-                    message = 'Could not load '+$module.id+' Module, missing library dependency '+dependencyID;
-
-                if( !(lib && lib instanceof Library) ) {
-                    // library is not present
-                    //_octane.log.entry(message);
-                    reject(message);
-                }
-                else{
-                    resolve();
-                }
-            });
-        }
-
-
 		octane.define({
             
             module     : function(name,dependencies,$module){ 
@@ -1662,17 +1747,22 @@
                _.isFunction(utils[util]) && utils[util].call();
             }
             // add debugging support if module included, pass internal _octane app object
-			if(_octane.modules['debug']){ options.debug = [_octane]; }
-            initModules(options);
-			octane.name = options.name || octane.name; 
-            // unhide the rest of content hidden behind the loader
-            setTimeout(function(){
-                octane.dom.container().setAttribute('style','visibility:visible;'); 
-            },1000);
-            // route to url-parsed view|| home
-            // var view = octane.parseView() || 'home';
-            //octane.route(view);
-            octane.fire('octane:ready');
+			if(_octane.modules['debug']){
+                options.debug = [_octane];
+            }
+            initModules(options).then(function(){
+                
+                octane.name = options.name || octane.name; 
+                // unhide the rest of content hidden behind the loader
+                setTimeout(function(){
+                    octane.dom.container().setAttribute('style','visibility:visible;'); 
+                },1000);
+                // route to url-parsed view|| home
+                // var view = octane.parseView() || 'home';
+                //octane.route(view);
+                octane.fire('octane:ready');
+            
+            });
 		}
         
        window.octane = window.$o = octane;
@@ -1717,21 +1807,10 @@
     }
 });;// JavaScript Document
 
-octane.module('router',[],function (cfg) {
+octane.module('router',{
+        modules : 'octane-views'
+    },function (cfg) {
 	
-    // octane application's views object and animation library
-	var $Views = {},
-        $animations;
-    
-    if(_.isObject(cfg)){
-        
-        try{
-            $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.library('view-animations');
-        }catch(e){
-            $animations = octane.library('view-animations');
-            octane.hasModule('Debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
-        }
-    }
     
 	// octane's own pushstate method
 	function pushState(params){
@@ -1776,12 +1855,12 @@ octane.module('router',[],function (cfg) {
         return new Promise(function(resolve,reject){
             
             ghost = _.isBoolean(ghost) ? ghost : false;
-            var $view = $Views[id];
+            var $view = octane.view(id);
            
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
                                                                                                 //
-                if($view instanceof View && $view != currentView){                              //
+                if( $view && $view != currentView){                                     //
                                                                                                 //
                 // ensure a route isn't triggered while another route is animating              //
                 //////////////////////////////////////////////////////////////////////////      //
@@ -1791,16 +1870,19 @@ octane.module('router',[],function (cfg) {
                         isRouting = true;                                               //      //
                                                                                         //      //
                     // exit the current view before calling a new view                  //      //
-                    //////////////////////////////////////////////////////////          //      //
-                                                                            //          //      //
-                        if(currentView instanceof View){                    //          //      //
-                            currentView.exit().done(function(){             //          //      // 
-                                loadView($view,ghost).done(resolve);        //          //      //
-                            });                                             //          //      //
-                        }else{                                              //          //      //
-                            loadView($view,ghost).done(resolve);            //          //      // 
-                        }                                                   //          //      //
-                    //////////////////////////////////////////////////////////          //      //
+                    //////////////////////////////////////////////////////////////      //      //
+                                                                                //      //      //
+                        if(currentView){                                        //      //      //
+                            currentView.exit().done(function(){                 //      //      // 
+                                loadView($view,ghost).done(function(result){    //      //      //
+                                    octane.fire('routed:view');                 //      //      //
+                                    resolve(result);                            //      //      //
+                                });                                             //      //      //
+                            });                                                 //      //      //
+                        }else{                                                  //      //      //
+                            loadView($view,ghost).done(resolve);                //      //      // 
+                        }                                                       //      //      //
+                    //////////////////////////////////////////////////////////////      //      //
                                                                                         //      //
                     }else{                                                              //      //
                         if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
@@ -1838,16 +1920,17 @@ octane.module('router',[],function (cfg) {
          });
    }  
 	
+    
 	// add a callback to be executed when the specified view finishes its loading animation 
 	function routeThen(id,callback){
 		
-		$Views[id] instanceof View && $Views[id].addCallback(callback);
+		octane.view(id) && octane.view(id).addCallback(callback);
 		return octane;
 	}
 	
 	function remove(id){
 		
-		$Views[id] instanceof View && $Views[id].exit();
+		octane.view(id) && octane.view(id).exit();
 		octane.goose('application',{currentView:''});
 	}
 	
@@ -1901,17 +1984,11 @@ octane.module('router',[],function (cfg) {
     
 	function initialize(){
 		
-        var $views = octane.dom.views(),
-            html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
-            stateChangeEvent = html5 ? 'popstate' : 'hashchange',
-            id, config;
-		
-        // bind html views to View objects		
-		for(var i=0,n=$views.length; i<n; i++){
-			id = $views[i].id;
-			config = JSON.parse($views[i].getAttribute('o-config'));
-			!$Views[id] && ($Views[id] = new View(id,config));
-		}		
+        var
+        html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+        stateChangeEvent = html5 ? 'popstate' : 'hashchange',
+        id, config;
+				
 		setRoutingButtons(); 
         // change the view with browser's forward/back buttons
         window.addEventListener(stateChangeEvent,function(){       
@@ -1930,7 +2007,7 @@ octane.module('router',[],function (cfg) {
                                 return parseView();
                             },
 		route			: function(id,ghost){
-								return route(id,ghost).then( octane.translator.translate );
+								return route(id,ghost);
                             },
 		routeThen		: function(id,callback){
 								return routeThen(id,callback);
@@ -1946,13 +2023,7 @@ octane.module('router',[],function (cfg) {
                             }
 	});
     
-    if(octane.hasModule('debug')){
-        octane.define({
-            getViews : function(){
-                return $Views;
-            }
-        });
-    }
+    
     
     // update the page title when the view changes
      octane.controller('application').parser('currentView',function($dirty){
@@ -1961,213 +2032,10 @@ octane.module('router',[],function (cfg) {
         return $dirty;
     });
 	
-    
-    // set-up for Views constructor
-    var Base = octane.constructor;
-    //var $animations = octane.library('viewAnimations') || {};
-    
-    
-	/* ------------------------------------------------------- */
-	//  Application Views
-	//
-	// @param id [string] id attribute of 'o-view' DOM element
-	// options : {starts:'left',loads:['slide','left','swing',500], exits:['slide','right','swing',500]}
-	// 
-	// @option starts: initial postion of the ViewFrame, default is left
-	// @option loads[from,easing,duration]
-	// @opton exits[to,easing,duration]
-	/* ------------------------------------------------------- */
-			
-		function View(id,config){
-			if(!_.isString(id)) return {instanced:false};
-			
-			config = _.isObject(config) ? config : {};
-			
-			var $this = this,
-			    // private properties
-				positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
-                loadConfig = _.isObject(config.loads),
-                exitConfig = _.isObject(config.exits),
-				cfg = {
-                    loadsBy         : loadConfig && config.loads.by || 'slide',
-                    loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'left',
-                    loadEasing      : loadConfig && config.loads.ease || 'swing',
-                    loadDuration    : loadConfig && _.isNumber(config.loads.dur) ? config.loads.dur : 500,
-                
-                    exitsBy         : exitConfig && config.exits.by || 'slide',
-                    exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'right',
-                    exitEasing      : exitConfig && config.exits.ease || 'swing',
-                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
-				};
-            
-            this.define(cfg);
-			
-			this.define({
-                
-                instanced	: true,
-				id			: id,
-				elem		: document.getElementById(id),
-				$elem 		: $('o-view#'+id),
-				_guid		: octane.GUID(),
-                doneLoading : [],
-				addCallback : function(callback){
-								_.isFunction(callback) && this.doneLoading.push(callback);
-							}					
-			});
-            
-            this.setPosition(this.loadsFrom);
-		}
-		
-        View.prototype = new Base('octane View');
-    
-        View.prototype.define({
-            constructor : View,
-            
-            handleEvent : function(e){
-					switch(e.type){
-						case 'translated':
-							this.setCanvasHeight();
-						    break;
-                        case 'resize':
-                            this.setCanvasHeight();
-                            break;
-                        case 'orientationchange':
-                            this.setCanvasHeight();
-                            break;  
-					}
-				},
-            
-            load : function(){
-                
-                var $this = this;
-                return new Promise(function(resolve){
-                    // scroll to top of page
-                    $('body').velocity('scroll',{duration:350});
-
-                    // make sure the view is visible
-                    $this.$elem.css({
-                        "visibility":"visible",
-                        'display':'block',
-                        'z-index':999999999
-                    });
-                    if($this.loadsBy !== 'fade'){
-                        $this.$elem.css({
-                            opacity:1
-                        });
-                    }
-                    // adjust the canvas height and load the view
-                    $this.setCanvasHeight(); 
-                    $animations.loads[$this.loadsBy].bind($this,resolve)();
-                }).then(function(){
-                    $this.doCallbacks();
-                });
-            },
-                              
-            exit : function (){
-                
-                var $this = this;
-
-                return new Promise(function(resolve){
-                    
-                    $animations.exits[$this.exitsBy].bind($this,resolve)();
-                }).then(function(){
-                    
-                    // make sure the view is hidden in its loadFrom position
-                    $this.$elem.css({
-                            'z-index':-1,
-                            'visibility':'hidden',
-                            'display':'none',
-                            'opacity':0
-                        });
-                    
-                    $this.setPosition($this.loadsFrom);
-                });
-            },
-            
-            setCanvasHeight : function(){
-                
-                // some jQuery to ensure view-canvas's height
-                var height = [];
-                this.$elem.children().each(function (){
-                    height.push($(this).height());
-                });
-                var totalHeight = _.reduce(height,function(totalHeight,num){
-                    return totalHeight + num;
-                });
-
-                document.querySelector('o-canvas').setAttribute('style','height:'+totalHeight+'px');
-            },
-                
-                        
-            setPosition : function (position){
-                var $this = this;
-                return new Promise(function(resolve){
-                    var $view = $this.$elem,
-                        anim = new __.Switch({
-
-                        'left': function(){
-                                    $view.css({
-                                        "left":-($(window).width()*1.1),
-                                        "top":0,
-                                        //"bottom":0
-                                    });
-                        },
-                        'right' : function() {
-                                    $view.css({
-                                        "right":-($(window).width()*1.1),
-                                        "top":0,
-                                        //"bottom":0
-                                    });
-                        },
-                        'top' : function(){
-                                    $view.css({
-                                        "top":-($(window).height()*1.1),
-                                        "left":0,
-                                        "right":0
-                                    });
-                        },
-                        'bottom' : function(){
-                                    $view.css({"bottom":-($(window).height()*1.1),
-                                        "left":0,
-                                        "right":0
-                                    });
-                        },
-                        'onscreen' :function(){
-                                    $view.css({
-                                        "left":0,
-                                        "right":0,
-                                        "top":0,
-                                        //"bottom":0
-                                    });
-                        },
-                        default : function(){ 
-                                    $view.css({
-                                        "left":-($(window).width()*1.1),
-                                        "top":0,
-                                        //"bottom":0
-                                    });
-                        }
-                    });
-
-                    anim.run(position);
-                    resolve();
-                });
-            },
-            
-            doCallbacks : function (){
-                    var $this = this,
-                        callbacks = this.doneLoading;
-            
-                    for (var i=0,n = callbacks.length; i < n; i++){
-                        _.isFunction(callbacks[i]) && callbacks[i].bind($this)();
-                    }
-            }
-        
-        });
-		
-		// initialize the router		
-		initialize();
+    // initialize the router		
+    initialize();
 });
+    
 		
 	
 		
@@ -2675,10 +2543,245 @@ octane.module('router',[],function (cfg) {
         /* ------------------------------- */
         // init
         /* ------------------------------- */
-
+                octane.handle('view:routed',translate);
                 findLang();
                 renderControls($M.langSupport);
                 translate();
     });
 
-	
+	;// set-up for Views constructor
+
+octane.module('octane-views',{
+        libraries : 'view-animations',
+    },
+    function(cfg){
+            
+            var 
+            Base = octane.constructor,
+            $Views = {},
+            $animations;
+    
+            try{
+                $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.library('view-animations');
+            }catch(e){
+                $animations = octane.library('view-animations');
+                octane.hasModule('debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
+            }
+
+    /* ------------------------------------------------------- */
+    //  Application View Constructor
+    //
+    // @param id [string] id attribute of 'o-view' DOM element
+    // options : {starts:'left',loads:['slide','left','swing',500], exits:['slide','right','swing',500]}
+    // 
+    // @option starts: initial postion of the ViewFrame, default is left
+    // @option loads[from,easing,duration]
+    // @opton exits[to,easing,duration]
+    /* ------------------------------------------------------- */
+
+        function View(id,config){
+            if(!_.isString(id)) return {instanced:false};
+
+            config = _.isObject(config) ? config : {};
+
+            var $this = this,
+                // private properties
+                positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
+                loadConfig = _.isObject(config.loads),
+                exitConfig = _.isObject(config.exits),
+                cfg = {
+                    loadsBy         : loadConfig && config.loads.by || 'slide',
+                    loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'left',
+                    loadEasing      : loadConfig && config.loads.ease || 'swing',
+                    loadDuration    : loadConfig && _.isNumber(config.loads.dur) ? config.loads.dur : 500,
+
+                    exitsBy         : exitConfig && config.exits.by || 'slide',
+                    exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'right',
+                    exitEasing      : exitConfig && config.exits.ease || 'swing',
+                    exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
+                };
+
+            this.define(cfg);
+
+            this.define({
+
+                instanced	: true,
+                id			: id,
+                elem		: document.getElementById(id),
+                $elem 		: $('o-view#'+id),
+                _guid		: octane.GUID(),
+                doneLoading : [],
+                addCallback : function(callback){
+                                _.isFunction(callback) && this.doneLoading.push(callback);
+                            }					
+            });
+
+            this.setPosition(this.loadsFrom);
+        }
+
+        View.prototype = new Base('octane View');
+
+        View.prototype.define({
+            constructor : View,
+
+            handleEvent : function(e){
+                    switch(e.type){
+                        case 'translated':
+                            this.setCanvasHeight();
+                            break;
+                        case 'resize':
+                            this.setCanvasHeight();
+                            break;
+                        case 'orientationchange':
+                            this.setCanvasHeight();
+                            break;  
+                    }
+                },
+
+            load : function(){
+
+                var $this = this;
+                return new Promise(function(resolve){
+                    // scroll to top of page
+                    $('body').velocity('scroll',{duration:350});
+
+                    // make sure the view is visible
+                    $this.$elem.css({
+                        "visibility":"visible",
+                        'display':'block',
+                        'z-index':999999999
+                    });
+                    if($this.loadsBy !== 'fade'){
+                        $this.$elem.css({
+                            opacity:1
+                        });
+                    }
+                    // adjust the canvas height and load the view
+                    $this.setCanvasHeight();
+                    $animations.loads[$this.loadsBy].bind($this,resolve)();
+                }).then(function(){
+                    $this.doCallbacks();
+                });
+            },
+
+            exit : function (){
+
+                var $this = this;
+
+                return new Promise(function(resolve){
+
+                    $animations.exits[$this.exitsBy].bind($this,resolve)();
+                }).then(function(){
+
+                    // make sure the view is hidden in its loadFrom position
+                    $this.$elem.css({
+                            'z-index':-1,
+                            'visibility':'hidden',
+                            'display':'none',
+                            'opacity':0
+                        });
+
+                    $this.setPosition($this.loadsFrom);
+                });
+            },
+
+            setCanvasHeight : function(){
+
+                // some jQuery to ensure view-canvas's height
+                var height = [];
+                this.$elem.children().each(function (){
+                    height.push($(this).height());
+                });
+                var totalHeight = _.reduce(height,function(totalHeight,num){
+                    return totalHeight + num;
+                });
+
+                document.querySelector('o-canvas').setAttribute('style','height:'+totalHeight+'px');
+            },
+
+
+            setPosition : function (position){
+                var $this = this;
+                return new Promise(function(resolve){
+                    var $view = $this.$elem,
+                        anim = new __.Switch({
+
+                        'left': function(){
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'right' : function() {
+                                    $view.css({
+                                        "right":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        'top' : function(){
+                                    $view.css({
+                                        "top":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'bottom' : function(){
+                                    $view.css({"bottom":-($(window).height()*1.1),
+                                        "left":0,
+                                        "right":0
+                                    });
+                        },
+                        'onscreen' :function(){
+                                    $view.css({
+                                        "left":0,
+                                        "right":0,
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        },
+                        default : function(){ 
+                                    $view.css({
+                                        "left":-($(window).width()*1.1),
+                                        "top":0,
+                                        //"bottom":0
+                                    });
+                        }
+                    });
+
+                    anim.run(position);
+                    resolve();
+                });
+            },
+
+            doCallbacks : function (){
+                    var $this = this,
+                        callbacks = this.doneLoading;
+
+                    for (var i=0,n = callbacks.length; i < n; i++){
+                        _.isFunction(callbacks[i]) && callbacks[i].bind($this)();
+                    }
+            }
+
+        });
+        
+        function initialize(){
+            
+            var $views = octane.dom.views();
+            // bind html views to View objects		
+            for(var i=0,n=$views.length; i<n; i++){
+                id = $views[i].id;
+                config = JSON.parse($views[i].getAttribute('o-config'));
+                !$Views[id] && ($Views[id] = new View(id,config));
+            }
+            octane.define({
+                view : function(id){
+                    return $Views[id] || false;
+                }
+            });
+        }
+    
+        initialize();
+                
+        });

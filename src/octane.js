@@ -157,7 +157,7 @@
 		});
 		
         // simple promise implementation
-        function Pact(){};    
+        function Pact(){}    
         Pact.prototype = new Base('Simple Promise');
         Pact.prototype.extend({
             state : 'pending',
@@ -451,15 +451,18 @@
 			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
-			library : function(name){
-				return new Promise(function(resolve,reject){
-                    var lib = _octane.libraries[name];
-                    if(lib instanceof Library){
-                        lib.then(resolve);
-                    } else {
-                        reject('Error: Library '+name+' does not exist');
-                    }
+            library : function(name){
+                return octane.hasLibrary(name).then(function(data){
+                    return data;
                 });
+            },
+			hasLibrary : function(name){
+                var lib = _octane.libraries[name];
+                if(lib instanceof Library){
+                    return lib;
+                } else {
+                    return Promise.reject('Error: Library '+name+' does not exist');
+                }
 			}
 		});
 	
@@ -980,7 +983,8 @@
 
                                     function filterOne(filter,o_bind,$data){
                                         // if a filter exists, run it on the data
-                                        // return object filtered data and detail about its filtration ('valid','invalid','undefined',etc. (user defined))
+                                        // return object filtered data and detail about its filtration
+                                        // 'valid','invalid', or 'undefined'
                                         var result = _octane.filters.run(filter,[$data[o_bind]]);
                                         // return the filtered data to the data object
                                         $data[o_bind] = result.data;
@@ -1067,25 +1071,167 @@
 	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 		
-		function Module (name) { 
+        _octane.bootlog = [];
+        function bootLog(message){
+            _octane.bootlog.push(message);
+            octane.model('bootlog').set({
+                bootlog:_octane.bootlog,
+                status:message
+            });
+        }
+        
+		function Module (cfg) { 
 			
-			this.name = name;
+			this.extend(cfg);	
+		}
+        
+		Module.prototype = new Base();
+        Module.prototype.define({
+               
+            checkDependencies : function(){
+                                    
+                                    var 
+                                    dependencies = this.dependencies || {},
+                                    mods = dependencies.modules || [],
+                                    libs = dependencies.libraries || [],
+                                    results = [],
+                                    message = [
+                                        this.name+': checking dependencies...',
+                                        this.name+': no dependencies, preparing to initialize...'
+                                    ];
+                
+                                   bootLog(message[0]);
+                                    
+                                    if(_.isString(mods)) { mods = mods.split(','); }
+                                    if(_.isString(libs)) { libs = libs.split(','); }
+                                    
+                                    if(mods.length === 0 && libs.length === 0){
+                                        bootLog(message[1]);
+                                        return Promise.resolve();
+                                        
+                                    } else {
+                                        for(var i=0,n = mods.length; i<n; i++){
+                                            results.push( this.checkModuleDependency(mods[i]) );               
+                                        }
+
+                                        for(var j=0,m = libs.length; j<m; j++){
+                                           results.push( this.checkLibDependency(libs[j]) ); 
+                                        }    
+                                    }
+                                    return Promise.all(results);
+                                },
             
-            var 
-            conditions = [
-                    [
-                       ( _.isString(this.name) && !__.isBlank(this.name) ),
-                        'Module name is undefined'
-                    ]
-                ],
-            loadable = verify(conditions,'Module','global');
+            checkModuleDependency : function(d){
+                                        
+                                        
+                                        d = d ? d.trim() : '';
+                                        var
+                                        $this = this,
+                                        mod = _octane.modules[d],
+                                        message = [
+                                            this.name+': no dependencies, preparing to initialize...',
+                                            this.name+': Could not load module, missing module dependency "'+d+'"',
+                                            this.name+': dependency "'+d+'" loaded and initialized, continuing...',
+                                            this.name+': dependency "'+d+'" not yet loaded, loading now...'
+                                        ];
+                                       
+                                        if(!d || d.length === 0) {
+                                            bootLog(message[0]);
+                                            return Promise.resolve();
+                                        }
+
+                                       if( !(mod && mod instanceof Module) ) {
+                                            // module is not present
+                                            bootLog(message[1]);
+                                            return Promise.reject(message[1]);
+                                        } else if( mod && mod.loaded){
+                                            bootLog(message[2]);
+                                            return Promise.resolve();
+                                        } else {
+                                            // module is not loaded, try to load it
+                                             if(!mod.loaded){
+                                                 bootLog(message[3]);
+                                                 return mod._load().then(function(){
+                                                     // recheck dependencies
+                                                     return $this.checkDependencies();
+                                                })
+                                                .catch(function(err){
+                                                    bootLog(err);
+                                                    Promise.reject(err);
+                                                });
+                                             }
+                                        }    
+                                },
+                
+            checkLibDependency : function(lib){
+                                    
+                                    var message = [
+                                            this.name+': library dependency "'+lib+'" found, continuing...',
+                                            this.name+': could not load module, missing library "'+lib+'"'
+                                        ];
+                
+                                     return octane.hasLibrary(lib).then(function(){
+                                            bootLog(message[0]);
+                                            return Promise.resolve();
+                                        }).catch(function(err){
+                                            bootLog(err);
+                                            return Promise.reject(message[1]);
+                                        });        
+                                },
             
-            if(!loadable){ return {instanced:false}; }
-			
-			this.define({
-				instanced 		:	true,
-				
-				model			:	function (name,options){
+            _load               : function(){
+                                    var $this = this;
+                                    if(!this.loaded){
+                                        return this.checkDependencies().then(function(){
+                                            return $this._initialize();
+                                        }).catch(function(err){
+                                            bootLog(err);
+                                            return $this._abort();
+                                        });   
+                                    } else {
+                                        Promise.resolve($this);
+                                    }
+                                },
+            _abort              : function(){
+                                    this.define({loaded:false});
+                                    delete octane[this.name];
+                                    return Promise.reject(this.name+': failed to initialize!');
+                                },
+            _initialize         : function(){
+                                    
+                                    var
+                                    $this = this,
+                                    message = [
+                                            this.name+': initializing...',
+                                            this.name+': successfully initialized!',
+                                            this.name+': already initialized, continuing...'
+                                        ];
+                                    
+                                    if(!this.loaded){
+                                        bootLog(message[0]);
+                                        this.constructor.prototype = new Module();
+                                            this.define({
+                                                loaded : true,
+                                                name    : this.name
+                                            }).define(this.constructor.__construct(this.cfg));
+
+                                            Object.defineProperty(octane,$this.name, {
+                                                value :$this,
+                                                writatble : false,
+                                                configurable : false
+                                            });
+                                            bootLog(message[1]);
+                                            octane.goose('application',{
+                                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                            });
+                                            // hook-in for updating a loading screen
+                                            octane.fire('loaded:module',{
+                                                detail:{moduleID: this.name }
+                                            });
+                                    }
+                                    return Promise.resolve(this);
+                                },
+            model			:	function (name,options){
                     
                                         if(_octane.models[name]){
                                             return _octane.models[name];
@@ -1095,135 +1241,25 @@
                                              return new Model(name,options);
                                         }
 									},
-				controller		:	function (model){ 
-										 if(_octane.controllers[model]){
-                                            return _octane.controllers[model];
-                                        }else{
-                                            return new Controller(model,this.name+' module');
-                                        } 
-									}
-			});	
-		}
-		
-		Module.prototype = new Base();
-        Module.prototype.define({
-            
-            constructor : Module,
-            attach      : function(){
-                
-                var $this = this,
-                    id = this.id;
-                console.log('attempting to load module '+$this.id);
-                return new Promise(function(loaded,notLoaded){
-
-                    var
-                    message = 'Module '+id+' could not be loaded, an unknown error occured';
-                    console.log($this.checkDependencies);
-                   $this.checkDependencies().then(function(){
-
-                        console.log('attaching module ',id);
-                        // attach the module to octane                       
-                        Object.defineProperty(octane,id, {
-                            value : $this.__construct($this.cfg),
-                            writatble : false,
-                            configurable : false
-                        });
-                        octane[id].name = id;
-                        _octane.modules[id].loaded = true;
-
-                        octane.goose('application',{
-                            loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                        });
-                        // hook-in for updating a loading screen
-                        octane.fire('loaded:module',{
-                            detail:{moduleID: id }
-                        });
-                        loaded();
-                   },notLoaded);
-                });
-            },
-               
-            checkDependencies : function(){
-                
-                var 
-                dependencies = this.dependencies || {},
-                mods = dependencies[modules] || [],
-                libs = dependencies[libraries] || [],
-                results = [];
-
-                if(_.isString(mods)) { mods = mods.split(',') };
-                if(_.isString(libs)) { libs = libs.split(',') };
-
-                for(var i=0,n = mods.length; i<n; i++){
-                    results.push( this.checkModuleDependency(mods[i]) );               
-                }
-
-                for(var j=0,m = libs.length; j<m; j++){
-                   results.push( this.checkLibraryDependency(libs[j]) ); 
-                }
-                
-                return Promise.all(results);
-            },
-            
-            checkModuleDependency : function(moduleID){
-                var $this = this;
-               return new Promise(function(resolve,reject){
-
-                    var  
-                    dependencyID = dependency.trim(),   
-                    mod = _octane.modules[dependencyID],
-                    message = 'Could not load '+$this.id+' Module, missing module dependency '+dependencyID ;
-
-                   if( !(mod && mod.prototype instanceof Module) ) {
-                        // module is not present
-                        _octane.log(message);
-                        reject(message);
-                    } else if( mod && mod.loaded){
-                        console.log('dependency '+dependencyID+' found, resolving '+$this.id);
-                        resolve();
-                    } else {
-                        // module is not loaded, try to load it
-                         if(!mod.loaded){
-                             console.log($this.id+' dependency '+dependencyID+' not loaded, loading now...');
-                             loadModule(mod).then(function(){
-                                 // recheck dependencies
-                                 return $this.checkDependencies();
-                             }).then(resolve,reject);
-                         }
-                    }
-               });     
-            },
-                
-            checkLibDependency : function(libID){
-                    var message = 'Could not load module '+this.id+', missing library '+libID;
-                    return octane.library[libID].then(function(){
-                            return new Promise(function(resolve){
-                                resolve();
-                            });
-                        },
-                        function(err){
-                            _octane.log(err);
-                            _octane.log(message);
-                            return new Promise(function(resolve,reject){
-                                reject();
-                            });
-                        });
-            }
+            controller		:	function (model){ 
+                                     if(_octane.controllers[model]){
+                                        return _octane.controllers[model];
+                                    }else{
+                                        return new Controller(model,this.name+' module');
+                                    } 
+                                }
         });
         
 		// add a module to octane before init
-		function addModule (id,dependencies,$module){
-			console.log('adding module ',id);
-            $module = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
-            $module.prototype = new Module(id);
+		function addModule (name,dependencies,constructor){
+            constructor = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
             
-            octane.extend.call($module,{
-                dependencies : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
-                id           : id,
-                loaded       : false
+			_octane.modules[name] = new Module({
+                name            : name,
+                constructor     : constructor,
+                dependencies    : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
+                loaded          : false
             });
-            
-			_octane.modules[id] = $module;
 		}
 		
 		// called at octane.initialize()
@@ -1234,159 +1270,34 @@
             var 
             moduleKeys = Object.keys(_octane.modules),
             modulesLoaded = [],
-            module,id;
+            module,name;
             
-            // load each module
-			for(var j=0,m=moduleKeys.length; j<m; j++){
-                id = moduleKeys[j];
-				module = _octane.modules[id];
-                // don't reload the same module
-                if(!module.loaded){
-                    // set init arguments to properties of the module's constructor function
-                    module.cfg = _.isArray(options[id]) ? options[id] : [];
-				    modulesLoaded.push( Module.prototype.attach.apply(module) );
-                }
-			}
-            
-            return Promise.all(modulesLoaded);
-		}
-		
-		// helper for initModules
-		function loadModule($module){
-            console.log('attempting to load module '+$module.id);
-            return new Promise(function(loaded,notLoaded){
+            // load router module first
+            return _octane.modules['router']._load().then(function(){
                 
-                var 
-                message1 = 'Could not load '+$module.name+' Module, already loaded',
-                message2 = 'Module '+$module.id+' could not be loaded, an unknown error occured';
-                
-                if($module.prototype instanceof Module){
-                   checkDependencies($module).then(function(){
-                        
-                        if($module.loaded){
-                            console.log('module '+$module.id+' is already loaded');
-                            // prevent the same module from loading twice
-                           _octane.log(message1);
-                        }else{
-                            console.log('attaching module ',$module.id);
-                            // attach the module to octane                       
-                            Object.defineProperty(octane,$module.id, {
-                                value : $module.__construct($module.initArgs),
-                                writatble : false,
-                                configurable : false
-                            });
-                            octane[$module.id].name = $module.id;
-                            _octane.modules[$module.id].loaded = true;
-
-                            octane.goose('application',{
-                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                            });
-                            // hook-in for updating a loading screen
-                            octane.fire('loaded:module',{
-                                detail:{moduleID: $module.id }
-                            });
-                        }
-                        loaded();
-                   },notLoaded);
-                } else {
-                    notLoaded(message2);
+                // load each module
+                for(var j=0,m=moduleKeys.length; j<m; j++){
+                    name = moduleKeys[j];
+                    module = _octane.modules[name];
+                    // don't reload the same module
+                    if(!module.loaded){
+                        // capture closure
+                        (function(module){
+                            // set init arguments to properties of the module's constructor function
+                            module.cfg = _.isArray(options[name]) ? options[name] : [];
+                            bootLog(module.name+': not loaded, loading...');
+                            modulesLoaded.push( module._load() );
+                        })(module);
+                    }
                 }
+                return Promise.all(modulesLoaded);
+            })
+            .catch(function(err){
+                console.log(err);
             });
 		}
 		
-		// helper for loadModules
-		function checkDependencies($module){
-			   
-                var 
-                dependencies = $module.dependencies || {},
-                mods = dependencies.modules || [],
-                libs = dependencies.libraries || [],
-                results = [],
-                loadable = true;
-
-                if(_.isString(mods)) { mods = mods.split(','); }
-                if(_.isString(libs)) { libs = libs.split(','); }
-
-                for(var i=0,n = mods.length; i<n; i++){
-                    results.push( checkModuleDependency($module,mods[i]) );               
-                }
-
-                for(var j=0,m = libs.length; j<m; j++){
-                   results.push( checkLibraryDependency($module,libs[j]) ); 
-                }
-                
-                return Promise.all(results);
-        }
         
-        // helper for checkDependencies
-        function checkModuleDependency($module,dependency){
-            return new Promise(function(resolve,reject){
-
-                var  
-                dependencyID = dependency.trim(),   
-                mod = _octane.modules[dependencyID],
-                message = 'Could not load '+$module.id+' Module, missing module dependency '+dependencyID ;
-                
-                
-               if( !(mod && mod.prototype instanceof Module) ) {
-                    // module is not present
-                    _octane.log(message);
-                    reject(message);
-                } else if( mod && mod.loaded){
-                    console.log('dependency '+dependencyID+' found, resolving '+$module.id);
-                    resolve();
-                } else {
-                    // module is not loaded, try to load it
-                     if(!mod.loaded){
-                         console.log($module.id+' dependency '+dependencyID+' not loaded, loading now...');
-                         loadModule(mod).then(
-                             function(){
-                                 // recheck dependencies
-                                 checkDependencies($module).then(resolve,reject);
-                             },
-                             function(err){
-                                 //_octane.log(err);
-                                 reject(err);
-                             });
-                     }
-                }
-           });
-        }
-
-        // helper for checkDependencies   
-        function checkLibraryDependency($module,dependency){
-            return _octane.libraries[dependency];
-            
-            /*return new Promise(function(resolve,reject){
-            _octane.libraries[dependency].then(
-                function(data){
-                    console.log(data);
-                    console.log('library loaded');
-                    resolve();
-                },
-                function(error){
-                    console.log(error);
-                    reject();
-                });
-            });
-           return new Promise(function(resolve,reject){
-                var dependencyID = dependency.trim(),   
-                    lib = _octane.libraries[dependencyID],
-                    message = 'Could not load '+$module.id+' Module, missing library dependency '+dependencyID;
-
-                if( !(lib && lib instanceof Library) ) {
-                    // library is not present
-                    //_octane.log(message);
-                    reject(message);
-                }
-                else{
-                    console.log($module.id+' library dependency '+dependencyID+' found');
-                    resolve();
-                }
-            });*/
-        }
-
-
 		octane.define({
             
             module     : function(name,dependencies,$module){ 

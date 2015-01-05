@@ -325,7 +325,7 @@
         /* ------------------------------- */
         // init
         /* ------------------------------- */
-
+                octane.handle('view:routed',translate);
                 findLang();
                 renderControls($M.langSupport);
                 translate();
