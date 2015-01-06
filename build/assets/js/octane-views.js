@@ -1,21 +1,17 @@
 // set-up for Views constructor
 
-octane.module('octane-views',{
-        libraries : 'view-animations',
-    },
+octane.module(
+    'octane-views',
+    ['viewLoadAnimations','viewExitAnimations'],
     function(cfg){
             
             var 
             Base = octane.constructor,
             $Views = {},
-            $animations;
+            $loads = octane.viewLoadAnimations,
+            $exits = octane.viewExitAnimations;
     
-            try{
-                $animations = (cfg.animations['exits'] && cfg.animations['loads']) ? cfg.animations : octane.library('view-animations');
-            }catch(e){
-                $animations = octane.library('view-animations');
-                octane.hasModule('debug') && octane.log('Could not load user-defined view animations. Error: '+e+'. Using default');
-            }
+            
 
     /* ------------------------------------------------------- */
     //  Application View Constructor
@@ -107,7 +103,12 @@ octane.module('octane-views',{
                     }
                     // adjust the canvas height and load the view
                     $this.setCanvasHeight();
-                    $animations.loads[$this.loadsBy].bind($this,resolve)();
+                    try{
+                        $loads[$this.loadsBy].bind($this,resolve)();
+                    }catch(ex){
+                        octane.hasModule('debug') && octane.log(ex);
+                        $loads.slide.bind($this,resolve)();
+                    }        
                 }).then(function(){
                     $this.doCallbacks();
                 });
@@ -118,8 +119,13 @@ octane.module('octane-views',{
                 var $this = this;
 
                 return new Promise(function(resolve){
-
-                    $animations.exits[$this.exitsBy].bind($this,resolve)();
+                    
+                    try{
+                        $exits[$this.exitsBy].bind($this,resolve)();
+                    }catch(ex){
+                        octane.hasModule('debug') && octane.log(ex);
+                        $exits.fade.bind($this,resolve);
+                    }
                 }).then(function(){
 
                     // make sure the view is hidden in its loadFrom position

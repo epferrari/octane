@@ -263,8 +263,10 @@
 			log 	   : function(message){
 							 _octane.logfile.push(message);
 						  },
-			getLogfile : function(){
-							 return _octane.logfile;
+			getLog     : function(){
+							 for(var i=0,I=_octane.logfile.length; i<I; i++){
+                                 console.log(_octane.logfile[i]);
+                             }
 						  }
 		});
 		
@@ -1087,12 +1089,11 @@
 		Module.prototype = new Base();
         Module.prototype.define({
                
-            checkDependencies : function(){
+            _checkDependencies : function(){
                                     
                                     var 
-                                    dependencies = this.dependencies || {},
-                                    mods = dependencies.modules || [],
-                                    libs = dependencies.libraries || [],
+                                    deps = this.dependencies || [],
+                                    $this = this,
                                     results = [],
                                     message = [
                                         this.name+': checking dependencies...',
@@ -1101,87 +1102,66 @@
                 
                                    bootLog(message[0]);
                                     
-                                    if(_.isString(mods)) { mods = mods.split(','); }
-                                    if(_.isString(libs)) { libs = libs.split(','); }
-                                    
-                                    if(mods.length === 0 && libs.length === 0){
+                                    if(deps.length === 0){
                                         bootLog(message[1]);
                                         return Promise.resolve();
                                         
                                     } else {
-                                        for(var i=0,n = mods.length; i<n; i++){
-                                            results.push( this.checkModuleDependency(mods[i]) );               
+                                        for(var i=0,n = deps.length; i<n; i++){
+                                            results.push( checkModuleDependency(deps[i]) );               
                                         }
-
-                                        for(var j=0,m = libs.length; j<m; j++){
-                                           results.push( this.checkLibDependency(libs[j]) ); 
-                                        }    
                                     }
-                                    return Promise.all(results);
-                                },
-            
-            checkModuleDependency : function(d){
+                                    
+                
+                                    //helper
+                                    function checkModuleDependency(depName){
                                         
-                                        
-                                        d = d ? d.trim() : '';
+                                        depName = depName ? depName.trim() : '';
                                         var
-                                        $this = this,
-                                        mod = _octane.modules[d],
+                                        dep = _octane.modules[depName],
                                         message = [
-                                            this.name+': no dependencies, preparing to initialize...',
-                                            this.name+': Could not load module, missing module dependency "'+d+'"',
-                                            this.name+': dependency "'+d+'" loaded and initialized, continuing...',
-                                            this.name+': dependency "'+d+'" not yet loaded, loading now...'
+                                            $this.name+': no dependencies, preparing to initialize...',
+                                            $this.name+': Could not load module, missing module dependency "'+depName+'"',
+                                            $this.name+': dependency "'+depName+'" loaded and initialized, continuing...',
+                                            $this.name+': dependency "'+depName+'" not yet loaded, loading now...'
                                         ];
                                        
-                                        if(!d || d.length === 0) {
+                                        if(!depName || depName.length === 0) {
                                             bootLog(message[0]);
                                             return Promise.resolve();
                                         }
 
-                                       if( !(mod && mod instanceof Module) ) {
-                                            // module is not present
+                                        if( !(dep && dep instanceof Module) ) {
+                                            // module is not present, fail
                                             bootLog(message[1]);
                                             return Promise.reject(message[1]);
-                                        } else if( mod && mod.loaded){
+                                        } else if( dep && dep.loaded){
+                                            // module is already loaded, continue
                                             bootLog(message[2]);
                                             return Promise.resolve();
                                         } else {
                                             // module is not loaded, try to load it
-                                             if(!mod.loaded){
-                                                 bootLog(message[3]);
-                                                 return mod._load().then(function(){
+                                            if(!dep.loaded){
+                                                bootLog(message[3]);
+                                                return dep._load().then(function(){
                                                      // recheck dependencies
-                                                     return $this.checkDependencies();
+                                                     return $this._checkDependencies();
                                                 })
                                                 .catch(function(err){
                                                     bootLog(err);
                                                     Promise.reject(err);
                                                 });
-                                             }
-                                        }    
-                                },
+                                            }
+                                        } 
+                                    }
                 
-            checkLibDependency : function(lib){
-                                    
-                                    var message = [
-                                            this.name+': library dependency "'+lib+'" found, continuing...',
-                                            this.name+': could not load module, missing library "'+lib+'"'
-                                        ];
-                
-                                     return octane.hasLibrary(lib).then(function(){
-                                            bootLog(message[0]);
-                                            return Promise.resolve();
-                                        }).catch(function(err){
-                                            bootLog(err);
-                                            return Promise.reject(message[1]);
-                                        });        
+                                    return Promise.all(results);
                                 },
             
             _load               : function(){
                                     var $this = this;
                                     if(!this.loaded){
-                                        return this.checkDependencies().then(function(){
+                                        return this._checkDependencies().then(function(){
                                             return $this._initialize();
                                         }).catch(function(err){
                                             bootLog(err);
@@ -1256,7 +1236,7 @@
 			_octane.modules[name] = new Module({
                 name            : name,
                 constructor     : constructor,
-                dependencies    : (__.typeOf(arguments[1]) == 'object') ? arguments[1] : {},
+                dependencies    : (__.typeOf(arguments[1]) == 'array') ? arguments[1] : [],
                 loaded          : false
             });
 		}
@@ -1292,7 +1272,7 @@
                 return Promise.all(modulesLoaded);
             })
             .catch(function(err){
-                console.log(err);
+                bootLog(err);
             });
 		}
 		

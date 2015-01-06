@@ -1443,14 +1443,13 @@
         }
         
 		function Module (cfg) { 
-			
-			this.extend(cfg);	
+			this.extend(cfg);
 		}
         
 		Module.prototype = new Base();
         Module.prototype.define({
                
-            checkDependencies : function(){
+            _checkDependencies : function(){
                                     
                                     var 
                                     dependencies = this.dependencies || {},
@@ -1473,17 +1472,17 @@
                                         
                                     } else {
                                         for(var i=0,n = mods.length; i<n; i++){
-                                            results.push( this.checkModuleDependency(mods[i]) );               
+                                            results.push( this._checkModuleDependency(mods[i]) );               
                                         }
 
                                         for(var j=0,m = libs.length; j<m; j++){
-                                           results.push( this.checkLibDependency(libs[j]) ); 
+                                           results.push( this._checkLibDependency(libs[j]) ); 
                                         }    
                                     }
                                     return Promise.all(results);
                                 },
             
-            checkModuleDependency : function(d){
+            _checkModuleDependency : function(d){
                                         
                                         
                                         d = d ? d.trim() : '';
@@ -1515,7 +1514,7 @@
                                                  bootLog(message[3]);
                                                  return mod._load().then(function(){
                                                      // recheck dependencies
-                                                     return $this.checkDependencies();
+                                                     return $this._checkDependencies();
                                                 })
                                                 .catch(function(err){
                                                     bootLog(err);
@@ -1525,7 +1524,7 @@
                                         }    
                                 },
                 
-            checkLibDependency : function(lib){
+            _checkLibDependency : function(lib){
                                     
                                     var message = [
                                             this.name+': library dependency "'+lib+'" found, continuing...',
@@ -1544,7 +1543,7 @@
             _load               : function(){
                                     var $this = this;
                                     if(!this.loaded){
-                                        return this.checkDependencies().then(function(){
+                                        return this._checkDependencies().then(function(){
                                             return $this._initialize();
                                         }).catch(function(err){
                                             bootLog(err);
@@ -1571,30 +1570,30 @@
                                     
                                     if(!this.loaded){
                                         bootLog(message[0]);
-                                        this.constructor.prototype = new Module();
-                                            this.define({
-                                                loaded : true,
-                                                name    : this.name
-                                            }).define(this.constructor.__construct(this.cfg));
+                                        this.constructor.prototype = new Module({name:this.name});
+                                            
+                                        this.define({
+                                            loaded : true,
+                                            name    : this.name,
+                                        }).define(this.constructor.__construct(this.cfg));
 
-                                            Object.defineProperty(octane,$this.name, {
-                                                value :$this,
-                                                writatble : false,
-                                                configurable : false
-                                            });
-                                            bootLog(message[1]);
-                                            octane.goose('application',{
-                                                loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                                            });
-                                            // hook-in for updating a loading screen
-                                            octane.fire('loaded:module',{
-                                                detail:{moduleID: this.name }
-                                            });
+                                        Object.defineProperty(octane,$this.name, {
+                                            value :$this,
+                                            writatble : false,
+                                            configurable : false
+                                        });
+                                        bootLog(message[1]);
+                                        octane.goose('application',{
+                                            loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                        });
+                                        // hook-in for updating a loading screen
+                                        octane.fire('loaded:module',{
+                                            detail:{moduleID: this.name }
+                                        });
                                     }
                                     return Promise.resolve(this);
                                 },
             model			:	function (name,options){
-                                        console.log('context name of model'+name+': '+this.name);
                                         if(_octane.models[name]){
                                             return _octane.models[name];
                                         }else{  
