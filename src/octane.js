@@ -24,6 +24,7 @@
                     // .hasModule(module)
 
                     // .route(id[,ghost])                       : extended from Router Module
+                    // .routeIf(id,condition,onFail)            : extended from Router Module
                     // .routeThen(id,callback)                  : extended from Router Module
                     // .parseView()                             : extended from Router Module
                     // .pushState(params)                       : extended from Router Module
@@ -80,7 +81,8 @@
 	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
-		function Base(name){ this.name = _.isString(name) && name; }	
+		function Base(name){ this.name = _.isString(name) && name; }
+        
 		
 		// extend an object with the properties and method of another object
 		// overwrites properties by default, set to false to only extend undefind properties
@@ -156,6 +158,31 @@
 			configuarable : false
 		});
 		
+    /* ------------------------------------------------------- */
+	// define public octane constructor
+	/* ------------------------------------------------------- */
+        
+        function Octane(name){
+            this.name = name;
+        };
+        Octane.prototype = new Base('Octane Application');
+        Octane.prototype.constructor = Octane;
+        Octane.prototype.initialized = false; 
+		
+	/* ------------------------------------------------------- */
+	// internal application object and properties
+	/* ------------------------------------------------------- */
+		
+		var _octane = new Base('octane protected');
+		_octane.define({
+				modules		    : {},
+				models		    : {},
+				views		    : {},
+				controllers     : {},
+                eventRegister   : {}
+		});
+        
+        
         // simple promise implementation
         function Pact(){}    
         Pact.prototype = new Base('Simple Promise');
@@ -219,33 +246,14 @@
                 }
             }
         });
-			
-		
-	/* ------------------------------------------------------- */
-	// define public octane object
-	/* ------------------------------------------------------- */
-		var octane = new Base('octane'); 
-		
-	/* ------------------------------------------------------- */
-	// internal application object and properties
-	/* ------------------------------------------------------- */
-		
-		var _octane = new Base('octane protected');
-		_octane.define({
-				modules		    : {},
-				models		    : {},
-				views		    : {},
-				controllers     : {},
-                eventRegister   : {}
-		});
-       
+	  
 	
 	/* ------------------------------------------------------- */
 	/*                       GUID                              */
 	/* ------------------------------------------------------- */		
 		
 		// set a unique identifier for the DOM element so we don't double count it
-		octane.define({
+		Octane.prototype.define({
 			GUID : function(){
 				var random4 = function() {
 					return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
@@ -283,14 +291,29 @@
 			}
 			return true;	
 		}
-	
+        
+        function OctaneError(message){
+            this.message = message || 'An Octane error occurred.';
+            this.stack = Error().stack;
+        }
+        
+        OctaneError.prototype = Object.create(Error.prototype);
+        OctaneError.prototype.constructor = OctaneError;
+        OctaneError.prototype.name = 'OctaneError';
+        
+        Octane.prototype.define({
+             error : function(message){
+                 throw new OctaneError(message);
+             }
+        });
+      
         
 	/* ------------------------------------------------------- */
 	/*                          EVENTS                         */
 	/* ------------------------------------------------------- */		
 		
        
-       octane.define({
+       Octane.prototype.define({
            
 			handle		: 	function(type,elem,handler){
                                 
@@ -391,7 +414,7 @@
                 
         }
                                   
-        octane.define({
+        Octane.prototype.define({
             
             addTemplate : function(id,markup){
                 
@@ -418,7 +441,7 @@
 		
 		_octane.filters = new __.Switch();
 		
-		octane.define({
+		Octane.prototype.define({
 			addFilter : function (name,valid,invalid){
                 
                 valid = valid || /.*/;
@@ -454,9 +477,9 @@
 			}
 		});
 		
-		octane.addFilter('number',/^[-\d]+$/);
-        octane.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        octane.addFilter('tel',/^[-0-9\.]{7,12}$/);
+		Octane.prototype.addFilter('number',/^[-\d]+$/);
+        Octane.prototype.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
+        Octane.prototype.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
@@ -485,12 +508,12 @@
         }
         Library.prototype = new Pact();
        
-		octane.define({
+		Octane.prototype.define({
 			addLibrary : function(name,lib){
 				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
 			},
             library : function(name){
-                return octane.hasLibrary(name).then(function(data){
+                return Octane.prototype.hasLibrary(name).then(function(data){
                     return data;
                 });
             },
@@ -589,7 +612,7 @@
                             }
                             
                             var e = this.name+':statechange';
-                            octane.fire(e,{detail:updated});
+                            Octane.prototype.fire(e,{detail:updated});
                                 
                             // helpers
                             /* ------------------------------------------------------- */
@@ -636,7 +659,7 @@
 		
 	/* define Model on octane - bridge to private properties and methods */
 		
-		octane.define({
+		Octane.prototype.define({
 			model 		: function (name,options){
                 
                             if(_octane.models[name]){
@@ -688,7 +711,7 @@
 						$this.refresh();
 					});
 				
-				octane.handle('input click '+$this.model.name+':statechange',$this);
+				Octane.prototype.handle('input click '+$this.model.name+':statechange',$this);
 				$this.parse();    
 				$this.refresh();
 			})($this);
@@ -740,7 +763,7 @@
                             
                             // element hasn't been parsed yet
                             if(!el._guid){
-                                el._guid = octane.GUID();
+                                el._guid = Octane.prototype.GUID();
                                 el._bind = $bind;
                                 el._update = $update;
                                 el._filters = JSON.parse( el.getAttribute('o-filters') );
@@ -864,7 +887,7 @@
                 conditions = [
 					[
                         $model instanceof Model,
-                        'defined model is not an instance of octane.Model'
+                        'defined model is not an instance of Octane.prototype.Model'
                     ],[
                         $model.instanced,
                         'model '+model+' passed as argument was not initialized'
@@ -890,7 +913,7 @@
 			// add this Controller instance to the _octane's controllers object
 			(function(){
 				_octane.controllers[model] = $this;
-				octane.handle($this.model.name+':statechange',$this);
+				Octane.prototype.handle($this.model.name+':statechange',$this);
 			})();	
 		}
 		
@@ -1094,7 +1117,7 @@
 							}
 		});
 	
-		octane.define({
+		Octane.prototype.define({
 			controller 	: function (model){ 
                                 if(_octane.controllers[model]){
                                     return _octane.controllers[model];
@@ -1112,7 +1135,7 @@
         _octane.bootlog = [];
         function bootLog(message){
             _octane.bootlog.push(message);
-            octane.model('bootlog').set({
+            Octane.prototype.model('bootlog').set({
                 bootlog:_octane.bootlog,
                 status:message
             });
@@ -1237,11 +1260,11 @@
                                             configurable : false
                                         });
                                         bootLog(message[1]);
-                                        octane.goose('application',{
+                                        Octane.prototype.goose('application',{
                                             loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
                                         });
                                         // hook-in for updating a loading screen
-                                        octane.fire('loaded:module',{
+                                        Octane.prototype.fire('loaded:module',{
                                             detail:{moduleID: this.name }
                                         });
                                     }
@@ -1277,7 +1300,7 @@
             });
 		}
 		
-		// called at octane.initialize()
+		// called at Octane.prototype.initialize()
 		function initModules(options){
 			
 			options = options || {};
@@ -1313,7 +1336,7 @@
 		}
 		
         
-		octane.define({
+		Octane.prototype.define({
             
             module     : function(name,dependencies,$module){ 
                             return addModule(name,dependencies,$module);
@@ -1327,7 +1350,7 @@
 	/*                         CIRCUIT                         */
 	/* ------------------------------------------------------- */
         
-        octane.define({
+        Octane.prototype.define({
             // artificially start the uptake circuit
              goose : function(model,$dirty){
                         _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
@@ -1355,7 +1378,7 @@
             });
         
         
-        octane.define.call(octane.dom,{
+        Octane.prototype.define.call(Octane.prototype.dom,{
             container : function(){
                 return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
             },
@@ -1368,7 +1391,7 @@
             }
         });
         
-         octane.controller('application')
+         Octane.prototype.controller('application')
             .parser('loadingProgress',function($data){
                 var currentProgress = this.model.get('loadingProgress') || 0;
                 $data.loadingProgress = currentProgress + $data.loadingProgress;
@@ -1379,23 +1402,34 @@
 	/*                          INIT                           */
 	/* ------------------------------------------------------- */
         
-        octane.define({
-            initialize : function(options){ return init(options); }		
+        Octane.prototype.define({
+            initialize :init
 		});
         
 		function init (options){
 			options = options || {};
             
+            // don't reinitialize
+            if(Octane.prototype.initialized){
+                return;
+            } else {
+                Octane.prototype.define({
+                    initialized : true 
+                });
+            }
+            
+            octane.name = options.name;
+            
             // initialize utilities
             var 
-            utils = octane.library('startup-utilities') || {},
+            utils = Octane.prototype.library('startup-utilities') || {},
             utilsKeys = Object.keys(utils),
             util;
                 
             for(var u=0,U=utilsKeys.length; u<U; u++){
                 util = utilsKeys[u];    
                 // hook for the loading message
-                octane.fire('loading:utility',{detail:util});
+                Octane.prototype.fire('loading:utility',{detail:util});
                 // init utility
                _.isFunction(utils[util]) && utils[util].call();
             }
@@ -1405,21 +1439,20 @@
             }
             initModules(options).then(function(){
                 
-                octane.name = options.name || octane.name; 
                 // unhide the rest of content hidden behind the loader
                 setTimeout(function(){
-                    octane.dom.container().setAttribute('style','visibility:visible;'); 
+                    Octane.prototype.dom.container().setAttribute('style','visibility:visible;'); 
                 },1000);
                 // route to url-parsed view|| home
-                // var view = octane.parseView() || 'home';
-                //octane.route(view);
-                octane.fire('octane:ready');
+                // var view = Octane.prototype.parseView() || 'home';
+                //Octane.prototype.route(view);
+                Octane.prototype.fire('octane:ready');
             
             });
 		}
         
-       window.octane = window.$o = octane;
-
+        window.octane = window.$o = new Octane();
+        
 	})($,_,__);
 
 
