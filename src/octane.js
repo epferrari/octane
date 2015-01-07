@@ -292,15 +292,51 @@
        
        octane.define({
            
-			handle		: 	function(type,handler){
+			handle		: 	function(type,elem,handler){
                                 
-                                var types = type ? type.split(' ') : [];
-                                for(var i=0,n=types.length; i<n; i++){
-								    window.addEventListener(types[i],handler,false);
+                                handler = (arguments.length == 3) ? arguments[2] : arguments[1];
+                                
+                                var 
+                                types = type ? type.split(' ') : [],
+                                numArgs = new __.Switch();
+                               
+                                numArgs
+                                .addCase('2',function(type,handler){
+
+                                    window.addEventListener(types[i],handler,false);
                                     if( !_.isArray(_octane.eventRegister[types[i]]) ){ 
                                         _octane.eventRegister[types[i]] = [];
                                     }
-								    _octane.eventRegister[types[i]].push(handler);
+                                    _octane.eventRegister[types[i]].push(handler);
+
+                                })
+                                .addCase('3',function(type,handler,elem){
+
+                                    window.addEventListener(type,function(e){
+                                       
+                                        if(e.srcElement == elem){
+                                            var swatch = new __.Switch({
+                                                'function' : function(e){
+                                                   try{
+                                                       handler.apply(elem,[e]);
+                                                   }catch(exception){
+                                                       _octane.log(exception);
+                                                   }
+                                                },
+                                                'object' : function(elem,e){
+                                                    try{
+                                                        handler.handleEvent.apply(handler,[e]);
+                                                    }catch(exception){
+                                                        _octane.log(exception);
+                                                    }
+                                                }
+                                            }).run(__.typeOf(handler),[elem,e]);
+                                        }
+                                    });
+                                });
+                                
+                                for(var i=0,n=types.length; i<n; i++){
+                                    numArgs.run(arguments.length,[types[i],handler,elem]);   
                                 }
 							},
 			fire 		: 	function(type,detail){
@@ -308,7 +344,7 @@
 									var e = detail ? __.customEvent(type,detail) : __.createEvent(type);
 									window.dispatchEvent(e);
 								}
-							}	
+							}                           
 		});
 	
         
