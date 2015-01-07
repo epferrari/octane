@@ -5,11 +5,11 @@ octane.module(
     ['viewLoadAnimations','viewExitAnimations'],
     function(cfg){
             
-            var 
-            Base = octane.constructor,
-            $Views = {},
-            $loads = octane.viewLoadAnimations,
-            $exits = octane.viewExitAnimations;
+        var 
+        Base = octane.constructor,
+        $Views = {},
+        $loads = octane.viewLoadAnimations,
+        $exits = octane.viewExitAnimations;
     
             
 

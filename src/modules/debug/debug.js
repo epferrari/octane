@@ -22,7 +22,7 @@
                _octane.log(message);
            },
            getLog : function(){ 
-                return _octane.getLogfile();
+                return _octane.getLog();
             }   
         });
     });
