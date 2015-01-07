@@ -38,18 +38,62 @@ octane.module(
         var isRouting,
             currentView,
             // store routes called while another route is executing its loading animation
-           routesQueue = [];
+           routesQueue = [],
+            // conditions under which the route should be called, added with .routeIf()
+           routeConditions = {};;
+        
+        // add a condition that needs to be true for the route to run
+        function routeIf(viewID,condition,failCallback){
+           
+            if(!_.isArray(routeConditions[viewID])){
+                routeConditions[viewID] = [];
+            }
+            if(_.isFunction(condition)){
+                condition = condition;
+            } else {
+                condition = function(){return true;};
+                octane.error('condition passed to .routeIf() for must be a function. View ID: '+viewID);
+            }
+            
+            routeConditions[viewID].push({
+                condition : condition,
+                onFail    : failCallback
+            });
+        }
+            
+        // add a callback to be executed when the specified view finishes its loading animation 
+        function routeThen(viewID,callback){
 
+            octane.view(viewID) && octane.view(viewID).addCallback(callback);
+            return octane;
+        }
+        
         // @param id [str]: id of the o-view to be called
         // @param callback [fn]: a function to be executed when the loading animation finishes
-        // 	function's thisArg is bound to the view called
+        // function's thisArg is bound to the view called
         // @param ghost [bool]: do not update the history with the view (default false)
-        function route(id,ghost){
-
+        function route(viewID,ghost){
             return new Promise(function(resolve,reject){
-
+                
                 ghost = _.isBoolean(ghost) ? ghost : false;
-                var $view = octane.view(id);
+                var 
+                $view = octane.view(viewID),
+                conditions = routeConditions[viewID];
+                
+                if(conditions){
+                    
+                    for(var c=0,C=conditions.length; c<C; c++){
+                        if(conditions[c].condition()){
+                            // meets routing condition
+                            continue;
+                        }else{
+                            // does not meet routing condition, call fail callback
+                            _.isFunction(conditions[c].onFail) && conditions[c].onFail();
+                            reject('Routing condition not fulfilled for route "'+viewID+'"');
+                            return;
+                        }
+                    }
+                }
 
                 // ensure the onscreen view isn't reanimated
                 //////////////////////////////////////////////////////////////////////////////////////
@@ -74,12 +118,14 @@ octane.module(
                                     });                                             //      //      //
                                 });                                                 //      //      //
                             }else{                                                  //      //      //
-                                loadView($view,ghost).done(resolve);                //      //      // 
+                                loadView($view,ghost)                               //      //      //
+                                    .then(resolve)                                  //      //      //
+                                    .catch(octane.log);                             //      //      //
                             }                                                       //      //      //
                         //////////////////////////////////////////////////////////////      //      //
                                                                                             //      //
                         }else{                                                              //      //
-                            if(!__.inArray(routesQueue,id)){routesQueue.push(id);}          //      //
+                            if(!__.inArray(routesQueue,viewID)){routesQueue.push(viewID);}  //      //
                         }                                                                   //      //
                     //////////////////////////////////////////////////////////////////////////      //
                                                                                                     //
@@ -91,6 +137,7 @@ octane.module(
 
             });
         }
+        
         // helper
         function loadView($view,ghost){
 
@@ -112,19 +159,11 @@ octane.module(
 
                  });
              });
-       }  
+        }  
+        
+        function remove(viewID){
 
-
-        // add a callback to be executed when the specified view finishes its loading animation 
-        function routeThen(id,callback){
-
-            octane.view(id) && octane.view(id).addCallback(callback);
-            return octane;
-        }
-
-        function remove(id){
-
-            octane.view(id) && octane.view(id).exit();
+            octane.view(viewID) && octane.view(viewID).exit();
             octane.goose('application',{currentView:''});
         }
 
@@ -135,16 +174,17 @@ octane.module(
             var n = btns.length;
 
             while(n--){
-
                 // closure to capture the button and route during the loop
                setRoutingButtonsHelper(btns[n]);
             }
         }
 
-        function setRoutingButtonsHelper(btn,route){
+        function setRoutingButtonsHelper(btn){
             var route = btn.getAttribute('o-route');
             btn.addEventListener('click',function(){
-                octane.route(route);
+                octane.route(route)
+                    .then()
+                    .catch(octane.log);
             });
          }
 
@@ -187,7 +227,12 @@ octane.module(
             // change the view with browser's forward/back buttons
             window.addEventListener(stateChangeEvent,function(){       
                 var view = parseView();
-                view && octane.route(view).done( function(){} );
+                view && octane.route(view).then( function(){
+                    //
+                })
+                .catch(function(ex){
+                    octane.log(ex);
+                })
             });
             // resize canvas to proper dimensions
             octane.handle('translated resize orientationchange',function(){
@@ -197,24 +242,15 @@ octane.module(
 
         // Router Public API				
         octane.define({
-            parseView       : function(){
-                                    return parseView();
-                                },
-            route			: function(id,ghost){
-                                    return route(id,ghost);
-                                },
-            routeThen		: function(id,callback){
-                                    return routeThen(id,callback);
-                                },
-            exit			: function(id){
-                                    return remove(id);
-                                },
-            pushState		: function (params){
-                                     pushState(params);
-                                },
-            currentView      : function(){
-                                return currentView;
-                                }
+            parseView       : parseView,
+            route			: route,
+            routeIf         : routeIf,
+            routeThen		: routeThen,
+            exit			: remove,
+            pushState		: pushState,
+            currentView     : function(){
+                                return currentView
+                            }
         });
 
 
