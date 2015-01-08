@@ -101,7 +101,10 @@
                                 if(overwrite){ // do overwrite
                                     this[key] = obj[key];	
                                 }else { // only write undefined properties
-                                    if(!(this[key])) { this[key] = obj[key]; }	
+                                    if(!(this[key])) {
+                                        var $this = this;
+                                        this[key] = _.isFunction(obj[key]) ? obj[key].bind($this) : obj[key];
+                                    }	
                                 }
 							}
 						}
@@ -208,8 +211,6 @@
             
                 resolve = _.isFunction(resolve) ? resolve : function(){};
                 reject = _.isFunction(reject) ? reject : function(){};
-                //!_.isFunction(resolve.then) && resolve.prototype = new Pact();
-                //!_.isFunction(reject.then) && reject.prototype = new Pact();
                 
                 this.resolveCallbacks.push(resolve);
                 this.rejectCallbacks.push(reject);
@@ -582,14 +583,25 @@
 		Model.prototype = new Base();
         Model.prototype.constructor = Model;
 		Model.prototype.define({
-			set	: function(fresh){
-							if(!_.isObject(fresh) || !_.isObject(this.state)) return;
+			set	: function(){
+                
+                            var fresh;
+							
+                            if(_.isString(arguments[0])){
+                                fresh = {};
+                                fresh[arguments[0]] = arguments[1];
+                            } else if(_.isObject(arguments[0])){
+                                fresh = arguments[0];
+                            } else {
+                                return;
+                            }
 							
 							// array for state properties changed
 							var
                             updated = [],
                             $state 	= this.state,
                             keyStringsToParse = Object.keys(fresh);
+                            
                             
                             for(var i=0,n=keyStringsToParse.length; i<n; i++){
                                 
@@ -613,6 +625,8 @@
                             
                             var e = this.name+':statechange';
                             Octane.prototype.fire(e,{detail:updated});
+                
+                            return fresh;
                                 
                             // helpers
                             /* ------------------------------------------------------- */
@@ -654,7 +668,14 @@
             process      : function($dirty){
                                 
                             _octane.controllers[this.name] && _octane.controllers[this.name].doFilter($dirty);
-                }
+                        },
+            controller   : function(){
+                                if(_octane.controllers[this.name]){
+                                    return _octane.controllers[this.name];
+                                } else {
+                                    return new Controller(this.name,this.context);
+                                }
+                            }
 		});
 		
 	/* define Model on octane - bridge to private properties and methods */
@@ -757,7 +778,12 @@
                                 if(o_update.length > 0 && o_update.indexOf("{") !== 0){
                                     $update[o_update] = 'html';
                                 } else {
-                                    $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
+                                    try{
+                                        $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
+                                    }catch(exc){
+                                        octane.log(exc);
+                                        octane.error('JSON.parse() could not parse o-update string. ViewModel.parse() on element '+el);
+                                    }
                                 }
                             }
                             
@@ -834,7 +860,7 @@
                                     
                                     function update(el,attribute,fresh){
 
-                                        var attrs = new __.Switch({
+                                        var o_update = new __.Switch({
                                             'html' : function(){
 
                                                         el.innerHTML = fresh;
@@ -846,7 +872,7 @@
                                                         el.setAttribute(attribute,fresh);
                                                     }
                                         });
-                                        attrs.run(attribute);
+                                        o_update.run(attribute);
                                     }
                                 
                                 /* ------------------------------------------------------- */
@@ -976,7 +1002,8 @@
                                 this.hooks[o_bind] = new __.Switch(caseObject);
                                 return this; // chainable
                             },
-            // add as function(keyString,data)
+            // param 1 : a model key or array of model keys to listen for change on
+            // add param 2 as function(model key,data held in model[key])
 			task   : 	function(o_bind,func){
 				                
 								var 
