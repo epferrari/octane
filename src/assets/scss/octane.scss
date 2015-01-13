@@ -1,6 +1,9 @@
+@import '_mixins';
 @import '../../modules/router/scss/_router';
 @import '../../modules/router/scss/_view';
 @import '../../modules/translator/scss/_translator';
+
+//@import '../../modules/modals/scss/_modals';
 
 html,body{
     height:100%
@@ -21,7 +24,7 @@ div.row{
 }
 
 o-container{
-     overflow-x:hidden;
+    overflow-x:hidden;
     overflow-y:hidden;
     visibility:hidden;
 }
@@ -41,12 +44,39 @@ o-view {
     overflow-x:hidden;
 }
 
+o-modal {
+    @extend o-view;
+    height:100%;
+    width:100%;
+    top:0;
+    left:0;
+    right:0;
+}
 
+#o-modal-background {
+    background-color:black;
+    position:fixed;
+    height:100%;
+    width:100%;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    display:none;
+    @include opacity(0.6);
+    &.o-modal-active{
+        z-index:999999998;
+        display:block;
+    }       
+}
 
 .o-btn {
 	cursor:pointer;
 }
 
 
-
+.blur{
+    -webkit-filter:blur(2px);
+}
+    
 

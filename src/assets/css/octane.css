@@ -1,4 +1,9 @@
 /* Scss Document */
+/* one off for responding to width changes */
+/* add breakpoint widths to any element */
+/* for gradients, just add variables (use percentages for opacity!!) 
+c1-pos = color1 position, i.e. top, bottom. op-c1 = color1 opacity, and so forth */
+/* Scss Document */
 o-control#translator {
   list-style: none;
   padding: 0px;
@@ -107,7 +112,7 @@ o-canvas {
   display: block;
   width: 100%; }
 
-o-view {
+o-view, o-modal {
   position: absolute;
   visibility: hidden;
   display: none;
@@ -115,7 +120,34 @@ o-view {
   width: 100%;
   overflow-x: hidden; }
 
+o-modal {
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0; }
+
+#o-modal-background {
+  background-color: black;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  opacity: 0.6;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+  filter: alpha(opacity=60); }
+  #o-modal-background.o-modal-active {
+    z-index: 999999998;
+    display: block; }
+
 .o-btn {
   cursor: pointer; }
+
+.blur {
+  -webkit-filter: blur(2px); }
 
 /*# sourceMappingURL=octane.css.map */
