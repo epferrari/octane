@@ -2,7 +2,7 @@
 
 octane.module(
     'router',
-    ['octane-views'],
+    ['oView'],
     function (cfg) {
 	
         // octane's own pushstate method
@@ -35,12 +35,29 @@ octane.module(
             );
         }
 
-        var isRouting,
-            currentView,
-            // store routes called while another route is executing its loading animation
-           routesQueue = [],
-            // conditions under which the route should be called, added with .routeIf()
-           routeConditions = {};;
+        var 
+        enRoute = null,
+        routingBlocked = false,
+        currentView,
+        // store routes called while another route is executing its loading animation
+        routesQueue = [],
+        // conditions under which a route should be called, added with .routeIf()
+        routeConditions = {};
+        
+        // block routing, incoming routes go to queue
+        octane.handle('block:routing',function(){
+            routingBlocked = true;
+        });
+        // release block and route from queue
+        octane.handle('unblock:routing',function(){
+            routingBlocked = false;
+            //( routesQueue.length > 0 ) && route(routesQueue.pop());
+            var lastRouteRequested = routesQueue.pop();
+            routesQueue = [];
+            route(lastRouteRequested).catch(function(ex){
+               octane.log(ex);
+            });  
+        });
         
         // add a condition that needs to be true for the route to run
         function routeIf(viewID,condition,failCallback){
@@ -73,93 +90,109 @@ octane.module(
         // function's thisArg is bound to the view called
         // @param ghost [bool]: do not update the history with the view (default false)
         function route(viewID,ghost){
-            return new Promise(function(resolve,reject){
+            return new Promise(function(resolve,reject){  
                 
                 ghost = _.isBoolean(ghost) ? ghost : false;
                 var 
-                $view = octane.view(viewID),
-                conditions = routeConditions[viewID];
+                $view = octane.view(viewID);
                 
-                if(conditions){
-                    
-                    for(var c=0,C=conditions.length; c<C; c++){
-                        if(conditions[c].condition()){
-                            // meets routing condition
-                            continue;
-                        }else{
-                            // does not meet routing condition, call fail callback
-                            _.isFunction(conditions[c].onFail) && conditions[c].onFail();
+                
+
+            // ensure the onscreen view isn't reanimated
+            //////////////////////////////////////////////////////////////////////////////////////
+                                                                                                //
+                if( $view && $view != currentView){                                             //
+                                                                                                //
+                // ensure a route isn't triggered while another route is animating              //
+                // or while routing has been blocked by another module                          //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                        //      //
+                    if(!enRoute && !routingBlocked){                                    //      //
+                                                                                        //      //
+                        if(!checkRouteIf(viewID)){
                             reject('Routing condition not fulfilled for route "'+viewID+'"');
                             return;
-                        }
-                    }
-                }
-
-                // ensure the onscreen view isn't reanimated
-                //////////////////////////////////////////////////////////////////////////////////////
-                                                                                                    //
-                    if( $view && $view != currentView){                                             //
-                                                                                                    //
-                    // ensure a route isn't triggered while another route is animating              //
-                    //////////////////////////////////////////////////////////////////////////      //
-                                                                                            //      //
-                        if(!isRouting){                                                     //      //
-                                                                                            //      //
-                            isRouting = true;                                               //      //
-                                                                                            //      //
-                        // exit the current view before calling a new view                  //      //
-                        //////////////////////////////////////////////////////////////      //      //
-                                                                                    //      //      //
-                            if(currentView){                                        //      //      //
-                                currentView.exit().done(function(){                 //      //      // 
-                                    loadView($view,ghost).done(function(result){    //      //      //
-                                        octane.fire('routed:view');                 //      //      //
-                                        resolve(result);                            //      //      //
-                                    });                                             //      //      //
-                                });                                                 //      //      //
-                            }else{                                                  //      //      //
-                                loadView($view,ghost)                               //      //      //
-                                    .then(resolve)                                  //      //      //
-                                    .catch(octane.log);                             //      //      //
-                            }                                                       //      //      //
-                        //////////////////////////////////////////////////////////////      //      //
-                                                                                            //      //
-                        }else{                                                              //      //
-                            if(!__.inArray(routesQueue,viewID)){routesQueue.push(viewID);}  //      //
-                        }                                                                   //      //
-                    //////////////////////////////////////////////////////////////////////////      //
-                                                                                                    //
-                    }else{                                                                          //
-                        resolve();                                                                  //
-                    }                                                                               //
-                                                                                                    //
-                //////////////////////////////////////////////////////////////////////////////////////
+                        }                                                               //      //
+                                                                                        //      //
+                        octane.fire('routing:begin');                                   //      //
+                                                                                        //      //
+                        enRoute = viewID;                                               //      //
+                                                                                        //      //
+                    // exit the current view before calling a new view                  //      //
+                    //////////////////////////////////////////////////////////////      //      //
+                                                                                //      //      //
+                        if(currentView){                                        //      //      //
+                            currentView.exit()                                  //      //      //
+                                .then(function(){                               //      //      //
+                                    return loadView($view,ghost);               //      //      //
+                                })                                              //      //      //
+                                .then(resolve)                                  //      //      //
+                                .catch(octane.log);                             //      //      //
+                        }else{                                                  //      //      //
+                            loadView($view,ghost)                               //      //      //
+                                .then(resolve)                                  //      //      //
+                                .catch(octane.log);                             //      //      //
+                        }                                                       //      //      //
+                    //////////////////////////////////////////////////////////////      //      //
+                                                                                        //      //
+                    }else{                                                              //      // 
+                        if(!__.inArray(routesQueue,viewID) && viewID !== enRoute){      //      //
+                            routesQueue.push(viewID);                                   //      //
+                        }                                                               //      //
+                    }                                                                   //      //
+                //////////////////////////////////////////////////////////////////////////      //
+                                                                                                //
+                }else{                                                                          //
+                    resolve();                                                                  //
+                }                                                                               //
+                                                                                                //
+            //////////////////////////////////////////////////////////////////////////////////////
 
             });
         }
         
         // helper
         function loadView($view,ghost){
-
-             return new Promise(function(resolve,reject){
-
-                $view.load().done(function(){
-                    !ghost && pushState({view:$view.id});
-
-                    // update the current biew
-                    currentView = $view;
-                    // update current view in global state, jumpstart Circuit                          
-                    octane.goose('application',{ currentView : $view.id });
-                    // flag the route complete
-                    isRouting = false;
-                    // resolve this route
-                    resolve();
-                    // route next view
-                    (routesQueue.length > 0) && route(routesQueue.pop());
-
-                 });
+            octane.fire('view:loading');
+            
+            return $view.load().then(function(){
+                
+                octane.fire('view:loaded');
+                !ghost && pushState({view:$view.id});
+                // update the current view
+                currentView = $view;
+                // update current view in global state, jumpstart Circuit                          
+                octane.goose('application',{ currentView : $view.id });
+                // flag this route complete
+                enRoute = null; 
+               // check for queued routes
+                if(routesQueue.length > 0){
+                     // route next view
+                    route(routesQueue.pop());
+                } else{
+                    // signal to any blocking listeners that routing is complete
+                    octane.fire('routing:complete');
+                }
              });
         }  
+        
+        // helper
+        function checkRouteIf(viewID){
+                    
+            var conditions = routeConditions[viewID] || [];
+
+                for(var c=0,C=conditions.length; c<C; c++){
+                    if(conditions[c].condition()){
+                        // meets routing condition
+                        continue;
+                    }else{
+                        // does not meet routing condition, call fail callback
+                        _.isFunction(conditions[c].onFail) && conditions[c].onFail();
+                        return false;
+                    }
+                }
+                return true;
+        }
         
         function remove(viewID){
 
@@ -243,7 +276,11 @@ octane.module(
         // Router Public API				
         octane.define({
             parseView       : parseView,
-            route			: route,
+            route			: function(viewID,ghost){
+                                return route(viewID,ghost).catch(function(ex){
+                                    octane.log(ex);
+                                });
+                            },
             routeIf         : routeIf,
             routeThen		: routeThen,
             exit			: remove,
