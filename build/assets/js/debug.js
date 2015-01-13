@@ -18,9 +18,6 @@
            getEvents	: function(){
                return _octane.eventRegister;
            },
-           log : function(message){
-               _octane.log(message);
-           },
            getLog : function(){ 
                 return _octane.getLog();
             }   

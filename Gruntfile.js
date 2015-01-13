@@ -57,7 +57,7 @@ module.exports = function(grunt) {
 		},
 		sass:{
 			watchMe:"src/**/*.scss",
-			octane:["src/assets/scss/*.scss","!src/assets/scss/devdocs.scss"],
+			octane:["src/assets/scss/octane.scss","!src/assets/scss/devdocs.scss"],
 			devdocs:"src/assets/scss/devdocs.scss"
 		},
 			

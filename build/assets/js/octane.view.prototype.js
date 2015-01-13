@@ -1,40 +1,20 @@
-// set-up for Views constructor
-
-octane.module(
-    'octane-views',
+octane.module('viewPrototype',
     ['viewLoadAnimations','viewExitAnimations'],
     function(cfg){
-            
-        var 
-        Base = octane.constructor,
-        $Views = {},
-        $loads = octane.viewLoadAnimations,
-        $exits = octane.viewExitAnimations;
     
+        var
+        $loads = this.import('viewLoadAnimations'),
+        $exits = this.import('viewExitAnimations');
+        
+        this.export({
             
-
-    /* ------------------------------------------------------- */
-    //  Application View Constructor
-    //
-    // @param id [string] id attribute of 'o-view' DOM element
-    // options : {starts:'left',loads:['slide','left','swing',500], exits:['slide','right','swing',500]}
-    // 
-    // @option starts: initial postion of the ViewFrame, default is left
-    // @option loads[from,easing,duration]
-    // @opton exits[to,easing,duration]
-    /* ------------------------------------------------------- */
-
-        function View(id,config){
-            if(!_.isString(id)) return {instanced:false};
-
-            config = _.isObject(config) ? config : {};
-
-            var $this = this,
-                // private properties
+            configure : function(config){
+                var        
                 positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
                 loadConfig = _.isObject(config.loads),
-                exitConfig = _.isObject(config.exits),
-                cfg = {
+                exitConfig = _.isObject(config.exits);
+
+                this.define({
                     loadsBy         : loadConfig && config.loads.by || 'slide',
                     loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'left',
                     loadEasing      : loadConfig && config.loads.ease || 'swing',
@@ -44,44 +24,22 @@ octane.module(
                     exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'right',
                     exitEasing      : exitConfig && config.exits.ease || 'swing',
                     exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
-                };
-
-            this.define(cfg);
-
-            this.define({
-
-                instanced	: true,
-                id			: id,
-                elem		: document.getElementById(id),
-                $elem 		: $('o-view#'+id),
-                _guid		: octane.GUID(),
-                doneLoading : [],
-                addCallback : function(callback){
-                                _.isFunction(callback) && this.doneLoading.push(callback);
-                            }					
-            });
-
-            this.setPosition(this.loadsFrom);
-        }
-
-        View.prototype = new Base('octane View');
-
-        View.prototype.define({
-            constructor : View,
-
+                });
+            },
+            
             handleEvent : function(e){
-                    switch(e.type){
-                        case 'translated':
-                            this.setCanvasHeight();
-                            break;
-                        case 'resize':
-                            this.setCanvasHeight();
-                            break;
-                        case 'orientationchange':
-                            this.setCanvasHeight();
-                            break;  
-                    }
-                },
+                switch(e.type){
+                    case 'translated':
+                        this.setCanvasHeight();
+                        break;
+                    case 'resize':
+                        this.setCanvasHeight();
+                        break;
+                    case 'orientationchange':
+                        this.setCanvasHeight();
+                        break;  
+                }
+            },
 
             load : function(){
 
@@ -94,7 +52,7 @@ octane.module(
                     $this.$elem.css({
                         "visibility":"visible",
                         'display':'block',
-                        'z-index':999999999
+                        'z-index':octane.dom.zIndexView
                     });
                     if($this.loadsBy !== 'fade'){
                         $this.$elem.css({
@@ -130,7 +88,7 @@ octane.module(
 
                     // make sure the view is hidden in its loadFrom position
                     $this.$elem.css({
-                            'z-index':-1,
+                            'z-index':octane.dom.zIndexHidden,
                             'visibility':'hidden',
                             'display':'none',
                             'opacity':0
@@ -209,34 +167,23 @@ octane.module(
                     resolve();
                 });
             },
-
-            doCallbacks : function (){
-                    var $this = this,
-                        callbacks = this.doneLoading;
-
-                    for (var i=0,n = callbacks.length; i < n; i++){
-                        _.isFunction(callbacks[i]) && callbacks[i].bind($this)();
-                    }
-            }
-
-        });
-        
-        function initialize(){
             
-            var $views = octane.dom.views();
-            // bind html views to View objects		
-            for(var i=0,n=$views.length; i<n; i++){
-                id = $views[i].id;
-                config = JSON.parse($views[i].getAttribute('o-config'));
-                !$Views[id] && ($Views[id] = new View(id,config));
-            }
-            octane.define({
-                view : function(id){
-                    return $Views[id] || false;
+            addCallback : function(callback){
+                try{
+                   this.doneLoading.push(callback);
+                }catch(exc){
+                    octane.error('cannot push callback, '+exc.message);
                 }
-            });
-        }
-    
-        initialize();
-                
-        });
+            },
+            
+            doCallbacks : function (){
+                var $this = this,
+                    callbacks = this.doneLoading;
+
+                for (var i=0,n = callbacks.length; i < n; i++){
+                    _.isFunction(callbacks[i]) && callbacks[i].bind($this)();
+                }
+            }
+
+        }); // end .define
+    }); // end module

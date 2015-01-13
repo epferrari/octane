@@ -4,7 +4,7 @@
 		
     octane.module('viewLoadAnimations',function(){
             
-        this.define({
+        this.export({
 
             applyLoading : function(resolve){},
 
@@ -37,7 +37,7 @@
                                     },
                                     'bottom':function(){
                                         $view.velocity(
-                                            {"bottom":"0%"},
+                                            {"top":"0%"},
                                             $config
                                         );
                                     }

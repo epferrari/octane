@@ -5,7 +5,7 @@
 
     octane.module('viewExitAnimations',function(){
 
-            this.define({
+            this.export({
 
                 removeLoading : function(resolve){},
 

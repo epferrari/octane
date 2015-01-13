@@ -297,7 +297,11 @@
             this.message = message || 'An Octane error occurred.';
             this.stack = Error().stack;
         }
-        
+        Octane.prototype.define({
+            log : function(message){
+                Octane.prototype.hasModule('debug') && _octane.log(message);
+            }
+        });
         OctaneError.prototype = Object.create(Error.prototype);
         OctaneError.prototype.constructor = OctaneError;
         OctaneError.prototype.name = 'OctaneError';
@@ -307,7 +311,142 @@
                  throw new OctaneError(message);
              }
         });
+    
+    /* ------------------------------------------------------- */
+	/*                     XMLHttpRequest                      */
+	/* ------------------------------------------------------- */
+        
+    
+        Octane.prototype.define({
+            
+            xhr : function(cfg){
+                    return new Promise(function(RESOLVE,REJECT){
+
+                        var
+                        xhr,
+                        error,
+                        params = {
+                            url : false,
+                            type : 'POST',
+                            send : null,
+                            responseType : 'text',
+                        };
+
+                        if(_.isString(cfg) && cfg.length !== 0){
+                           params.url = cfg;
+                        } else if(_.isObject(cfg)){
+                            Octane.prototype.extend(params,cfg);
+                        } else {
+                            error = Octane.prototype.error('Octane.ajax must have a url');
+                            REJECT(error);
+                            return;
+                        }
+
+                        if (window.XMLHttpRequest) {
+                          xhr = new XMLHttpRequest();
+                        } else if (window.ActiveXObject){
+                            try {
+                                xhr = new ActiveXObject("Msxml2.XMLHTTP");
+                            }catch(e){
+                                try {
+                                    xhr = new ActiveXObject("Microsoft.XMLHTTP");
+                                }catch(e){
+                                    error = Octane.prototype.error('Could not create XMLHttpRequest '+e.message);
+                                    REJECT(error);
+                                }
+                            }
+                        }
+
+                        xhr.onreadystatechange = checkRequest;
+                        xhr.open(params.type,params.url);
+                        xhr.send(params.send);
+
+                        function checkRequest(){
+                            if(xhr.readyState === 4){
+                                new __.Switch({
+                                    '200' : function(xhr,params,RESOLVE,REJECT){
+                                         var response;
+                                        
+                                        if(params.responseType == ('json' || "JSON")){
+                                            response = returnJSON(xhr.responseText);
+                                        } else {
+                                            response = xhr.responseText;
+                                        }
+                                        response ? 
+                                            RESOLVE(response) :
+                                            REJECT(Octane.prototype.error('Error parsing response as JSON: Octane.ajax()')); 
+                                    },
+                                    '404' : function(){
+                                        REJECT(Octane.prototype.error('The server responded with 400 not found'));
+                                    },
+                                    '500' : function(){
+                                         REJECT(Octane.prototype.error('An internal server error occurred'));
+                                    }
+                                }).run(xhr.status,[xhr,params,RESOLVE,REJECT]);
+                            }
+                        }
+
+                        function returnJSON(response){
+
+                            try{
+                                return JSON.parse(response);
+                            }catch(e){
+                                return false;
+                            }
+                        }
+                    }); // end Promise()
+                }, // end Octane.xhr()
+            getLibrary : function(url,fn){
+                return new Promise(function(resolve,reject){
+                     
+                    var
+                    script,
+                    content,
+                    cleanURL = url.replace(/[.\/:]/g,'_'),
+                    loaded = document.querySelectorAll('script#'+cleanURL);
+                    
+                    if(loaded.length !== 0){
+                        // script is loaded
+                        Octane.prototype.hasLibrary(cleanURL).then(resolve,reject);
+                    } else {
+                        
+                        Octane.prototype.handle('script:loaded:'+cleanURL,function(){
+                            content = _octane.cacheJSON.pop();
+                            Octane.prototype.addLibrary(cleanURL,content).then(resolve,reject);
+                        });
+                        Octane.prototype.handle('script:failed:'+cleanURL,function(){
+                            reject('Script failed to load from '+url);
+                        });
+                        
+                        script = document.createElement('script');
+                        script.id = cleanURL;
+                        script.src = url;
+                        script.onload = function(){
+                            Octane.prototype.fire('script:loaded:'+cleanURL);
+                        };
+                        script.onerror = function(){
+                            Octane.prototype.fire('script:failed:'+cleanURL);
+                        };
+                        
+                        document.body.appendChild(script);
+                    }
+                });
+            },
+            jsonp : function(json){
+                if(_.isString(json)){
+                    try{
+                        json = JSON.parse(json);
+                    }catch(exc){
+                       Octane.prototype.error('failed to parse JSON from Octane.jsonp() '+exc.message); 
+                    }
+                } 
+                if(_.isObject(json)){
+                    _octane.cacheJSON.push(json);
+                }       
+            }       
+        });
       
+        _octane.cacheJSON = [];
         
 	/* ------------------------------------------------------- */
 	/*                          EVENTS                         */
@@ -511,7 +650,12 @@
        
 		Octane.prototype.define({
 			addLibrary : function(name,lib){
-				_octane.libraries[name] = _.isObject(lib) ? new Library(name,lib) : {};
+                if(_.isObject(lib)){
+				    return _octane.libraries[name] = new Library(name,lib);
+                } else {
+                    return Promise.reject('could not create library '+name+'. Data was not an object');
+                }
+                
 			},
             library : function(name){
                 return Octane.prototype.hasLibrary(name).then(function(data){
@@ -1167,14 +1311,46 @@
                 status:message
             });
         }
+        _octane.moduleExports = {};
         
 		function Module (cfg) { 
 			this.extend(cfg);
 		}
         
 		Module.prototype = new Base();
+        Module.prototype.extend({
+            constructor         : Module
+        });
         Module.prototype.define({
-               
+             import           :   function(module){
+                                    return _octane.moduleExports[module];
+                                },
+             export          :   function(exports){
+                                    if(!_.isObject(_octane.moduleExports[this.name])){
+                                        _octane.moduleExports[this.name] = {};
+                                    }
+                                    try{
+                                        Octane.prototype.extend.apply(_octane.moduleExports[this.name],[exports]);
+                                    }catch (exc){
+                                        Octane.prototype.error('Could not create extend exports, '+this.name+' module. '+exc.message);
+                                    }
+                                },
+             model			:	function (name,options){
+                                    if(_octane.models[name]){
+                                        return _octane.models[name];
+                                    }else{  
+                                         options = _.isObject(options) ? options : {};
+                                         options.context = this.name+' module';
+                                         return new Model(name,options);
+                                    }
+								},
+            controller		:	function (model){ 
+                                     if(_octane.controllers[model]){
+                                        return _octane.controllers[model];
+                                    }else{
+                                        return new Controller(model,this.name+' module');
+                                    } 
+                                },
             _checkDependencies : function(){
                                     
                                     var 
@@ -1276,10 +1452,13 @@
                                         bootLog(message[0]);
                                         this.constructor.prototype = new Module({name:this.name});
                                             
-                                        this.define({
+                                        this
+                                        .define({
                                             loaded : true,
                                             name    : this.name,
-                                        }).define(this.constructor.__construct(this.cfg));
+                                            exports : this.constructor.prototype.exports
+                                        })
+                                        .define(this.constructor.__construct(this.cfg));
 
                                         Object.defineProperty(octane,$this.name, {
                                             value :$this,
@@ -1296,22 +1475,6 @@
                                         });
                                     }
                                     return Promise.resolve(this);
-                                },
-            model			:	function (name,options){
-                                        if(_octane.models[name]){
-                                            return _octane.models[name];
-                                        }else{  
-                                             options = _.isObject(options) ? options : {};
-                                             options.context = this.name+' module';
-                                             return new Model(name,options);
-                                        }
-									},
-            controller		:	function (model){ 
-                                     if(_octane.controllers[model]){
-                                        return _octane.controllers[model];
-                                    }else{
-                                        return new Controller(model,this.name+' module');
-                                    } 
                                 }
         });
         
@@ -1415,7 +1578,11 @@
             },
             views    : function(){
                 return document.getElementsByTagName('o-view') || [];
-            }
+            },
+            zIndexOverlay   : 999999999,
+            zIndexMenu      : 99999998,
+            zIndexView      : 99999997,
+            zIndexHidden    : -1
         });
         
          Octane.prototype.controller('application')
