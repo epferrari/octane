@@ -10,6 +10,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-bower-concat');
 	grunt.loadNpmTasks('grunt-html-build');
+    grunt.loadNpmTasks('grunt-postcss');
+    grunt.loadNpmTasks('grunt-autoprefixer');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	
     var src = {
@@ -113,7 +115,9 @@ module.exports = function(grunt) {
 		fonts:{
 			dir:"dist/assets/fonts/"
 		}
-	};       
+	};
+    
+    var autoprefixer = require('autoprefixer-core');
     
   	// Project configuration.
 	grunt.initConfig({
@@ -152,7 +156,7 @@ module.exports = function(grunt) {
 							}]
 						}
 					},
-		
+        
 		// concat js and css files and save them to staging/
 		// staged for minification
 		concat:     {
@@ -168,6 +172,29 @@ module.exports = function(grunt) {
 							dest	: dist.css.main
 						}
 					},
+        /*
+        postcss:    {
+                        options:{
+                            processors:[
+                                autoprefixer(['last 2 versions','ie9','ie10']).postcss
+                            ]
+                        },
+                        dist : {
+                            src : dist.css.main
+                        }
+                    },
+         */
+        
+        autoprefixer : {
+                        
+                        options : {
+                            browsers:['last 2 versions','ie 9','ie 10']
+                        },
+                        dist:{
+                            src : dist.css.main,
+                            dest: dist.css.main
+                        }
+                    },
 		
 		uglify:		{
 						dist:{
@@ -388,6 +415,9 @@ module.exports = function(grunt) {
 		// concat all js/css
         // do not include bower dependencies
 			'concat',
+        
+        // post process css with auto prefixer
+            'autoprefixer:dist',
 			
 		// minify js/css into release directory
 			'cssmin',
