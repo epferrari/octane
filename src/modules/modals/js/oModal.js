@@ -9,7 +9,8 @@ octane.module(
         $loads = this.import('viewLoadAnimations'),
         $exits = this.import('viewExitAnimations'),
         $Modals = {},
-        modalBG = document.createElement('div');
+        modalBG = document.createElement('div'),
+        modalBgHelper = document.createElement('div');
             
 
 
@@ -26,7 +27,7 @@ octane.module(
                 elem		: elem,
                 $elem 		: $(elem),
                 _guid		: octane.GUID(),
-                doneLoading : [],					
+                doneLoading : []					
             });
             this.setPosition(this.loadsFrom);
 
@@ -60,65 +61,39 @@ octane.module(
                                 exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
                             });
                         },
-            exit        : function(){
-                            var $this = this;
-                            return $viewProto.exit.bind(this)().then(function(){
-                                $(modalBG)
-                                    .removeClass('o-modal-active')
-                                    .velocity({
-                                        opacity : 0
-                                    },{
-                                            easing    : $this.loadEasing,
-                                            duration  : $this.loadDuration,
-                                            display   : 'none'
-                                    });
-                                    
-                                $('o-container>header, o-container>o-canvas, o-container>div').removeClass('blur');
-                                
-                            });
-                        },
             setPosition : $viewProto.setPosition,
             addCallback : $viewProto.addCallback,
-            doCallbacks : $viewProto.doCallbacks,
-            load       : function (){
+            doCallbacks : $viewProto.doCallbacks,       
+            load        : function (){
+                            var 
+                            $this = this,
+                            blur = util.checkCssFilterSupport();
+                
+                            this.adjustSize();
+                            util.addLoading();
+                            
+                            if(blur){
+                                return util.loadBG()
+                                    .then(util.getCanvas)
+                                    .then(util.removeLoading)
+                                    .then(util.hideApp)
+                                    .then(util.loadModal.bind($this))
+                                    .then($this.doCallbacks.bind($this));
+                            }else{
+                                return util.loadBG()
+                                    .then(util.removeLoading)
+                                    .then(util.loadModal.bind($this))
+                                    .then($this.doCallbacks.bind($this));
+                            }
+                        },
+            exit        : function(){
+                            
                             var $this = this;
-                            return new Promise(function(resolve){
-                                
-                                // darken and blur background app
-                                $(modalBG)
-                                    .addClass('o-modal-active')
-                                    .velocity({
-                                        opacity : 0.6
-                                    },{
-                                        display   : 'block',
-                                        easing    : $this.loadEasing,
-                                        duration  : $this.loadDuration
-                                    });
-                                $('o-container>header, o-container>o-canvas, o-container>div').addClass('blur');
-
-                                // scroll to top of page
-                                $('body').velocity('scroll',{duration:350});
-
-                                // make sure the view is visible
-                                $this.$elem.css({
-                                    "visibility":"visible",
-                                    'display':'block',
-                                    'z-index':octane.dom.zIndexOverlay
-                                });
-                                if($this.loadsBy !== 'fade'){
-                                    $this.$elem.css({
-                                        opacity:1
-                                    });
-                                }
-                                try{
-                                    $loads[$this.loadsBy].bind($this,resolve)();
-                                }catch(ex){
-                                    octane.hasModule('debug') && octane.log(ex);
-                                    $loads.slide.bind($this,resolve)();
-                                }        
-                            }).then(function(){
-                                $this.doCallbacks();
-                            });
+                            
+                            return $viewProto.exit.bind($this)()
+                                .then(util.unloadBG)
+                                .then(util.revealApp); 
+                                  
                         },
             adjustSize : function(){
                             var 
@@ -147,7 +122,133 @@ octane.module(
         });
         // end oModal prototype
 
+        var util = {
+            checkCssFilterSupport : function(enableWebkit){
+                var 
+                el,
+                test1,
+                test2,
+                filter = 'filter:blur(2px)';
+                
+                //CSS3 filter is webkit. so here we fill webkit detection arg with its default
+                if(enableWebkit === undefined) {
+                    enableWebkit = false;
+                }
+                //creating an element dynamically
+                el = document.createElement('div');
+                //adding filter-blur property to it
+                el.style.cssText = (enableWebkit) ? '-webkit-'+filter : filter;
+                //checking whether the style is computed or ignored
+                test1 = (el.style.length !== 0);
+                //checking for false positives of IE
+                test2 = (
+                    document.documentMode === undefined //non-IE browsers, including ancient IEs
+                    || document.documentMode > 9 //IE compatibility mode
+                );
+                //combining test results
+                return test1 && test2;
+            },
+                
+            addLoading : function(){
+                $(modalBG).addClass('loading');
+            },
+            removeLoading : function(){
+                $(modalBG).removeClass('loading');
+            },
+            getCanvas : function getCanvas(){
+                return new Promise(function(resolve){
+                    html2canvas(octane.dom.container(),{
+                        onrendered : function(canvas){
+                            modalBG.firstChild && modalBG.removeChild(modalBG.firstChild);
+                            modalBG.appendChild(canvas);
+                            resolve();
+                        }
+                    });
+                });
+            },
+            // darken and blur background
+            // bind to an oModal instance
+            loadModal : function loadModal(){
+                var $this = this;
+                return new Promise(function(resolve){
+                    // scroll to top of page
+                    $('body').velocity('scroll',{duration:600});
 
+                    // make sure the view is visible as it animates onscreen
+                    $this.$elem.css({
+                        "visibility":"visible",
+                        'display':'block',
+                        'z-index':octane.dom.zIndexOverlay
+                    });
+                    // let velocity fadeIn take care of opacity if configured
+                    if($this.loadsBy !== 'fade'){
+                        $this.$elem.css({
+                            opacity:1
+                        });
+                    }
+                    // load the modal, resolve the Promise on animation complete
+                    try{
+                        $loads[$this.loadsBy].bind($this,resolve)();
+                    }catch(ex){
+                        octane.hasModule('debug') && octane.log(ex);
+                        $loads.slide.bind($this,resolve)();
+                    }
+                });
+            },
+            // darken the app background
+            loadBG  : function loadBG(canvas){
+                return new Promise(function(resolve){
+                    $(modalBG)
+                        .addClass('o-modal-active')
+                       
+                        .velocity('fadeIn',{
+                            display   : 'block',
+                            easing    : 'swing',
+                            duration  : 300,
+                            complete  : function(){
+                                resolve();
+                            }
+                        });
+                     
+                   
+                });
+            },
+            unloadBG : function unloadBG(){
+                $(modalBG)
+                    .removeClass('o-modal-active')
+                    .velocity({
+                        opacity : 0
+                    },{
+                        easing    : 'swing',
+                        duration  : 300,
+                        display   : 'none',
+                        complete  : function(){
+                            modalBG.firstChild && modalBG.removeChild(modalBG.firstChild);
+                        }
+                    });
+            },
+             // helper
+             revealApp : function revealApp(){
+                $('o-view').removeClass('hidden');
+                $(octane.dom.container()).removeClass('hidden');
+                // make sure canvas fits its content after hide
+                octane.currentView().setCanvasHeight();
+                return Promise.resolve();
+            },
+            hideApp : function hideApp(){
+                return new Promise(function(resolve){
+                    $(octane.dom.container()).addClass('hidden');
+                    $('o-view').addClass('hidden');
+                    resolve();
+                });
+            }
+        };
+            
+            
+            
+            
+            
+            
 
         // helper
         function initModal(elem){
@@ -200,10 +301,7 @@ octane.module(
 
             if(!block){
                 octane.fire('block:routing');
-                console.log('current',currentModal.id);
-                console.log('called',modalID);
                 if(!currentModal){
-                    console.log('not calling same modal',currentModal);
                     $modal.load().then(function(){
                         currentModal = $modal;
                         octane.fire('unblock:routing');
@@ -230,7 +328,7 @@ octane.module(
                 
                 octane.fire('block:routing');
                 
-                $modal.exit().then(function(){
+               $modal.exit().then(function(){
                     octane.fire('unblock:routing');
                     currentModal = false;
                 });
@@ -240,7 +338,7 @@ octane.module(
 
         function initialize(){
             
-            modalBG.setAttribute('id','o-modal-background');
+            modalBG.setAttribute('id','o-modal-bg');
             document.body.appendChild(modalBG);
             
             $modals = document.getElementsByTagName('o-modal')
@@ -254,7 +352,7 @@ octane.module(
             // dismiss modal automatically on route
             octane.handle('routing:begin',function(){
                 block = true;
-                currentModal && currentModal.exit();  
+                dismissModal(currentModal.id);  
             });
 
             // re-enable
@@ -271,7 +369,13 @@ octane.module(
         this.extend({
             call    : callModal,
 
-            dismiss : dismissModal
+            dismiss : dismissModal,
+            current : function(){
+                return currentModal;
+            },
+            isBlocked : function(){
+                return block;
+            }
         });
 
         initialize();

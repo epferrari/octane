@@ -2,11 +2,10 @@
 @import '../../modules/router/scss/_router';
 @import '../../modules/router/scss/_view';
 @import '../../modules/translator/scss/_translator';
-
-//@import '../../modules/modals/scss/_modals';
+@import '../../modules/modals/scss/_modal';
 
 html,body{
-    height:100%
+    height:100%;
 }
 
 
@@ -26,7 +25,9 @@ div.row{
 o-container{
     overflow-x:hidden;
     overflow-y:hidden;
-    visibility:hidden;
+    height:auto;
+    float:left;
+    padding-bottom:30px;
 }
 
 o-canvas{
@@ -44,39 +45,28 @@ o-view {
     overflow-x:hidden;
 }
 
-o-modal {
-    @extend o-view;
-    height:100%;
-    width:100%;
-    top:0;
-    left:0;
-    right:0;
-}
-
-#o-modal-background {
-    background-color:black;
-    position:fixed;
-    height:100%;
-    width:100%;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
-    display:none;
-    @include opacity(0.6);
-    &.o-modal-active{
-        z-index:999999998;
-        display:block;
-    }       
-}
-
 .o-btn {
 	cursor:pointer;
+    min-height:50px;
+    min-width:50px;    
 }
 
-
-.blur{
-    -webkit-filter:blur(2px);
+[o-route]{
+    cursor:pointer;
 }
-    
+
+.hidden{
+    visibility:hidden !important;
+}
+
+.display-none{
+    display:none;
+}
+ 
+.loading{
+	//background-image:url(../img/loading.gif);
+	background-size:100px auto;
+	background-position:center;
+    background-repeat:no-repeat;
+}
 

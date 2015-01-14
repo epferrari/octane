@@ -42,7 +42,6 @@ octane.module('viewPrototype',
             },
 
             load : function(){
-
                 var $this = this;
                 return new Promise(function(resolve){
                     // scroll to top of page
@@ -141,7 +140,9 @@ octane.module('viewPrototype',
                                     });
                         },
                         'bottom' : function(){
-                                    $view.css({"bottom":-($(window).height()*1.1),
+                                    $view.css({
+                                        "top":$(window).height()*1.1,
+                                        "bottom":-($(window).height()*1.1),
                                         "left":0,
                                         "right":0
                                     });
