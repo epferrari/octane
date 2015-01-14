@@ -530,9 +530,15 @@
         function Octane(name){
             this.name = name;
         };
-        Octane.prototype = new Base('Octane Application');
-        Octane.prototype.constructor = Octane;
-        Octane.prototype.initialized = false; 
+        
+        var $O = Octane.prototype = new Base('Octane Application');
+        $O.constructor = Octane;
+        $O.initialized = false;
+        $O.define({
+            base : function(name){
+                return new Base(name);
+            }
+        });
 		
 	/* ------------------------------------------------------- */
 	// internal application object and properties
@@ -616,7 +622,7 @@
 	/* ------------------------------------------------------- */		
 		
 		// set a unique identifier for the DOM element so we don't double count it
-		Octane.prototype.define({
+		$O.define({
 			GUID : function(){
 				var random4 = function() {
 					return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
@@ -640,6 +646,12 @@
                              }
 						  }
 		});
+        
+        $O.define({
+            log : function(message){
+                $O.hasModule('debug') && _octane.log(message);
+            }
+        });
 		
 		// helper for dependencies, etc	
 		function verify(conditions,constructor,$context){
@@ -659,16 +671,12 @@
             this.message = message || 'An Octane error occurred.';
             this.stack = Error().stack;
         }
-        Octane.prototype.define({
-            log : function(message){
-                Octane.prototype.hasModule('debug') && _octane.log(message);
-            }
-        });
+        
         OctaneError.prototype = Object.create(Error.prototype);
         OctaneError.prototype.constructor = OctaneError;
         OctaneError.prototype.name = 'OctaneError';
         
-        Octane.prototype.define({
+        $O.define({
              error : function(message){
                  throw new OctaneError(message);
              }
@@ -679,7 +687,7 @@
 	/* ------------------------------------------------------- */
         
     
-        Octane.prototype.define({
+        $O.define({
             
             xhr : function(cfg){
                     return new Promise(function(RESOLVE,REJECT){
@@ -697,9 +705,9 @@
                         if(_.isString(cfg) && cfg.length !== 0){
                            params.url = cfg;
                         } else if(_.isObject(cfg)){
-                            Octane.prototype.extend(params,cfg);
+                            $O.extend(params,cfg);
                         } else {
-                            error = Octane.prototype.error('Octane.ajax must have a url');
+                            error = $O.error('Octane.ajax must have a url');
                             REJECT(error);
                             return;
                         }
@@ -713,7 +721,7 @@
                                 try {
                                     xhr = new ActiveXObject("Microsoft.XMLHTTP");
                                 }catch(e){
-                                    error = Octane.prototype.error('Could not create XMLHttpRequest '+e.message);
+                                    error = $O.error('Could not create XMLHttpRequest '+e.message);
                                     REJECT(error);
                                 }
                             }
@@ -736,13 +744,13 @@
                                         }
                                         response ? 
                                             RESOLVE(response) :
-                                            REJECT(Octane.prototype.error('Error parsing response as JSON: Octane.ajax()')); 
+                                            REJECT($O.error('Error parsing response as JSON: Octane.ajax()')); 
                                     },
-                                    '404' : function(){
-                                        REJECT(Octane.prototype.error('The server responded with 400 not found'));
+                                    '404' : function(xhr,params,RESOLVE,REJECT){
+                                        REJECT($O.error('The server responded with 400 not found'));
                                     },
-                                    '500' : function(){
-                                         REJECT(Octane.prototype.error('An internal server error occurred'));
+                                    '500' : function(xhr,params,RESOLVE,REJECT){
+                                         REJECT($O.error('An internal server error occurred'));
                                     }
                                 }).run(xhr.status,[xhr,params,RESOLVE,REJECT]);
                             }
@@ -769,14 +777,14 @@
                     
                     if(loaded.length !== 0){
                         // script is loaded
-                        Octane.prototype.hasLibrary(cleanURL).then(resolve,reject);
+                        $O.hasLibrary(cleanURL).then(resolve,reject);
                     } else {
                         
-                        Octane.prototype.handle('script:loaded:'+cleanURL,function(){
+                        $O.handle('script:loaded:'+cleanURL,function(){
                             content = _octane.cacheJSON.pop();
-                            Octane.prototype.addLibrary(cleanURL,content).then(resolve,reject);
+                            $O.addLibrary(cleanURL,content).then(resolve,reject);
                         });
-                        Octane.prototype.handle('script:failed:'+cleanURL,function(){
+                        $O.handle('script:failed:'+cleanURL,function(){
                             reject('Script failed to load from '+url);
                         });
                         
@@ -784,10 +792,10 @@
                         script.id = cleanURL;
                         script.src = url;
                         script.onload = function(){
-                            Octane.prototype.fire('script:loaded:'+cleanURL);
+                            $O.fire('script:loaded:'+cleanURL);
                         };
                         script.onerror = function(){
-                            Octane.prototype.fire('script:failed:'+cleanURL);
+                            $O.fire('script:failed:'+cleanURL);
                         };
                         
                         document.body.appendChild(script);
@@ -799,7 +807,7 @@
                     try{
                         json = JSON.parse(json);
                     }catch(exc){
-                       Octane.prototype.error('failed to parse JSON from Octane.jsonp() '+exc.message); 
+                       $O.error('failed to parse JSON from Octane.jsonp() '+exc.message); 
                     }
                 } 
                 if(_.isObject(json)){
@@ -815,7 +823,7 @@
 	/* ------------------------------------------------------- */		
 		
        
-       Octane.prototype.define({
+       $O.define({
            
 			handle		: 	function(type,elem,handler){
                                 
@@ -916,7 +924,7 @@
                 
         }
                                   
-        Octane.prototype.define({
+        $O.define({
             
             addTemplate : function(id,markup){
                 
@@ -943,7 +951,7 @@
 		
 		_octane.filters = new __.Switch();
 		
-		Octane.prototype.define({
+		$O.define({
 			addFilter : function (name,valid,invalid){
                 
                 valid = valid || /.*/;
@@ -979,9 +987,9 @@
 			}
 		});
 		
-		Octane.prototype.addFilter('number',/^[-\d]+$/);
-        Octane.prototype.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        Octane.prototype.addFilter('tel',/^[-0-9\.]{7,12}$/);
+		$O.addFilter('number',/^[-\d]+$/);
+        $O.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
+        $O.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
@@ -1010,7 +1018,7 @@
         }
         Library.prototype = new Pact();
        
-		Octane.prototype.define({
+		$O.define({
 			addLibrary : function(name,lib){
                 if(_.isObject(lib)){
 				    return _octane.libraries[name] = new Library(name,lib);
@@ -1020,7 +1028,7 @@
                 
 			},
             library : function(name){
-                return Octane.prototype.hasLibrary(name).then(function(data){
+                return $O.hasLibrary(name).then(function(data){
                     return data;
                 });
             },
@@ -1130,7 +1138,7 @@
                             }
                             
                             var e = this.name+':statechange';
-                            Octane.prototype.fire(e,{detail:updated});
+                            $O.fire(e,{detail:updated});
                 
                             return fresh;
                                 
@@ -1186,7 +1194,7 @@
 		
 	/* define Model on octane - bridge to private properties and methods */
 		
-		Octane.prototype.define({
+		$O.define({
 			model 		: function (name,options){
                 
                             if(_octane.models[name]){
@@ -1238,7 +1246,7 @@
 						$this.refresh();
 					});
 				
-				Octane.prototype.handle('input click '+$this.model.name+':statechange',$this);
+				$O.handle('input click '+$this.model.name+':statechange',$this);
 				$this.parse();    
 				$this.refresh();
 			})($this);
@@ -1295,10 +1303,14 @@
                             
                             // element hasn't been parsed yet
                             if(!el._guid){
-                                el._guid = Octane.prototype.GUID();
+                                el._guid = $O.GUID();
                                 el._bind = $bind;
                                 el._update = $update;
-                                el._filters = JSON.parse( el.getAttribute('o-filters') );
+                                try{
+                                    el._filters = JSON.parse( el.getAttribute('o-filters') );
+                                } catch (ex){
+                                    $O.error(ex);
+                                }
                             }
                             
                             // create array for this.bindings[bind] if not already an array
@@ -1397,6 +1409,8 @@
                                     $dirty[pointer] = element.value;
                                     if(_octane.controllers[this.model.name]){
                                         _octane.controllers[this.model.name].doFilter($dirty);
+                                    } else {
+                                        this.model.set($dirty);
                                     }
                                 }				
 							},
@@ -1419,7 +1433,7 @@
                 conditions = [
 					[
                         $model instanceof Model,
-                        'defined model is not an instance of Octane.prototype.Model'
+                        'defined model is not an instance of $O.Model'
                     ],[
                         $model.instanced,
                         'model '+model+' passed as argument was not initialized'
@@ -1445,7 +1459,7 @@
 			// add this Controller instance to the _octane's controllers object
 			(function(){
 				_octane.controllers[model] = $this;
-				Octane.prototype.handle($this.model.name+':statechange',$this);
+				$O.handle($this.model.name+':statechange',$this);
 			})();	
 		}
 		
@@ -1650,7 +1664,7 @@
 							}
 		});
 	
-		Octane.prototype.define({
+		$O.define({
 			controller 	: function (model){ 
                                 if(_octane.controllers[model]){
                                     return _octane.controllers[model];
@@ -1668,7 +1682,7 @@
         _octane.bootlog = [];
         function bootLog(message){
             _octane.bootlog.push(message);
-            Octane.prototype.model('bootlog').set({
+            $O.model('bootlog').set({
                 bootlog:_octane.bootlog,
                 status:message
             });
@@ -1692,9 +1706,9 @@
                                         _octane.moduleExports[this.name] = {};
                                     }
                                     try{
-                                        Octane.prototype.extend.apply(_octane.moduleExports[this.name],[exports]);
+                                        $O.extend.apply(_octane.moduleExports[this.name],[exports]);
                                     }catch (exc){
-                                        Octane.prototype.error('Could not create extend exports, '+this.name+' module. '+exc.message);
+                                        $O.error('Could not create extend exports, '+this.name+' module. '+exc.message);
                                     }
                                 },
              model			:	function (name,options){
@@ -1828,11 +1842,11 @@
                                             configurable : false
                                         });
                                         bootLog(message[1]);
-                                        Octane.prototype.goose('application',{
+                                        $O.goose('application',{
                                             loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
                                         });
                                         // hook-in for updating a loading screen
-                                        Octane.prototype.fire('loaded:module',{
+                                        $O.fire('loaded:module',{
                                             detail:{moduleID: this.name }
                                         });
                                     }
@@ -1852,7 +1866,7 @@
             });
 		}
 		
-		// called at Octane.prototype.initialize()
+		// called at $O.initialize()
 		function initModules(options){
 			
 			options = options || {};
@@ -1888,7 +1902,7 @@
 		}
 		
         
-		Octane.prototype.define({
+		$O.define({
             
             module     : function(name,dependencies,$module){ 
                             return addModule(name,dependencies,$module);
@@ -1902,7 +1916,7 @@
 	/*                         CIRCUIT                         */
 	/* ------------------------------------------------------- */
         
-        Octane.prototype.define({
+        $O.define({
             // artificially start the uptake circuit
              goose : function(model,$dirty){
                         _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
@@ -1930,7 +1944,7 @@
             });
         
         
-        Octane.prototype.define.call(Octane.prototype.dom,{
+        $O.define.call($O.dom,{
             container : function(){
                 return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
             },
@@ -1947,7 +1961,7 @@
             zIndexHidden    : -1
         });
         
-         Octane.prototype.controller('application')
+         $O.controller('application')
             .parser('loadingProgress',function($data){
                 var currentProgress = this.model.get('loadingProgress') || 0;
                 $data.loadingProgress = currentProgress + $data.loadingProgress;
@@ -1958,7 +1972,7 @@
 	/*                          INIT                           */
 	/* ------------------------------------------------------- */
         
-        Octane.prototype.define({
+        $O.define({
             initialize :init
 		});
         
@@ -1966,10 +1980,10 @@
 			options = options || {};
             
             // don't reinitialize
-            if(Octane.prototype.initialized){
+            if($O.initialized){
                 return;
             } else {
-                Octane.prototype.define({
+                $O.define({
                     initialized : true 
                 });
             }
@@ -1978,14 +1992,14 @@
             
             // initialize utilities
             var 
-            utils = Octane.prototype.library('startup-utilities') || {},
+            utils = $O.library('startup-utilities') || {},
             utilsKeys = Object.keys(utils),
             util;
                 
             for(var u=0,U=utilsKeys.length; u<U; u++){
                 util = utilsKeys[u];    
                 // hook for the loading message
-                Octane.prototype.fire('loading:utility',{detail:util});
+                $O.fire('loading:utility',{detail:util});
                 // init utility
                _.isFunction(utils[util]) && utils[util].call();
             }
@@ -1997,12 +2011,17 @@
                 
                 // unhide the rest of content hidden behind the loader
                 setTimeout(function(){
-                    Octane.prototype.dom.container().setAttribute('style','visibility:visible;'); 
+                    var klass = $O.dom.container().getAttribute('class');
+                    klass = klass ? klass.split(' ') : [];
+                    _.pull(klass,'hidden');
+                    klass = klass.join(' ');
+                    $O.dom.container().setAttribute('class',klass);
+                    //$($O.dom.container()).removeClass('hidden'); 
                 },1000);
                 // route to url-parsed view|| home
-                // var view = Octane.prototype.parseView() || 'home';
-                //Octane.prototype.route(view);
-                Octane.prototype.fire('octane:ready');
+                // var view = $O.parseView() || 'home';
+                //$O.route(view);
+                $O.fire('octane:ready');
             
             });
 		}
@@ -2062,7 +2081,8 @@
         $loads = this.import('viewLoadAnimations'),
         $exits = this.import('viewExitAnimations'),
         $Modals = {},
-        modalBG = document.createElement('div');
+        modalBG = document.createElement('div'),
+        modalBgHelper = document.createElement('div');
             
 
 
@@ -2079,7 +2099,7 @@
                 elem		: elem,
                 $elem 		: $(elem),
                 _guid		: octane.GUID(),
-                doneLoading : [],					
+                doneLoading : []					
             });
             this.setPosition(this.loadsFrom);
 
@@ -2113,40 +2133,28 @@
                                 exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
                             });
                         },
-            exit        : function(){
-                            return $viewProto.exit.bind(this)().then(function(){
-                                currentModal = false;
-                            });
-                        },
             setPosition : $viewProto.setPosition,
             addCallback : $viewProto.addCallback,
-            doCallbacks : $viewProto.doCallbacks,
-            load       : function (){
+            doCallbacks : $viewProto.doCallbacks,       
+            load        : function (){
                             var $this = this;
-                            return new Promise(function(resolve){
-                                // scroll to top of page
-                                $('body').velocity('scroll',{duration:350});
-
-                                // make sure the view is visible
-                                $this.$elem.css({
-                                    "visibility":"visible",
-                                    'display':'block',
-                                    'z-index':octane.dom.zIndexOverlay
-                                });
-                                if($this.loadsBy !== 'fade'){
-                                    $this.$elem.css({
-                                        opacity:1
-                                    });
-                                }
-                                try{
-                                    $loads[$this.loadsBy].bind($this,resolve)();
-                                }catch(ex){
-                                    octane.hasModule('debug') && octane.log(ex);
-                                    $loads.slide.bind($this,resolve)();
-                                }        
-                            }).then(function(){
-                                $this.doCallbacks();
-                            });
+                            this.adjustSize();
+                            util.addLoading();
+                            return util.loadBG()
+                                .then(util.getCanvas)
+                                .then(util.removeLoading)
+                                .then(util.hideApp)
+                                .then(util.loadModal.bind($this))
+                                .then($this.doCallbacks.bind($this));      
+                        },
+            exit        : function(){
+                            
+                            var $this = this;
+                            
+                            return $viewProto.exit.bind($this)()
+                                
+                                .then(util.unloadBG).then(util.revealApp); 
+                                  
                         },
             adjustSize : function(){
                             var 
@@ -2168,14 +2176,114 @@
                             dismisser.handleEvent = function(e){
                                 e.stopPropagation;
                                 e.stopImmediatePropagation;
-                                $this.exit();
+                                dismissModal($this.id);
                                 return false;
                             }
                         }    
         });
         // end oModal prototype
 
+        var util = {
+            addLoading : function(){
+                $(modalBG).addClass('loading');
+            },
+            removeLoading : function(){
+                $(modalBG).removeClass('loading');
+            },
+            getCanvas : function getCanvas(){
+                return new Promise(function(resolve){
+                    html2canvas(octane.dom.container(),{
+                        onrendered : function(canvas){
+                            modalBG.firstChild && modalBG.removeChild(modalBG.firstChild);
+                            modalBG.appendChild(canvas);
+                            resolve();
+                        }
+                    });
+                });
+            },
+            // darken and blur background
+            // bind to an oModal instance
+            loadModal : function loadModal(){
+                var $this = this;
+                return new Promise(function(resolve){
+                    // scroll to top of page
+                    $('body').velocity('scroll',{duration:600});
 
+                    // make sure the view is visible as it animates onscreen
+                    $this.$elem.css({
+                        "visibility":"visible",
+                        'display':'block',
+                        'z-index':octane.dom.zIndexOverlay
+                    });
+                    // let velocity fadeIn take care of opacity if configured
+                    if($this.loadsBy !== 'fade'){
+                        $this.$elem.css({
+                            opacity:1
+                        });
+                    }
+                    // load the modal, resolve the Promise on animation complete
+                    try{
+                        $loads[$this.loadsBy].bind($this,resolve)();
+                    }catch(ex){
+                        octane.hasModule('debug') && octane.log(ex);
+                        $loads.slide.bind($this,resolve)();
+                    }
+                });
+            },
+            // darken the app background
+            loadBG  : function loadBG(canvas){
+                return new Promise(function(resolve){
+                    $(modalBG)
+                        .addClass('o-modal-active')
+                       
+                        .velocity('fadeIn',{
+                            display   : 'block',
+                            easing    : 'swing',
+                            duration  : 300,
+                            complete  : function(){
+                                resolve();
+                            }
+                        });
+                     
+                   
+                });
+            },
+            unloadBG : function unloadBG(){
+                $(modalBG)
+                    .removeClass('o-modal-active')
+                    .velocity({
+                        opacity : 0
+                    },{
+                        easing    : 'swing',
+                        duration  : 300,
+                        display   : 'none',
+                        complete  : function(){
+                            modalBG.firstChild && modalBG.removeChild(modalBG.firstChild);
+                        }
+                    });
+            },
+             // helper
+             revealApp : function revealApp(){
+                $('o-view').removeClass('hidden');
+                $(octane.dom.container()).removeClass('hidden');
+                // make sure canvas fits its content after hide
+                octane.currentView().setCanvasHeight();
+                return Promise.resolve();
+            },
+            hideApp : function hideApp(){
+                return new Promise(function(resolve){
+                    $(octane.dom.container()).addClass('hidden');
+                    $('o-view').addClass('hidden');
+                    resolve();
+                });
+            }
+        };
+            
+            
+            
+            
+            
+            
 
         // helper
         function initModal(elem){
@@ -2189,8 +2297,7 @@
                 octane.error('invalid o-config attribute for o-modal '+id+'. '+ex.message);
                 config = null;
             }
-            console.log(id);
-            console.log(elem);
+           
             if(!$Modals[id]){
                $Modals[id] = new oModal(elem,config);
             }
@@ -2198,7 +2305,7 @@
         // end helper
 
         function setTriggerHandlers(){
-            console.log('setting trigger handlers');
+            
             var triggers = document.querySelectorAll('[o-modal]');
 
             for(var t=0,T=triggers.length; t<T; t++){
@@ -2208,9 +2315,9 @@
 
         // helper    
         function addTriggerHandler($trigger){
-            console.log('adding handler');
+            
              octane.handle('click',$trigger,function(e){
-                 console.log('click triggered');
+                
                 var modalID = $trigger.getAttribute('o-modal');
                 callModal(modalID);
             });
@@ -2223,27 +2330,27 @@
 
         function callModal(modalID){
 
-            $(modalBG).addClass('o-modal-active');
-            $('o-container>header, o-container>o-canvas, o-container>div').addClass('blur');
             var $modal = $Modals[modalID];
 
             if(!($modal && ($modal instanceof oModal))){  return };
 
             if(!block){
                 octane.fire('block:routing');
-                if(currentModal && currentModal.id != modalID){
+                if(!currentModal){
+                    $modal.load().then(function(){
+                        currentModal = $modal;
+                        octane.fire('unblock:routing');
+                    });
+                } else if (currentModal.id !== modalID){
                     // another modal is onscreen, remove it
-                    currentModal.exit()
+                   currentModal.exit()
                         .then($modal.load)
                         .then(function(){
                             currentModal = $modal;
                             octane.fire('unblock:routing');
                         });
                 } else {
-                    $modal.load().then(function(){
-                        currentModal = $modal;
-                        octane.fire('unblock:routing');
-                    });
+                   octane.fire('unblock:routing'); 
                 }
             }
         }
@@ -2256,11 +2363,9 @@
                 
                 octane.fire('block:routing');
                 
-                $(modalBG).removeClass('o-modal-active');
-                $('o-container>header, o-container>o-canvas, o-container>div').removeClass('blur');
-                
-                $modal.exit().then(function(){
+               $modal.exit().then(function(){
                     octane.fire('unblock:routing');
+                    currentModal = false;
                 });
             }
         }
@@ -2268,7 +2373,7 @@
 
         function initialize(){
             
-            modalBG.setAttribute('id','o-modal-background');
+            modalBG.setAttribute('id','o-modal-bg');
             document.body.appendChild(modalBG);
             
             $modals = document.getElementsByTagName('o-modal')
@@ -2282,7 +2387,7 @@
             // dismiss modal automatically on route
             octane.handle('routing:begin',function(){
                 block = true;
-                currentModal && currentModal.exit();  
+                dismissModal(currentModal.id);  
             });
 
             // re-enable
@@ -2300,12 +2405,11 @@
             call    : callModal,
 
             dismiss : dismissModal,
-
-            getModal : function(id){
-                            return $Modals[id];
+            current : function(){
+                return currentModal;
             },
-            getBlock : function(){
-                console.log('blocked ',block);
+            isBlocked : function(){
+                return block;
             }
         });
 
@@ -3032,7 +3136,6 @@ octane.module(
             },
 
             load : function(){
-
                 var $this = this;
                 return new Promise(function(resolve){
                     // scroll to top of page
@@ -3131,7 +3234,9 @@ octane.module(
                                     });
                         },
                         'bottom' : function(){
-                                    $view.css({"bottom":-($(window).height()*1.1),
+                                    $view.css({
+                                        "top":$(window).height()*1.1,
+                                        "bottom":-($(window).height()*1.1),
                                         "left":0,
                                         "right":0
                                     });
@@ -3361,8 +3466,10 @@ octane.module(
                                         );
                                     },
                                     'bottom':function(){
-                                        $view.velocity(
-                                            {"top":"0%"},
+                                        $view.velocity({
+                                            top:0,
+                                            bottom:0
+                                        },
                                             $config
                                         );
                                     }
