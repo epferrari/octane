@@ -36,8 +36,10 @@
                                         );
                                     },
                                     'bottom':function(){
-                                        $view.velocity(
-                                            {"top":"0%"},
+                                        $view.velocity({
+                                            top:0,
+                                            bottom:0
+                                        },
                                             $config
                                         );
                                     }
