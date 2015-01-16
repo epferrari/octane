@@ -132,7 +132,7 @@ octane.module(
                 
                 //CSS3 filter is webkit. so here we fill webkit detection arg with its default
                 if(enableWebkit === undefined) {
-                    enableWebkit = false;
+                    enableWebkit = true;
                 }
                 //creating an element dynamically
                 el = document.createElement('div');
@@ -208,9 +208,7 @@ octane.module(
                             complete  : function(){
                                 resolve();
                             }
-                        });
-                     
-                   
+                        });   
                 });
             },
             unloadBG : function unloadBG(){
@@ -227,29 +225,19 @@ octane.module(
                         }
                     });
             },
-             // helper
-             revealApp : function revealApp(){
-                $('o-view').removeClass('hidden');
+            // helper
+            revealApp : function revealApp(){
                 $(octane.dom.container()).removeClass('hidden');
-                // make sure canvas fits its content after hide
-                octane.currentView().setCanvasHeight();
                 return Promise.resolve();
             },
             hideApp : function hideApp(){
                 return new Promise(function(resolve){
                     $(octane.dom.container()).addClass('hidden');
-                    $('o-view').addClass('hidden');
                     resolve();
                 });
             }
         };
-            
-            
-            
-            
-            
-            
-
+        
         // helper
         function initModal(elem){
             var 
@@ -328,10 +316,10 @@ octane.module(
                 
                 octane.fire('block:routing');
                 
-               $modal.exit().then(function(){
+               $modal.exit()//.then(function(){
                     octane.fire('unblock:routing');
                     currentModal = false;
-                });
+               // });
             }
         }
 

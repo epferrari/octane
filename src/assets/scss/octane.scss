@@ -64,9 +64,19 @@ o-view {
 }
  
 .loading{
-	//background-image:url(../img/loading.gif);
-	background-size:100px auto;
-	background-position:center;
-    background-repeat:no-repeat;
+    &:after{
+        content:"";
+        position:absolute;
+        top:0;
+        bottom:0;
+        left:0;
+        right:0;
+        width:100%;
+        height:100%;
+        background-image:url(../img/loader-light.gif);
+        background-size:100px auto;
+        background-position:center;
+        background-repeat:no-repeat;
+    }
 }
 

@@ -20,8 +20,7 @@
                                 },
                                 anim = new __.Switch({
                                     'left':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "left":-($(window).width()*1.1),
                                                 "right":$(window).width()*2.2
                                             },
@@ -29,8 +28,7 @@
                                         );
                                     },
                                     'right':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "right":-($(window).width()*1.1),
                                                 "left":$(window).width()*2.2
                                             },
@@ -38,8 +36,7 @@
                                         );
                                     },
                                     'top':function(){	
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "top":-($(window).height()*1.1),
                                                 "bottom":$(window).height()*2.2
                                             },
@@ -47,8 +44,7 @@
                                         );
                                     },
                                     'bottom':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "bottom":-($(window).height()*1.1),
                                                 "top":$(window).height()*2.2
                                             },

@@ -335,7 +335,7 @@
                         error,
                         params = {
                             url : false,
-                            type : 'POST',
+                            method : 'GET',
                             send : null,
                             responseType : 'text',
                         };
@@ -366,7 +366,7 @@
                         }
 
                         xhr.onreadystatechange = checkRequest;
-                        xhr.open(params.type,params.url);
+                        xhr.open(params.method,params.url);
                         xhr.send(params.send);
 
                         function checkRequest(){
@@ -1645,7 +1645,7 @@
 			if(_octane.modules['debug']){
                 options.debug = [_octane];
             }
-            initModules(options).then(function(){
+            return initModules(options).then(function(){
                 
                 // unhide the rest of content hidden behind the loader
                 setTimeout(function(){

@@ -2137,23 +2137,34 @@
             addCallback : $viewProto.addCallback,
             doCallbacks : $viewProto.doCallbacks,       
             load        : function (){
-                            var $this = this;
+                            var 
+                            $this = this,
+                            blur = util.checkCssFilterSupport();
+                
                             this.adjustSize();
                             util.addLoading();
-                            return util.loadBG()
-                                .then(util.getCanvas)
-                                .then(util.removeLoading)
-                                .then(util.hideApp)
-                                .then(util.loadModal.bind($this))
-                                .then($this.doCallbacks.bind($this));      
+                            
+                            if(blur){
+                                return util.loadBG()
+                                    .then(util.getCanvas)
+                                    .then(util.removeLoading)
+                                    .then(util.hideApp)
+                                    .then(util.loadModal.bind($this))
+                                    .then($this.doCallbacks.bind($this));
+                            }else{
+                                return util.loadBG()
+                                    .then(util.removeLoading)
+                                    .then(util.loadModal.bind($this))
+                                    .then($this.doCallbacks.bind($this));
+                            }
                         },
             exit        : function(){
                             
                             var $this = this;
                             
                             return $viewProto.exit.bind($this)()
-                                
-                                .then(util.unloadBG).then(util.revealApp); 
+                                .then(util.unloadBG)
+                                .then(util.revealApp); 
                                   
                         },
             adjustSize : function(){
@@ -2184,6 +2195,32 @@
         // end oModal prototype
 
         var util = {
+            checkCssFilterSupport : function(enableWebkit){
+                var 
+                el,
+                test1,
+                test2,
+                filter = 'filter:blur(2px)';
+                
+                //CSS3 filter is webkit. so here we fill webkit detection arg with its default
+                if(enableWebkit === undefined) {
+                    enableWebkit = true;
+                }
+                //creating an element dynamically
+                el = document.createElement('div');
+                //adding filter-blur property to it
+                el.style.cssText = (enableWebkit) ? '-webkit-'+filter : filter;
+                //checking whether the style is computed or ignored
+                test1 = (el.style.length !== 0);
+                //checking for false positives of IE
+                test2 = (
+                    document.documentMode === undefined //non-IE browsers, including ancient IEs
+                    || document.documentMode > 9 //IE compatibility mode
+                );
+                //combining test results
+                return test1 && test2;
+            },
+                
             addLoading : function(){
                 $(modalBG).addClass('loading');
             },
@@ -2243,9 +2280,7 @@
                             complete  : function(){
                                 resolve();
                             }
-                        });
-                     
-                   
+                        });   
                 });
             },
             unloadBG : function unloadBG(){
@@ -2262,29 +2297,19 @@
                         }
                     });
             },
-             // helper
-             revealApp : function revealApp(){
-                $('o-view').removeClass('hidden');
+            // helper
+            revealApp : function revealApp(){
                 $(octane.dom.container()).removeClass('hidden');
-                // make sure canvas fits its content after hide
-                octane.currentView().setCanvasHeight();
                 return Promise.resolve();
             },
             hideApp : function hideApp(){
                 return new Promise(function(resolve){
                     $(octane.dom.container()).addClass('hidden');
-                    $('o-view').addClass('hidden');
                     resolve();
                 });
             }
         };
-            
-            
-            
-            
-            
-            
-
+        
         // helper
         function initModal(elem){
             var 
@@ -2363,10 +2388,10 @@
                 
                 octane.fire('block:routing');
                 
-               $modal.exit().then(function(){
+               $modal.exit()//.then(function(){
                     octane.fire('unblock:routing');
                     currentModal = false;
-                });
+               // });
             }
         }
 
@@ -3152,8 +3177,9 @@ octane.module(
                             opacity:1
                         });
                     }
-                    // adjust the canvas height and load the view
-                    $this.setCanvasHeight();
+                    // adjust the canvas height and load the view,
+                    // use cached height if available
+                    $this.setCanvasHeight($this.cachedHeight);
                     try{
                         $loads[$this.loadsBy].bind($this,resolve)();
                     }catch(ex){
@@ -3191,8 +3217,8 @@ octane.module(
                 });
             },
 
-            setCanvasHeight : function(){
-
+            setCanvasHeight : function($pixels){
+                
                 // some jQuery to ensure view-canvas's height
                 var height = [];
                 this.$elem.children().each(function (){
@@ -3201,8 +3227,9 @@ octane.module(
                 var totalHeight = _.reduce(height,function(totalHeight,num){
                     return totalHeight + num;
                 });
-
-                document.querySelector('o-canvas').setAttribute('style','height:'+totalHeight+'px');
+                $pixels = $pixels || totalHeight;
+                this.cachedHeight = $pixels;
+                document.querySelector('o-canvas').setAttribute('style','height:'+$pixels+'px');
             },
 
 
@@ -3373,8 +3400,7 @@ octane.module(
                                 },
                                 anim = new __.Switch({
                                     'left':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "left":-($(window).width()*1.1),
                                                 "right":$(window).width()*2.2
                                             },
@@ -3382,8 +3408,7 @@ octane.module(
                                         );
                                     },
                                     'right':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "right":-($(window).width()*1.1),
                                                 "left":$(window).width()*2.2
                                             },
@@ -3391,8 +3416,7 @@ octane.module(
                                         );
                                     },
                                     'top':function(){	
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "top":-($(window).height()*1.1),
                                                 "bottom":$(window).height()*2.2
                                             },
@@ -3400,8 +3424,7 @@ octane.module(
                                         );
                                     },
                                     'bottom':function(){
-                                        $view.velocity(
-                                            {
+                                        $view.velocity({
                                                 "bottom":-($(window).height()*1.1),
                                                 "top":$(window).height()*2.2
                                             },
@@ -3448,14 +3471,18 @@ octane.module(
                                 },
                                 anim = new __.Switch({
                                     'left': function(){
-                                        $view.velocity(
-                                            {"left":"0%"},
+                                        $view.velocity({
+                                                left : 0,
+                                                right : 0
+                                            },
                                             $config
                                         );
                                     },
                                     'right': function (){
-                                        $view.velocity(
-                                            {"right":"0%"},
+                                        $view.velocity({
+                                                left : 0,
+                                                right : 0
+                                            },
                                             $config
                                         );
                                     },

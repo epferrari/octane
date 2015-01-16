@@ -83,18 +83,23 @@ A Controller is the logic center of an MV* application. Whereas a Model holds ap
 
 
 
-# Octane API
+# Octane Javascript API
 
 ### Core
 
--	[`.extend`](#extend)
--	[`.define`](#define)
--	[`.model`](#model)
+-	[`.base`](#base)
 -	[`.controller`](#controller)
--	[`.module`](#module)
--	[`.hasModule`](#has-module)
+-	[`.define`](#define)
+-	[`.extend`](#extend)
+-	[`.get`](#get)
 -	[`.goose`](#goose)
+-	[`.hasModule`](#has-module)
+-	[`.jsonp`](#jsonp)
+-	[`.model`](#model)
+-	[`.module`](#module)
+-	[`.set`](#set)
 -	[`.trip`](#trip)
+-	[`.xhr`](#xhr)
 
 ###### Events
 
@@ -138,6 +143,19 @@ A Controller is the logic center of an MV* application. Whereas a Model holds ap
 -	[`.hook`](#controller-hook)
 -	[`.parser`](#controller-parser)
 -	[`.task`](#controller-task)
+
+### Modules
+
+-	[`.export`](#module-export)
+-	[`.import`](#module-import)
+-	[`.model`](#module-model)
+-	[`.controller`](#module-controller)
+
+### Modals
+
+-	[`.call`](#modal-call)
+-	[`dismiss`](#modal-dismiss)
+
 
 
 
@@ -421,7 +439,18 @@ Any module that your module depends on must be listed as a dependency upon your 
 [crockford2]: http://javascript.crockford.com/private.html
 
 
-# Octane DOM
+# Octane DOM API
+
+-	[`<o-container>`](#o-container)
+-	[`<o-canvas>`](#o-canvas)
+-	[`<o-view>`](#o-view)
+-	[`<o-modal>`](#o-modal)
+-	[`o-bind`](#o-bind)
+-	[`o-update`](#o-update)
+-	[`o-filter`](#o-filter)
+-	[`o-config`](#o-config)
+
+
 
 DOM Elements are bound to Models, and thus included in the circuit, by giving them an `o-bind` or `o-update` attribute. The `o-bind` attribute tells Octane to update a model when the value of the element changes, and to update the element's value when the model changes. For example, a text input element with an `o-bind` attribute would sync whatever a user types with the element's bound model key.
 

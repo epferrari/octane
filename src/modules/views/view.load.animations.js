@@ -18,14 +18,18 @@
                                 },
                                 anim = new __.Switch({
                                     'left': function(){
-                                        $view.velocity(
-                                            {"left":"0%"},
+                                        $view.velocity({
+                                                left : 0,
+                                                right : 0
+                                            },
                                             $config
                                         );
                                     },
                                     'right': function (){
-                                        $view.velocity(
-                                            {"right":"0%"},
+                                        $view.velocity({
+                                                left : 0,
+                                                right : 0
+                                            },
                                             $config
                                         );
                                     },

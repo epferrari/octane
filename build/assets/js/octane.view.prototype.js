@@ -58,8 +58,9 @@ octane.module('viewPrototype',
                             opacity:1
                         });
                     }
-                    // adjust the canvas height and load the view
-                    $this.setCanvasHeight();
+                    // adjust the canvas height and load the view,
+                    // use cached height if available
+                    $this.setCanvasHeight($this.cachedHeight);
                     try{
                         $loads[$this.loadsBy].bind($this,resolve)();
                     }catch(ex){
@@ -97,8 +98,8 @@ octane.module('viewPrototype',
                 });
             },
 
-            setCanvasHeight : function(){
-
+            setCanvasHeight : function($pixels){
+                
                 // some jQuery to ensure view-canvas's height
                 var height = [];
                 this.$elem.children().each(function (){
@@ -107,8 +108,9 @@ octane.module('viewPrototype',
                 var totalHeight = _.reduce(height,function(totalHeight,num){
                     return totalHeight + num;
                 });
-
-                document.querySelector('o-canvas').setAttribute('style','height:'+totalHeight+'px');
+                $pixels = $pixels || totalHeight;
+                this.cachedHeight = $pixels;
+                document.querySelector('o-canvas').setAttribute('style','height:'+$pixels+'px');
             },
 
 
