@@ -734,7 +734,7 @@
                 rebase      : function($db) {
                                 db = _.isObject($db) && $db;
                             },
-                reScope     : vm.parse.bind(vm)
+                rescope     : vm.parse.bind(vm)
 			});
 			
 			// initialize
