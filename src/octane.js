@@ -874,14 +874,6 @@
             model       : function(name){
                             return _octane.models[name] || false;
                         }
-        /*model 		: function (name,config){
-                
-                            if(_octane.models[name]){
-                                return _octane.models[name];
-                            }else{
-							     return new Model(name,config);
-                            }
-						}*/
             
 		});
         
@@ -904,31 +896,7 @@
 			
 			
 			// initialize
-			(function($this){
-				
-                //_octane.view_models.push($this);
-				
-				$this.watcher
-					.addCase('input',function(e){
-                        //console.log('dispatch element: ',e.srcElement);
-                        //console.log('value at event handler: ',e.srcElement.value);
-						$this.uptake(e.srcElement);
-					})
-                    .addCase('select',function(e){
-                        $this.uptake(e.srcElement);
-                    })
-                    .addCase('click',function(e){
-                        $this.uptake(e.srcElement);
-                    })
-					.addCase($this.model.name+':statechange',function(e){
-						//$this.parse();
-						$this.refresh();
-					});
-				
-				$O.handle('input click '+$this.model.name+':statechange',$this);
-				$this.parse();    
-				$this.refresh();
-			})($this);
+            this.init();
 		}
 		
 		
@@ -936,6 +904,31 @@
 	
 		ViewModel.prototype = new Base();
 		ViewModel.prototype.define({
+            
+            init : function(){
+				        
+                        var $this = this;
+                        this.watcher
+                            .addCase('input',function(e){
+                                //console.log('dispatch element: ',e.srcElement);
+                                //console.log('value at event handler: ',e.srcElement.value);
+                                $this.uptake(e.srcElement);
+                            })
+                            .addCase('select',function(e){
+                                $this.uptake(e.srcElement);
+                            })
+                            .addCase('click',function(e){
+                                $this.uptake(e.srcElement);
+                            })
+                            .addCase($this.model.name+':statechange',function(e){
+                                //$this.parse();
+                                $this.refresh();
+                            });
+
+                        $O.handle('input click '+$this.model.name+':statechange',$this);
+                        this.parse();    
+                        this.refresh();
+                    },
 			
             // find bound elements on the DOM
 			parse	: function(){
