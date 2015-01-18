@@ -694,7 +694,7 @@
             
 			var  
             $this = this,
-            db = config.db, // RESTful 
+            $db = config.db, // RESTful 
             conditions = [
                 [_.isString(name),'Model name must be a string.']
             ],
@@ -723,16 +723,16 @@
                                     try{
                                         dbData = keyArray.reduce(function(o,x,i){
                                             return o[x];
-                                        },db);
+                                        },$db);
                                     }catch(ex){
-                                        dbData = '';
+                                        dbData = null;
                                         _octane.error('Unable to get model db data "'+keyString+'". Error: '+ex.message);
                                     }
                                     return dbData;
                                 }
                             },
-                rebase      : function($db) {
-                                db = _.isObject($db) && $db;
+                rebase      : function(db) {
+                                $db = _.isObject(db) && db;
                             },
                 rescope     : vm.parse.bind(vm)
 			});
@@ -791,8 +791,7 @@
                                 modelUpdated && updated.push(keyString);
                             }
                             
-                            var e = this.name+':statechange';
-                            $O.fire(e,{detail:updated});
+                            $O.fire(this.name+':statechange');
                 
                             return fresh;
                                 
@@ -834,11 +833,15 @@
                             }
 						},
             clear       : function(){
-                            var stateProps = Object.keys(this.state);
+                            var 
+                            stateProps = Object.keys(this.state),
+                            cleared = {};
                             
                             for(var i=0,n=stateProps.length; i<n; i++){
-                                delete this.state[stateProps[i]];
+                                cleared[stateProps[i]] = null;
+                                //delete this.state[stateProps[i]];
                             }
+                            this.set(cleared);
                             return this;
                         },                   
             reset       : function(){
@@ -857,8 +860,6 @@
                             }
 		});
 		
-	/* define Model on octane - bridge to private properties and methods */
-		
 		$O.define({
 			Model 		: function (name,$db,$defaults){
                             if(!_octane.models[name]){
@@ -873,6 +874,29 @@
 				        },
             model       : function(name){
                             return _octane.models[name] || false;
+                        },
+            get         : function(modelStateKey){
+                            
+                            var 
+                            modelName = modelStateKey.split('.')[0],
+                            stateKey = modelStateKey.split('.').slice(1).join('.'),
+                            model = $O.model(modelName);
+                            
+                            if(model && stateKey){
+                                return model.get(stateKey);
+                            } else if(model){
+                                return model.get();
+                            }
+                        },
+            fetch       : function(modelDbKey){
+                            var 
+                            modelName = modelDbKey.split('.')[0],
+                            dbKey = modelDbKey.split('.').slice(1).join('.'),
+                            model = $O.model(modelName);
+                
+                            if(model && dbKey){
+                                return model.access(dbKey);
+                            }
                         }
             
 		});
@@ -1129,10 +1153,9 @@
 			});
 			
 			// add this Controller instance to the _octane's controllers object
-			(function(){
-				_octane.controllers[model] = $this;
-				$O.handle($this.model.name+':statechange',$this);
-			})();	
+			//(function(){
+            _octane.controllers[model] = $this;
+			//})();	
 		}
 		
 	/* prototype Controller */
@@ -1196,37 +1219,37 @@
                             },
             // param 1 : a model key or array of model keys to listen for change on
             // add param 2 as function(model key,data held in model[key])
-			task   : 	function(o_bind,func){
-				                
-								var 
-                                $this = this,
-                                bind,
-                                data;
-                               
-								if(_.isFunction(func)){
-                                    if(__.typeOf(o_bind) == 'string'){
-                                        o_bind = o_bind.split(',');
-                                    }
-                                    for(var i=0,n=o_bind.length; i<n; i++){
-                                        // closure to preserve scope
-                                        bindTask(o_bind[i]);
-                                    }
-								}
-								return this; // chainable
-                
-                                // helper
-                                /* ------------------------------------------------------- */
-                                    
-                                    function bindTask(bind){
-                                        bind = bind.trim();
-                                        $this.tasks.addCase(bind,function(){
-                                            var data = $this.model.get(bind);
-                                            func.bind($this)(bind,data);
-                                        });
-                                    }
+			task   : 	function(o_bind,task){
+				               
+                                var 
+                                $controller = this,
+                                models = {},
+                                cache ={};
                                 
-                                /* ------------------------------------------------------- */
-                
+                                if(!_.isArray(o_bind)){
+                                    o_bind = [o_bind];
+                                }
+                                
+                                for(var m=0,M=o_bind.length; m<M; m++){
+                                    addBindHandler(o_bind[m],task);   
+                                }
+                                
+                                // helper
+                                function addBindHandler(o_bind,task){
+                                    var 
+                                    model =  model = o_bind.split('.')[0],
+                                    bind = o_bind.split('.').slice(1).join('.');
+                                    
+                                    $O.handle(model+':statechange',function(e){
+                                        var currentVal = $O.get(o_bind);
+                                        if(currentVal != cache[o_bind]){
+                                            cache[o_bind] = currentVal;
+                                            task.apply($controller,[bind,currentVal]);
+                                        }
+                                    });
+                                }
+                                
+								return $controller; // chainable
 							},
 			
 			fetch	: 	function(dbKey){
@@ -1302,37 +1325,6 @@
                                         }  
                                     }   
                                 }
-							},
-            
-			handleEvent : 	function(e){
-								
-								var 
-                                $this = this,
-								eventHandler = new __.Switch();
-									
-								eventHandler.addCase($this.model.name+':statechange',loopState);
-								
-                                // passed e.details, which on event "this.model.statechange"
-                                // is an object of updated model states
-								function loopState(dataBindKeys){
-										for(var i=0,n=dataBindKeys.length; i<n; i++){
-                                            // closure to trap current dataBindKey
-                                            loopStateHelper(dataBindKeys[i]);
-										}
-								}
-                                
-                                eventHandler.run(e.type,[e.detail]);
-                                
-                                // helper
-                                /* ------------------------------------------------------- */
-                                    
-                                    function loopStateHelper(key){
-                                        setTimeout(function(){
-                                              $this.tasks.run(key);
-                                        },0);
-                                    }
-                
-                                /* ------------------------------------------------------- */	
 							}
 		});
 	
