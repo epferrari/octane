@@ -158,7 +158,8 @@ o-container {
   overflow-y: hidden;
   height: auto;
   float: left;
-  padding-bottom: 30px; }
+  padding-bottom: 30px;
+  width: 100%; }
 
 o-canvas {
   position: relative;
