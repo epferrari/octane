@@ -50,7 +50,7 @@
                     // .set({key:value,...})	
                     // .get([stateKey])
                     // .access(dbKey)
-                    // .reScope()
+                    // .rescope()
 
                 /* Controller methods */
 
@@ -860,27 +860,28 @@
 	/* define Model on octane - bridge to private properties and methods */
 		
 		$O.define({
-			/*Model 		: function (name,$db,$default){
-                                 var config = {
-                                    db : _.isObject($db) ? $db : null,
-                                    defaults : _.isObject($defaults) ? $defaults : null,
+			Model 		: function (name,$db,$defaults){
+                            if(!_octane.models[name]){
+                                 return new Model(name,{
+                                    db :$db,
+                                    defaults : $defaults,
                                     context : 'Application'
-                                 }
-                                
-							     return new Model(name,config);
+                                });
+                            } else {
+                                $O.error('Model '+name+' already exists!');
                             }
 				        },
             model       : function(name){
                             return _octane.models[name] || false;
-                        }*/
-        model 		: function (name,config){
+                        }
+        /*model 		: function (name,config){
                 
                             if(_octane.models[name]){
                                 return _octane.models[name];
                             }else{
 							     return new Model(name,config);
                             }
-						}
+						}*/
             
 		});
         
@@ -1129,7 +1130,7 @@
 				model			: $model,
 				context         : context,
                 tasks   		: new __.Switch(),
-				filters          : {},
+				filters         : {},
                 parsers         : {},
 			    hooks           : {}    
 			});
@@ -1358,6 +1359,7 @@
 	/* ------------------------------------------------------- */
 		
         _octane.bootlog = [];
+        $O.Model('bootlog');
         function bootLog(message){
             _octane.bootlog.push(message);
             $O.model('bootlog').set({
@@ -1385,18 +1387,20 @@
                                     }
                                     try{
                                         $O.extend.apply(_octane.moduleExports[this.name],[exports]);
-                                    }catch (exc){
-                                        $O.error('Could not create extend exports, '+this.name+' module. '+exc.message);
+                                    }catch (ex){
+                                        $O.error('Could not create extend exports, '+this.name+' module. '+ex.message);
                                     }
                                 },
-             model			:	function (name,options){
-                                    if(_octane.models[name]){
-                                        return _octane.models[name];
-                                    }else{  
-                                         options = _.isObject(options) ? options : {};
-                                         options.context = this.name+' module';
-                                         return new Model(name,options);
-                                    }
+             Model			:	function (name,$db,defaults){
+                                   if(!_octane.models[name]){
+                                        return new Model(name,{
+                                            db : $db,
+                                            defaults : defaults,
+                                            context : this.name+' module'
+                                        });
+                                   } else {
+                                       $O.error('Model '+name+' already exists!');
+                                   }
 								},
             controller		:	function (model){ 
                                      if(_octane.controllers[model]){
@@ -1599,7 +1603,7 @@
         
         $O.define({
             // artificially start the uptake circuit
-             goose : function(model,$dirty){
+            goose : function(model,$dirty){
                         _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
                     },
             // a custom event for the app to fire when user data changes 
