@@ -685,49 +685,60 @@
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 	
-		function Model(name,options){
+		function Model(name,config){
 			
-			options = _.isObject(options) ? options : {};
-			options.context = options.context || 'Application';
+			config = _.isObject(config) ? config : {};
+            config.db = _.isObject(config.db) ? config.db : {};
+            config.defaults = _.isObject(config.defaults) ? config.defaults : {};
+            config.context = config.context || 'Application';
             
-			var
+			var  
+            $this = this,
+            db = config.db, // RESTful 
             conditions = [
-                [
-                    _.isString(name),
-                    'Model name must be a string.'
-                ]
+                [_.isString(name),'Model name must be a string.']
             ],
-            loadable = verify(conditions,'Model',options.context);
-                
-			if(!loadable) return {instanced:false};
+            loadable = verify(conditions,'Model',config.context);  
 			
-			// RESTful
-			var 
-            db = {},    
-            $this = this;
-            
+            if(!loadable) return {instanced:false};
+			
             this.define({
 				instanced	: true,
 				name		: name,
-                context     : options.context,
+                context     : config.context,
+                defaults    : config.defaults,
 				state		: {}
             });
             var vm = new ViewModel($this);
             
 			// public
 			this.define({
-				access		: function(key) { return db[key]; },
-                reScope    : function(){ vm.parse(); }
+				access		: function(keyString) { 
+                                
+                                var dbData,keyArray;
+
+                                if(keyString){
+                                    keyArray = keyString.split('.');
+
+                                    try{
+                                        dbData = keyArray.reduce(function(o,x,i){
+                                            return o[x];
+                                        },db);
+                                    }catch(ex){
+                                        dbData = '';
+                                        _octane.error('Unable to get model db data "'+keyString+'". Error: '+ex.message);
+                                    }
+                                    return dbData;
+                                }
+                            },
+                rebase      : function($db) {
+                                db = _.isObject($db) && $db;
+                            },
+                reScope     : vm.parse.bind(vm)
 			});
 			
 			// initialize
-			(function ($this){
-
-				_octane.models[name] = $this;
-				
-				Base.prototype.extend.call(db,options.db);
-				$this.set(options.defaults);
-			})(this);			
+			this.init();			
 		}
 		
 	/* prototype Model */	
@@ -735,6 +746,11 @@
 		Model.prototype = new Base();
         Model.prototype.constructor = Model;
 		Model.prototype.define({
+            init : function(){
+                
+                            this.set(this.defaults);
+                            _octane.models[this.name] = this;
+                        },
 			set	: function(){
                 
                             var fresh;
@@ -797,26 +813,37 @@
 						},
 			get	: 	function(keyString){
                                 
-                                var
-                                $this = this,
-                                stateData;
-                                
-                                if(keyString){
-                                    var keyArray = keyString.split('.');
-                                    
-                                    try{
-                                        stateData = keyArray.reduce(function(o,x,i){
-                                            return o[x];
-                                        },$this.state);
-                                    }catch(e){
-                                        stateData = '';
-                                        _octane.log('Unable to get model data "'+keyString+'". Error: '+e);
-                                    }
-                                    return stateData;
-                                } else {
-                                    return this.state;
+                            var
+                            $this = this,
+                            stateData;
+
+                            if(keyString){
+                                var keyArray = keyString.split('.');
+
+                                try{
+                                    stateData = keyArray.reduce(function(o,x,i){
+                                        return o[x];
+                                    },$this.state);
+                                }catch(e){
+                                    stateData = '';
+                                    _octane.log('Unable to get model data "'+keyString+'". Error: '+e);
                                 }
+                                return stateData;
+                            } else {
+                                return this.state;
+                            }
 						},
+            clear       : function(){
+                            var stateProps = Object.keys(this.state);
+                            
+                            for(var i=0,n=stateProps.length; i<n; i++){
+                                delete this.state[stateProps[i]];
+                            }
+                            return this;
+                        },                   
+            reset       : function(){
+                            this.clear().set(this.defaults);
+                        },
             process      : function($dirty){
                                 
                             _octane.controllers[this.name] && _octane.controllers[this.name].doFilter($dirty);
@@ -833,15 +860,28 @@
 	/* define Model on octane - bridge to private properties and methods */
 		
 		$O.define({
-			model 		: function (name,options){
+			/*Model 		: function (name,$db,$default){
+                                 var config = {
+                                    db : _.isObject($db) ? $db : null,
+                                    defaults : _.isObject($defaults) ? $defaults : null,
+                                    context : 'Application'
+                                 }
+                                
+							     return new Model(name,config);
+                            }
+				        },
+            model       : function(name){
+                            return _octane.models[name] || false;
+                        }*/
+        model 		: function (name,config){
                 
                             if(_octane.models[name]){
                                 return _octane.models[name];
-                            }else{  
-							     options = _.isObject(options) ? options : {}; 
-							     return new Model(name,options);
+                            }else{
+							     return new Model(name,config);
                             }
 						}
+            
 		});
         
     /* ------------------------------------------------------- */
@@ -1414,12 +1454,15 @@
                                         } else if( dep && dep.loaded){
                                             // module is already loaded, continue
                                             bootLog(message[2]);
+                                            // remove dependency from list
+                                            _.pull(deps,depName);
                                             return Promise.resolve();
                                         } else {
                                             // module is not loaded, try to load it
                                             if(!dep.loaded){
                                                 bootLog(message[3]);
                                                 return dep._load().then(function(){
+                                                    
                                                      // recheck dependencies
                                                      return $this._checkDependencies();
                                                 })
