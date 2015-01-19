@@ -162,7 +162,7 @@ octane.module(
                 // update the current view
                 currentView = $view;
                 // update current view in global state, jumpstart Circuit                          
-                octane.goose('application',{ currentView : $view.id });
+                octane.goose({"application.currentView" : $view.id });
                 // flag this route complete
                 enRoute = null; 
                // check for queued routes
@@ -197,7 +197,7 @@ octane.module(
         function remove(viewID){
 
             octane.view(viewID) && octane.view(viewID).exit();
-            octane.goose('application',{currentView:''});
+            octane.goose({'application.currentView':''});
         }
 
 
@@ -293,11 +293,10 @@ octane.module(
 
 
         // update the page title when the view changes
-         octane.controller('application').parser('currentView',function($dirty){
-            $dirty.currentViewTitle = __.titleize($dirty.currentView);
-
-            return $dirty;
-        });
+         octane.controller('application')
+            .parser('application.currentView',function($dirty){
+                $dirty.currentViewTitle = __.titleize($dirty.currentView);
+            });
 
         // initialize the router		
         initialize();

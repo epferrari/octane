@@ -847,10 +847,6 @@
             reset       : function(){
                             this.clear().set(this.defaults);
                         },
-            process      : function($dirty){
-                                
-                            _octane.controllers[this.name] && _octane.controllers[this.name].doFilter($dirty);
-                        },
             controller   : function(){
                                 if(_octane.controllers[this.name]){
                                     return _octane.controllers[this.name];
@@ -878,8 +874,8 @@
             get         : function(modelStateKey){
                             
                             var 
-                            modelName = modelStateKey.split('.')[0],
-                            stateKey = modelStateKey.split('.').slice(1).join('.'),
+                            modelName = $O._parseModelName(modelStateKey),
+                            stateKey = $O._parseModelKey(modelStateKey),
                             model = $O.model(modelName);
                             
                             if(model && stateKey){
@@ -888,6 +884,31 @@
                                 return model.get();
                             }
                         },
+            set         : function(){
+                            var 
+                            fresh,
+                            model,
+                            keys,
+                            key;
+                        
+                            if(_.isString(arguments[0])){
+                                fresh = {};
+                                fresh[arguments[0]] = arguments[1];
+                            } else if(_.isObject(arguments[0])){
+                                fresh = arguments[0];
+                            } else {
+                                return;
+                            }
+                           
+                            keys = Object.keys(fresh);
+                            for(var i=0,F=keys.length; i<F; i++){
+                                (function(key){
+                                    model = $O._parseModelName(key);
+                                    $O.model(model) && $O.model(model).set($O._parseModelKey(key),fresh[key]);
+                                })(keys[i]);
+                            }
+                        },
+                            
             fetch       : function(modelDbKey){
                             var 
                             modelName = modelDbKey.split('.')[0],
@@ -896,6 +917,22 @@
                 
                             if(model && dbKey){
                                 return model.access(dbKey);
+                            }
+                        },
+            _parseModelName  : function(bind){
+                            try {
+                                return bind.split('.')[0];
+                            } catch (ex){
+                               $O.error('could not parse model name from '+bind+': '+ex.message);
+                                return false;
+                            }
+                        },
+            _parseModelKey   : function(o_bind){
+                            try{
+                                return o_bind.split('.').slice(1).join('.');
+                            } catch (ex){
+                                $O.error('could not parse model key from '+o_bind+': '+ex.message);
+                                return false;
                             }
                         }
             
@@ -1051,7 +1088,7 @@
                                         var
                                         element = this.scope[key][i],
                                         // remove model name from string
-                                        pointer = element._bind ? element._bind.split('.').slice(1).join('.') : '',
+                                        pointer = element._bind ? $O._parseModelKey(element._bind) : '',
                                         toUpdate = element._update,
                                         toUpdateKeys = Object.keys(toUpdate),
                                         ukey,
@@ -1063,7 +1100,7 @@
                                         for(var u=0,U = toUpdateKeys.length; u<U; u++){
                                             ukey = toUpdateKeys[u];
                                             // remove model name from string
-                                            upointer = ukey.split('.').slice(1).join('.');
+                                            upointer = $O._parseModelKey(ukey);
                                             update(element,toUpdate[ukey],this.model.get(upointer));
                                         }
                                     }
@@ -1098,15 +1135,26 @@
                                 var 
                                 o_bind = element._bind,
                                 // remove model name from string
-                                pointer = o_bind ? o_bind.split('.').slice(1).join('.') : '',
-                                $dirty={};
+                                pointer = o_bind ? $O._parseModelKey(o_bind) : null,
+                                $state={};
 
                                 if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
-                                    $dirty[pointer] = element.value;
+                                    $state[pointer] = element.value;
+                                    /* 
+                                        var parsed = false,controller;
+                                        for(var c=0,C=_octane.controllers.length; c<C; c++){
+                                            controller = _octane.controllers[c];
+                                            if(controller.parsers[o_bind]){
+                                                controller.applyParsers(this.model.name,$state);
+                                                parsed = true;
+                                            }
+                                        }
+                                        !parsed && this.model.set($state);
+                                    */
                                     if(_octane.controllers[this.model.name]){
-                                        _octane.controllers[this.model.name].doFilter($dirty);
+                                        _octane.controllers[this.model.name].applyParsers(this.model.name,$state);
                                     } else {
-                                        this.model.set($dirty);
+                                        this.model.set($state);
                                     }
                                 }				
 							},
@@ -1177,34 +1225,36 @@
             // the second is an arbitrarily named flag that tells the parser it should be a Promise
             // remember to resolve the promise or the data won't be set in the model
             parser			: function(o_bind,func){
-                                    
+                                   
                                 var 
                                 funcDeclaration= func.toString().split('{')[0],
                                 pattern = /\(([^)]+)\)/,
                                 argsString = pattern.exec(funcDeclaration)[1],
                                 argsArray = argsString.split(','),
                                 $this = this;
+                                
+                                // confirm we have an array of parsers
+                                this.parsers[o_bind] = _.isArray(this.parsers[o_bind]) ? this.parsers[o_bind] : [];
                 
-                                if(_.isFunction(func) && _.isUndefined(this.parsers[o_bind])){
+                                if(_.isFunction(func)){
 
                                     if(argsArray.length == 2){
-                                        this.parsers[o_bind] = function($dirty){
+                                        this.parsers[o_bind].push(function($state){
                                             return new Promise(function(resolve,reject){
                                                 // create object to resolve/reject promise in our parser function
-                                                var $deferred = {
+                                                var promise = {
                                                     resolve:resolve,
                                                     reject:reject
                                                 };
                                                 // make sure 'this' in our hooks refers to this Controller
-                                                func.bind($this)($dirty,$deferred);
+                                                func.bind($this)($state,promise);
                                             });
-                                        };
-                                    
+                                        });
                                     }else{
-                                        this.parsers[o_bind] = function($dirty){
+                                        this.parsers[o_bind].push(function($state){
                                             // make sure 'this' in our hooks refers to this Controller
-                                            return func.bind($this,$dirty)();
-                                        };
+                                            return func.bind($this,$state)();
+                                        });
                                     }
                                 }
                                 return this; // chainable	
@@ -1301,29 +1351,60 @@
                                 
 							},
 			
-			applyParsers	: function($data){
+			applyParsers	: function(model,$state){
                                 
                                 var
-                                $this = this,
-                                $maybePromise;
-                
-                                if(_.isObject($data)){
+                                $this = this;
+                                if(_.isObject($state)){
                                     
                                     var 
-                                    dataKeys = Object.keys($data),
-                                    o_bind,$filter;
+                                    stateKeys = Object.keys($state),
+                                    o_bind,$filter,parsers;
 									
-                                    for(var i=0,I=dataKeys.length; i<I; i++){
-                                        o_bind = dataKeys[i];
-                                            
-                                        $maybePromise = $this.parsers[o_bind] && $this.parsers[o_bind]($data);
-                                        //$this.parsers[o_bind] && $this.parsers[o_bind]($data);
-                                        if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
-                                            $maybePromise.then($this.model.set);
-                                        }else{
-                                            $this.model.set($data);
-                                        }  
-                                    }   
+                                    for(var i=0,I=stateKeys.length; i<I; i++){
+                                        
+                                        o_bind = model+'.'+stateKeys[i];
+                                        parsers = this.parsers[o_bind];
+                                        
+                                        if(parsers && _.isArray(parsers)){
+                                            for(var p=0,P=parsers.length; p<P; p++){
+                                                applyParser($state,parsers[p],parsers);    
+                                            }  
+                                        } else {
+                                            $O.model(model).set($state);
+                                        }
+                                    }
+                                }
+                
+                                // helper
+                                function applyParser($state,parser,parsers){
+                                    var
+                                    nextParser = parsers.indexOf(parser) +1, // resolves to 0 if no next parser
+                                    $maybePromise = parser && parser($state);
+                                    
+                                    if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
+                                        if(nextParser){
+                                            $maybePromise.then(function(data){
+                                                applyParser(data,parsers[nextParser],parsers);
+                                            });
+                                        } else {
+                                            try {
+                                                $maybePromise.then($O.model(model).set);
+                                            }catch(ex){
+                                                $O.log(ex);
+                                            }
+                                        }
+                                    } else {
+                                        if(nextParser){
+                                            applyParser($state,parsers[nextParser],parsers);
+                                        } else {
+                                            try{
+                                                $O.model(model).set($state);
+                                            }catch(ex){
+                                                $O.log(ex);
+                                            }
+                                        }
+                                    }
                                 }
 							}
 		});
@@ -1347,9 +1428,9 @@
         $O.Model('bootlog');
         function bootLog(message){
             _octane.bootlog.push(message);
-            $O.model('bootlog').set({
-                bootlog:_octane.bootlog,
-                status:message
+            $O.set({
+                'bootlog.log':_octane.bootlog,
+                'bootlog.status':message
             });
         }
         _octane.moduleExports = {};
@@ -1501,8 +1582,8 @@
                                         this
                                         .define({
                                             loaded : true,
-                                            name    : this.name,
-                                            exports : this.constructor.prototype.exports
+                                            name    : this.name
+                                            //exports : this.constructor.prototype.exports
                                         })
                                         .define(this.constructor.__construct(this.cfg));
 
@@ -1512,8 +1593,8 @@
                                             configurable : false
                                         });
                                         bootLog(message[1]);
-                                        $O.goose('application',{
-                                            loadingProgress : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                        $O.goose("application",{
+                                            "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
                                         });
                                         // hook-in for updating a loading screen
                                         $O.fire('loaded:module',{
@@ -1589,7 +1670,7 @@
         $O.define({
             // artificially start the uptake circuit
             goose : function(model,$dirty){
-                        _octane.controllers[model] && _octane.controllers[model].doFilter($dirty);
+                        _octane.controllers[model] && _octane.controllers[model].applyParsers(model,$dirty);
                     },
             // a custom event for the app to fire when user data changes 
             trip       :   function(elem){
@@ -1632,7 +1713,7 @@
         });
         
          $O.controller('application')
-            .parser('loadingProgress',function($data){
+            .parser('application.loadingProgress',function($data){
                 var currentProgress = this.model.get('loadingProgress') || 0;
                 $data.loadingProgress = currentProgress + $data.loadingProgress;
             });
