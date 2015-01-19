@@ -56,11 +56,11 @@
 
                     // .filter(o-bind,filter)
                     // .hook(o-bind,$caseObject)
-                    // .parser(o-bind,func(data[,async]))
+                    // .hook(o-bind,func(data[,async]))
                     // .task(o-bind,func(o-bind,data))
 
                     // .doFilter($data)
-                    // .applyParsers($data)
+                    // .applyHooks($data)
 
                 /* ViewModel methods */
 
@@ -846,14 +846,7 @@
                         },                   
             reset       : function(){
                             this.clear().set(this.defaults);
-                        },
-            controller   : function(){
-                                if(_octane.controllers[this.name]){
-                                    return _octane.controllers[this.name];
-                                } else {
-                                    return new Controller(this.name,this.context);
-                                }
-                            }
+                        }
 		});
 		
 		$O.define({
@@ -1140,22 +1133,26 @@
 
                                 if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
                                     $state[pointer] = element.value;
-                                    /* 
-                                        var parsed = false,controller;
-                                        for(var c=0,C=_octane.controllers.length; c<C; c++){
-                                            controller = _octane.controllers[c];
-                                            if(controller.parsers[o_bind]){
-                                                controller.applyParsers(this.model.name,$state);
-                                                parsed = true;
-                                            }
+                                    
+                                    var 
+                                    parsed = false,
+                                    controllerIDs = Object.keys(_octane.controllers),
+                                    controller;
+                                    
+                                    for(var c=0,C=controllerIDs.length; c<C; c++){
+                                        controller = _octane.controllers[controllerIDs[c]];
+                                        if(controller.hooks[o_bind]){
+                                            controller.applyHooks(this.model.name,$state);
+                                            parsed = true;
                                         }
-                                        !parsed && this.model.set($state);
-                                    */
-                                    if(_octane.controllers[this.model.name]){
-                                        _octane.controllers[this.model.name].applyParsers(this.model.name,$state);
+                                    }
+                                    !parsed && this.model.set($state);
+                                   
+                                    /*if(_octane.controllers[this.model.name]){
+                                        _octane.controllers[this.model.name].applyHooks(this.model.name,$state);
                                     } else {
                                         this.model.set($state);
-                                    }
+                                    }*/
                                 }				
 							},
 			handleEvent	: 	function (e){ 
@@ -1168,23 +1165,9 @@
 	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 		
-		function Controller(model,context){
+		function Controller(name,context){
 			
             context = context || 'Application';
-           
-			// validate context
-			var	$model = _octane.models[model] || {},
-                conditions = [
-					[
-                        $model instanceof Model,
-                        'defined model is not an instance of $O.Model'
-                    ],[
-                        $model.instanced,
-                        'model '+model+' passed as argument was not initialized'
-                    ]
-				],
-                loadable = verify(conditions,'Controller',context);
-			if(!loadable) return {instanced:false};
 			
 			var $this = this;
 			// private properties
@@ -1192,17 +1175,15 @@
 			// semi-public	API	
 			this.define({
                 instanced		: true,
-				model			: $model,
+				name			: name,
 				context         : context,
-                tasks   		: new __.Switch(),
 				filters         : {},
-                parsers         : {},
-			    hooks           : {}    
+                hooks           : {}   
 			});
 			
 			// add this Controller instance to the _octane's controllers object
 			//(function(){
-            _octane.controllers[model] = $this;
+            _octane.controllers[name] = $this;
 			//})();	
 		}
 		
@@ -1212,19 +1193,13 @@
         Controller.prototype.constructor = Controller;
 		Controller.prototype.define({
             
-            // assign an _octane filter to be run on a 'dirty' data property
-            filter		: function(o_bind,filter){
-                                this.filters[o_bind] = filter;
-                                return this; // chainable
-                        },
-
             // a function to be applied in between filtering and the setting of data in the model
-            // if one model data value changes depending on another, a parser is the place for that logic
+            // if one model data value changes depending on another, a hook is the place for that logic
             // key is the incoming data key to parse for, fn is the function to apply
-            // parser param 'func' can take 2 arguments, the first is the bound dirty data,
-            // the second is an arbitrarily named flag that tells the parser it should be a Promise
+            // hook param 'func' can take 2 arguments, the first is the bound dirty data,
+            // the second is an arbitrarily named flag that tells the hook it should be a Promise
             // remember to resolve the promise or the data won't be set in the model
-            parser			: function(o_bind,func){
+            hook			: function(o_bind,func){
                                    
                                 var 
                                 funcDeclaration= func.toString().split('{')[0],
@@ -1233,15 +1208,15 @@
                                 argsArray = argsString.split(','),
                                 $this = this;
                                 
-                                // confirm we have an array of parsers
-                                this.parsers[o_bind] = _.isArray(this.parsers[o_bind]) ? this.parsers[o_bind] : [];
+                                // confirm we have an array of hooks
+                                this.hooks[o_bind] = _.isArray(this.hooks[o_bind]) ? this.hooks[o_bind] : [];
                 
                                 if(_.isFunction(func)){
 
                                     if(argsArray.length == 2){
-                                        this.parsers[o_bind].push(function($state){
+                                        this.hooks[o_bind].push(function($state){
                                             return new Promise(function(resolve,reject){
-                                                // create object to resolve/reject promise in our parser function
+                                                // create object to resolve/reject promise in our hook function
                                                 var promise = {
                                                     resolve:resolve,
                                                     reject:reject
@@ -1251,7 +1226,7 @@
                                             });
                                         });
                                     }else{
-                                        this.parsers[o_bind].push(function($state){
+                                        this.hooks[o_bind].push(function($state){
                                             // make sure 'this' in our hooks refers to this Controller
                                             return func.bind($this,$state)();
                                         });
@@ -1261,12 +1236,7 @@
                           },
 
 
-            // add a new Switch instance with a case object to be processed
-            // when a filter is called on the defined property
-            hook			: function(o_bind,caseObject){
-                                this.hooks[o_bind] = new __.Switch(caseObject);
-                                return this; // chainable
-                            },
+            
             // param 1 : a model key or array of model keys to listen for change on
             // add param 2 as function(model key,data held in model[key])
 			task   : 	function(o_bind,task){
@@ -1287,8 +1257,8 @@
                                 // helper
                                 function addBindHandler(o_bind,task){
                                     var 
-                                    model =  model = o_bind.split('.')[0],
-                                    bind = o_bind.split('.').slice(1).join('.');
+                                    model =  $O._parseModelName(o_bind),
+                                    bind = $O._parseModelKey(o_bind);
                                     
                                     $O.handle(model+':statechange',function(e){
                                         var currentVal = $O.get(o_bind);
@@ -1302,11 +1272,76 @@
 								return $controller; // chainable
 							},
 			
-			fetch	: 	function(dbKey){
-				
-								return this.model.access(dbKey);
-							},
 			
+			applyHooks	: function(model,$state){
+                                
+                                var
+                                $this = this;
+                                if(_.isObject($state)){
+                                    
+                                    var 
+                                    stateKeys = Object.keys($state),
+                                    o_bind,hooks;
+									
+                                    for(var i=0,I=stateKeys.length; i<I; i++){
+                                        
+                                        (function(key){
+                                            o_bind = model+'.'+key;
+                                            hooks = $this.hooks[o_bind];
+
+                                            if(hooks && _.isArray(hooks)){
+                                                for(var p=0,P=hooks.length; p<P; p++){
+                                                    applyHook($state,hooks[p],hooks);    
+                                                }  
+                                            } else {
+                                                $O.model(model).set($state);
+                                            }
+                                        })(stateKeys[i]);
+                                    }
+                                }
+                
+                                // helper
+                                function applyHook($state,hook,hooks){
+                                    var
+                                    nextHook = hooks.indexOf(hook) +1, // resolves to 0 if no next hook
+                                    $maybePromise = hook && hook($state);
+                                    
+                                    if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
+                                        if(nextHook){
+                                            $maybePromise.then(function(data){
+                                                applyHook(data,hooks[nextHook],hooks);
+                                            });
+                                        } else {
+                                            try {
+                                                $maybePromise.then($O.model(model).set);
+                                            }catch(ex){
+                                                $O.log(ex);
+                                            }
+                                        }
+                                    } else {
+                                        if(nextHook){
+                                            applyHook($state,hooks[nextHook],hooks);
+                                        } else {
+                                            try{
+                                                $O.model(model).set($state);
+                                            }catch(ex){
+                                                $O.log(ex);
+                                            }
+                                        }
+                                    }
+                                }
+							},
+             // assign an _octane filter to be run on a 'dirty' data property
+            filter		: function(o_bind,filter){
+                                this.filters[o_bind] = filter;
+                                return this; // chainable
+                        },
+            // add a new Switch instance with a case object to be processed
+            // when a filter is called on the defined property
+            /*hook			: function(o_bind,caseObject){
+                                this.hooks[o_bind] = new __.Switch(caseObject);
+                                return this; // chainable
+                            },
 			doFilter : function($dirty){
 								var $this = this;
 								    
@@ -1329,10 +1364,10 @@
 									return $data;   
 								}
 								
-								this.applyParsers( filterAll($dirty) );	
+								this.applyHooks( filterAll($dirty) );	
                 
                                 // helper
-                                /* ------------------------------------------------------- */
+                                /* ------------------------------------------------------- 
 
                                     function filterOne(filter,o_bind,$data){
                                         // if a filter exists, run it on the data
@@ -1347,76 +1382,25 @@
                                         return $this.hooks[o_bind] ? $this.hooks[o_bind].run(result.status,[$data]) : $data;
                                     }
 
-                                /* ------------------------------------------------------- */
+                                /* ------------------------------------------------------- 
                                 
-							},
-			
-			applyParsers	: function(model,$state){
-                                
-                                var
-                                $this = this;
-                                if(_.isObject($state)){
-                                    
-                                    var 
-                                    stateKeys = Object.keys($state),
-                                    o_bind,$filter,parsers;
-									
-                                    for(var i=0,I=stateKeys.length; i<I; i++){
-                                        
-                                        o_bind = model+'.'+stateKeys[i];
-                                        parsers = this.parsers[o_bind];
-                                        
-                                        if(parsers && _.isArray(parsers)){
-                                            for(var p=0,P=parsers.length; p<P; p++){
-                                                applyParser($state,parsers[p],parsers);    
-                                            }  
-                                        } else {
-                                            $O.model(model).set($state);
-                                        }
-                                    }
-                                }
-                
-                                // helper
-                                function applyParser($state,parser,parsers){
-                                    var
-                                    nextParser = parsers.indexOf(parser) +1, // resolves to 0 if no next parser
-                                    $maybePromise = parser && parser($state);
-                                    
-                                    if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
-                                        if(nextParser){
-                                            $maybePromise.then(function(data){
-                                                applyParser(data,parsers[nextParser],parsers);
-                                            });
-                                        } else {
-                                            try {
-                                                $maybePromise.then($O.model(model).set);
-                                            }catch(ex){
-                                                $O.log(ex);
-                                            }
-                                        }
-                                    } else {
-                                        if(nextParser){
-                                            applyParser($state,parsers[nextParser],parsers);
-                                        } else {
-                                            try{
-                                                $O.model(model).set($state);
-                                            }catch(ex){
-                                                $O.log(ex);
-                                            }
-                                        }
-                                    }
-                                }
-							}
+							},*/
 		});
 	
 		$O.define({
-			controller 	: function (model){ 
-                                if(_octane.controllers[model]){
-                                    return _octane.controllers[model];
-                                }else{
-                                    return new Controller(model,'Application');
+			Controller 	: function (name){
+                                if(!name){
+                                    return new Controller($O.GUID(),'Application');
+                                } else if(!_octane.controllers[name]){
+                                    return new Controller(name,'Application');
+                                } else {
+                                    $O.error('Controller '+name+' already exists!');
                                 }
+                            },
+            controller  : function(name){
+                            return _octane.controllers[name] || false;
                             }
+                            
 		});
 	
 	
@@ -1468,12 +1452,14 @@
                                        $O.error('Model '+name+' already exists!');
                                    }
 								},
-            controller		:	function (model){ 
-                                     if(_octane.controllers[model]){
-                                        return _octane.controllers[model];
-                                    }else{
-                                        return new Controller(model,this.name+' module');
-                                    } 
+            Controller		:	function (name){ 
+                                    if(!name){
+                                        return new Controller($O.GUID(),this.name+' module');
+                                    } else if(!_octane.controllers[name]){
+                                        return new Controller(name,this.name+' module');
+                                    } else {
+                                        $O.error('Controller '+name+' already exists!');
+                                    }
                                 },
             _checkDependencies : function(){
                                     
@@ -1669,8 +1655,15 @@
         
         $O.define({
             // artificially start the uptake circuit
-            goose : function(model,$dirty){
-                        _octane.controllers[model] && _octane.controllers[model].applyParsers(model,$dirty);
+            goose : function(model,$state){
+                        var
+                        controllers = _octane.controllers,
+                        controllerIDs = Object.keys(controllers),
+                        id;
+                
+                        for(var i=0,c=controllerIDs.length; i<c; i++){
+                            controllers[controllerIDs[i]].applyHooks(model,$state);
+                        }
                     },
             // a custom event for the app to fire when user data changes 
             trip       :   function(elem){
@@ -1688,9 +1681,9 @@
         
         // global model and controller
         // octane DOM elements
-            .define({ 
-                appModel : new Model('application'),
-                $Controller : new Controller('application'),
+            .define({
+                appModel : $O.Model('application'),
+                appController : $O.Controller('AppController'),
                 dom:{} 
             });
         
@@ -1712,10 +1705,11 @@
             zIndexHidden    : -1
         });
         
-         $O.controller('application')
-            .parser('application.loadingProgress',function($data){
-                var currentProgress = this.model.get('loadingProgress') || 0;
-                $data.loadingProgress = currentProgress + $data.loadingProgress;
+        
+        $O.controller('AppController')
+            .hook('application.loadingProgress',function($state){
+                var currentProgress = $O.get('application.loadingProgress') || 0;
+                $state.loadingProgress = currentProgress + $state.loadingProgress;
             });
         
     

@@ -293,9 +293,9 @@ octane.module(
 
 
         // update the page title when the view changes
-         octane.controller('application')
-            .parser('application.currentView',function($dirty){
-                $dirty.currentViewTitle = __.titleize($dirty.currentView);
+         octane.Controller()
+            .hook('application.currentView',function($state){
+                $state.currentViewTitle = __.titleize($state.currentView);
             });
 
         // initialize the router		
