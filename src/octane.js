@@ -782,7 +782,6 @@
                                 
                                 try{
                                     keyArray.reduce(parseString,$state);
-            
                                     modelUpdated = true;
                                 }catch(e){
                                     modelUpdated = false;
@@ -801,7 +800,12 @@
                                 function parseString(o,x,index){
 
                                     if(index == (k-1)){
-                                        return o[x] = value;
+                                        if(value == null){
+                                            delete o[x];
+                                            return;
+                                        } else {
+                                            return o[x] = value;
+                                        }
                                     }else{
                                         return o[x] = _.isObject(o[x]) ? o[x] : {};
                                     }
@@ -810,6 +814,26 @@
                             /* ------------------------------------------------------- */
                            
 						},
+            unset : function(){
+                
+                            var toUnset;
+							
+                            if(_.isString(arguments[0])){
+                                toUnset = {};
+                                toUnset[arguments[0]] = arguments[1];
+                            } else if(_.isObject(arguments[0])){
+                                toUnset = arguments[0];
+                            } else {
+                                return;
+                            }
+                
+                            _.forOwn(toUnset,function(val,key){
+                                toUnset[key] = null;
+                            });
+                
+                            this.set(toUnset);
+                        
+                        },
 			get	: 	function(keyString){
                                 
                             var
@@ -878,30 +902,82 @@
                             }
                         },
             set         : function(){
-                            var 
+                            
+                            var
+                            arg0 = arguments[0],
+                            arg1 = arguments[1],
                             fresh,
-                            model,
                             keys,
-                            key;
-                        
-                            if(_.isString(arguments[0])){
-                                fresh = {};
-                                fresh[arguments[0]] = arguments[1];
-                            } else if(_.isObject(arguments[0])){
-                                fresh = arguments[0];
-                            } else {
-                                return;
-                            }
+                            swatch;
+                            
+                            swatch = new __.Switch({
+                                'string' : function(arg0,arg1){
+                                    fresh = {};
+                                    fresh[arg0] = arg1;
+                                },
+                                'object' : function(arg0,arg1){
+                                    fresh = arg0;
+                                },
+                                'default' : function(){
+                                    fresh = {};
+                                }
+                            }).run(__.typeOf(arg0),[arg0,arg1]);
+                            
                            
                             keys = Object.keys(fresh);
                             for(var i=0,F=keys.length; i<F; i++){
-                                (function(key){
-                                    model = $O._parseModelName(key);
-                                    $O.model(model) && $O.model(model).set($O._parseModelKey(key),fresh[key]);
-                                })(keys[i]);
+                               doSet( keys[i] );
                             }
-                        },
                             
+                            // helper
+                            function doSet(keystring){
+                                
+                                var
+                                model = $O._parseModelName(keystring),
+                                key = $O._parseModelKey(keystring),
+                                value = fresh[keystring];
+                                
+                                _octane.models[model] && _octane.models[model].set(key,value);
+                            }
+                
+                        },
+            unset       : function(){
+                            
+                            
+                            var
+                            subject = arguments[0],
+                            toUnset,
+                            swatch;
+                
+                            swatch = new __.Switch({
+                                'string' : function(sub){
+                                    toUnset = sub.split(',');
+                                    for(var i=0,n=toUnset.length; i<n; i++){
+                                        toUnset[i] = toUnset[i].trim();
+                                    }
+                                },
+                                'array' : function(sub){
+                                    toUnset = sub;
+                                },
+                                'default' : function(){
+                                    toUnset = [];
+                                }
+                            }).run(__.typeOf(subject),[subject]);
+
+                
+                            for(var i=0,n=toUnset.length; i<n; i++){
+                                 doUnset(toUnset[i]);   
+                            }
+                            
+                            // helper
+                            function doUnset(keystring){
+                                
+                                var
+                                model = $O._parseModelName(keystring),
+                                key = $O._parseModelKey(keystring);
+                                _octane.models[model] && _octane.models[model].unset(key);
+                            }
+                        },              
             fetch       : function(modelDbKey){
                             var 
                             modelName = modelDbKey.split('.')[0],
