@@ -27,7 +27,8 @@ octane.module(
                 elem		: elem,
                 $elem 		: $(elem),
                 _guid		: octane.GUID(),
-                doneLoading : []					
+                todoAfterLoad : [],
+                todoBeforeLoad : []
             });
             this.setPosition(this.loadsFrom);
 
@@ -78,7 +79,7 @@ octane.module(
                                     .then(util.removeLoading)
                                     .then(util.hideApp)
                                     .then(util.loadModal.bind($this))
-                                    .then($this.doCallbacks.bind($this));
+                                    .then($this.doLoadThen.bind($this));
                             }else{
                                 return util.loadBG()
                                     .then(util.removeLoading)
@@ -288,11 +289,11 @@ octane.module(
             if(!($modal && ($modal instanceof oModal))){  return };
 
             if(!block){
-                octane.fire('block:routing');
+                octane.blockRouting();
                 if(!currentModal){
                     $modal.load().then(function(){
                         currentModal = $modal;
-                        octane.fire('unblock:routing');
+                        octane.unblockRouting(); 
                     });
                 } else if (currentModal.id !== modalID){
                     // another modal is onscreen, remove it
@@ -300,7 +301,7 @@ octane.module(
                         .then($modal.load)
                         .then(function(){
                             currentModal = $modal;
-                            octane.blockRouting();
+                            octane.unblockRouting(); 
                         });
                 } else {
                    octane.unblockRouting(); 
