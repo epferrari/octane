@@ -62,8 +62,8 @@ octane.module(
                             });
                         },
             setPosition : $viewProto.setPosition,
-            addCallback : $viewProto.addCallback,
-            doCallbacks : $viewProto.doCallbacks,       
+            loadThen    : $viewProto.loadThen,
+            doLoadThen  : $viewProto.doLoadThen,       
             load        : function (){
                             var 
                             $this = this,
@@ -83,7 +83,7 @@ octane.module(
                                 return util.loadBG()
                                     .then(util.removeLoading)
                                     .then(util.loadModal.bind($this))
-                                    .then($this.doCallbacks.bind($this));
+                                    .then($this.doLoadThen.bind($this));
                             }
                         },
             exit        : function(){
@@ -300,10 +300,10 @@ octane.module(
                         .then($modal.load)
                         .then(function(){
                             currentModal = $modal;
-                            octane.fire('unblock:routing');
+                            octane.blockRouting();
                         });
                 } else {
-                   octane.fire('unblock:routing'); 
+                   octane.unblockRouting(); 
                 }
             }
         }
@@ -314,10 +314,10 @@ octane.module(
 
             if($modal && $modal instanceof oModal){
                 
-                octane.fire('block:routing');
+                octane.blockRouting();
                 
                $modal.exit()//.then(function(){
-                    octane.fire('unblock:routing');
+                    octane.unblockRouting();
                     currentModal = false;
                // });
             }
@@ -363,6 +363,9 @@ octane.module(
             },
             isBlocked : function(){
                 return block;
+            },
+            callThen : function(modalID,callback,args){
+                $Modals[modalID] && $Modals[modalID].loadThen(callback,args);
             }
         });
 

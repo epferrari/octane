@@ -45,11 +45,13 @@ octane.module(
         routeConditions = {};
         
         // block routing, incoming routes go to queue
-        octane.handle('block:routing',function(){
+        //octane.handle('block:routing',function(){
+        function blockRouting(){
             routingBlocked = true;
-        });
+        }//);
         // release block and route from queue
-        octane.handle('unblock:routing',function(){
+        //octane.handle('unblock:routing',function(){
+        function unblockRouting(){
             routingBlocked = false;
             //( routesQueue.length > 0 ) && route(routesQueue.pop());
             var lastRouteRequested = routesQueue.pop();
@@ -57,7 +59,7 @@ octane.module(
             route(lastRouteRequested).catch(function(ex){
                octane.log(ex);
             });  
-        });
+        }//);
         
         // add a condition that needs to be true for the route to run
         function routeIf(viewID,condition,failCallback){
@@ -77,11 +79,20 @@ octane.module(
                 onFail    : failCallback
             });
         }
+        
+        // add a deferred to execute before a view is routed
+        // unlike routeIf, route will initialize whether the promise resolves or rejects
+        // just keeps view from routing until something is done
+        function routeAfter(viewID,deferred,argsArray){
+            
+            octane.view(viewID) && octane.view(viewID).beforeLoad(deferred,argsArray);
+            return octane;
+        }
             
         // add a callback to be executed when the specified view finishes its loading animation 
-        function routeThen(viewID,callback){
+        function routeThen(viewID,callback,argsArray){
 
-            octane.view(viewID) && octane.view(viewID).addCallback(callback);
+            octane.view(viewID) && octane.view(viewID).loadThen(callback,argsArray);
             return octane;
         }
         
@@ -162,7 +173,10 @@ octane.module(
                 // update the current view
                 currentView = $view;
                 // update current view in global state, jumpstart Circuit                          
-                octane.goose({"application.currentView" : $view.id });
+                octane.goose('application',{
+                    viewID : $view.id,
+                    viewTitle : $view.title   
+                });
                 // flag this route complete
                 enRoute = null; 
                // check for queued routes
@@ -193,13 +207,6 @@ octane.module(
                 }
                 return true;
         }
-        
-        function remove(viewID){
-
-            octane.view(viewID) && octane.view(viewID).exit();
-            octane.goose({'application.currentView':''});
-        }
-
 
         function setRoutingButtons(){
 
@@ -282,21 +289,15 @@ octane.module(
                                 });
                             },
             routeIf         : routeIf,
+            routeAfter      : routeAfter,
             routeThen		: routeThen,
-            exit			: remove,
             pushState		: pushState,
             currentView     : function(){
                                 return currentView
-                            }
+                            },
+            blockRouting    : blockRouting,
+            unblockRouting  : unblockRouting
         });
-
-
-
-        // update the page title when the view changes
-         octane.Controller()
-            .hook('application.currentView',function($state){
-                $state.currentViewTitle = __.titleize($state.currentView);
-            });
 
         // initialize the router		
         initialize();

@@ -31,10 +31,12 @@ octane.module(
 
                 instanced	: true,
                 id			: elem.id,
+                title       : elem.getAttribute('title') || '',
                 elem		: elem,
                 $elem 		: $(elem),
                 _guid		: octane.GUID(),
-                doneLoading : [],					
+                todoBeforeLoad : [],
+                todoAfterLoad : [],					
             });
             this.setPosition(this.loadsFrom);
         }
@@ -52,7 +54,7 @@ octane.module(
             $views = octane.dom.views(),
             id;
             
-            // bind html views to View objects		
+            // bind html views to View objects 
             for(var i=0,n=$views.length; i<n; i++){
                 id = $views[i].id;
                 config = JSON.parse($views[i].getAttribute('o-config'));
