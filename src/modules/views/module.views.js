@@ -6,7 +6,7 @@ octane.module(
     function(cfg){
             
         var 
-        Base = octane.constructor,
+        Base = octane.constructor, 
         $Views = {},
         $proto = this.import('viewPrototype');
     
@@ -38,7 +38,8 @@ octane.module(
                 todoBeforeLoad : [],
                 todoAfterLoad : [],					
             });
-            this.setPosition(this.loadsFrom);
+            
+            this.elem.classList.add('view-'+this.loadsFrom);
         }
 
         View.prototype = new Base('octane View');
@@ -48,7 +49,7 @@ octane.module(
         
         View.prototype.extend($proto);
         
-        function initialize(){
+        this.initialize = function(){
             
             var 
             $views = octane.dom.views(),
@@ -65,9 +66,6 @@ octane.module(
                     return $Views[id] || false;
                 }
             });
-        }
-        
-        initialize();
-        
-                
+        };
+         
     });
