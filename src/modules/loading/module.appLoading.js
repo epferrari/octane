@@ -5,6 +5,8 @@
 	
 		octane.module('appLoading', function (cfg){
 			
+            cfg = _.isObject(cfg) ? cfg : {};
+            
 			var 
 			$this = this,
 			defaults = {
@@ -17,6 +19,7 @@
 			$model = octane.model('appLoading',{singleton:true}).set(defaults),
 			$controller = octane.controller()			
 			.hook('appLoading.progress',function($state,promise){
+                $state.progress = $state.progress <= 100 ? $state.progress : 100;
 				$state.percent =$state.progress.toString()+"%";
 				$state.screenReader = $state.percent+' Loaded';
 				promise.resolve($state);	
@@ -46,8 +49,8 @@
                 loadingContainer = octane.dom.loadingContainer(),
                 appContainer = octane.dom.appContainer(),
                 view = octane.parseView() || 'home';
-                if(__.inArray(cfg.restricted,view)){
-                    view = cfg.defaultView;
+                if(_.isArray(cfg.restricted) && __.inArray(cfg.restricted,view)){
+                    view = cfg.defaultView || 'home';
                 }
                 appContainer.classList.remove('hidden');
 
