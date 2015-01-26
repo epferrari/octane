@@ -101,14 +101,13 @@ octane.module(
         // function's thisArg is bound to the view called
         // @param ghost [bool]: do not update the history with the view (default false)
         function route(viewID,ghost){
+            
             return new Promise(function(resolve,reject){  
                 
                 ghost = _.isBoolean(ghost) ? ghost : false;
                 var 
                 $view = octane.view(viewID);
-                
-                
-
+            
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
                                                                                                 //
@@ -133,9 +132,9 @@ octane.module(
                     //////////////////////////////////////////////////////////////      //      //
                                                                                 //      //      //
                         if(currentView){                                        //      //      //
-                            currentView.exit()                                  //      //      //
+                            currentView.queueExit()                             //      //      //
                                 .then(function(){                               //      //      //
-                                    return loadView($view,ghost);               //      //      //
+                                    return loadView($view,ghost,currentView);   //      //      //
                                 })                                              //      //      //
                                 .then(resolve)                                  //      //      //
                                 .catch(octane.log);                             //      //      //
@@ -163,7 +162,7 @@ octane.module(
         }
         
         // helper
-        function loadView($view,ghost){
+        function loadView($view,ghost,previousView){
             octane.fire('view:loading');
             
             return $view.load().then(function(){
@@ -177,6 +176,8 @@ octane.module(
                     viewID : $view.id,
                     viewTitle : $view.title   
                 });
+                // send previous view back intot the hidden view stack
+                previousView && previousView.exit();
                 // flag this route complete
                 enRoute = null; 
                // check for queued routes
@@ -196,12 +197,12 @@ octane.module(
             var conditions = routeConditions[viewID] || [];
 
                 for(var c=0,C=conditions.length; c<C; c++){
-                    if(conditions[c].condition()){
+                    if(conditions[c].condition.call()){
                         // meets routing condition
                         continue;
                     }else{
                         // does not meet routing condition, call fail callback
-                        _.isFunction(conditions[c].onFail) && conditions[c].onFail();
+                        _.isFunction(conditions[c].onFail) && conditions[c].onFail.call();
                         return false;
                     }
                 }
@@ -211,6 +212,7 @@ octane.module(
         function setRoutingButtons(){
 
             var btns = document.querySelectorAll('[o-route]');
+            
             var n = btns.length;
 
             while(n--){
@@ -234,9 +236,9 @@ octane.module(
 
             // for HTML5 vs. HTML4 browsers
             // detect with modernizr   
-            var html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history');
+            var  history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history');
 
-            if(html5){
+            if(history){
                 return __.location().searchObject.view || false;
             } else {
                  var hash = window.location.hash,
@@ -256,11 +258,32 @@ octane.module(
             }
          }
 
-        function initialize(){
+        
+
+        // Router Public API				
+        octane.constructor.prototype.define({
+            parseView       : parseView,
+            route			: function(viewID,ghost){
+                                return route(viewID,ghost).catch(function(ex){
+                                    octane.log(ex);
+                                });
+                            },
+            routeIf         : routeIf,
+            routeAfter      : routeAfter,
+            routeThen		: routeThen,
+            pushState		: pushState,
+            currentView     : function(){
+                                return currentView
+                            },
+            blockRouting    : blockRouting,
+            unblockRouting  : unblockRouting
+        });
+        
+        this.initialize= function(){
 
             var
-            html5 = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
-            stateChangeEvent = html5 ? 'popstate' : 'hashchange',
+            history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+            stateChangeEvent = history ? 'popstate' : 'hashchange',
             id, config;
 
             setRoutingButtons(); 
@@ -279,28 +302,6 @@ octane.module(
                 currentView && currentView.setCanvasHeight();
             });
         }
-
-        // Router Public API				
-        octane.define({
-            parseView       : parseView,
-            route			: function(viewID,ghost){
-                                return route(viewID,ghost).catch(function(ex){
-                                    octane.log(ex);
-                                });
-                            },
-            routeIf         : routeIf,
-            routeAfter      : routeAfter,
-            routeThen		: routeThen,
-            pushState		: pushState,
-            currentView     : function(){
-                                return currentView
-                            },
-            blockRouting    : blockRouting,
-            unblockRouting  : unblockRouting
-        });
-
-        // initialize the router		
-        initialize();
     });
     
 		
