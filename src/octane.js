@@ -1677,28 +1677,32 @@
             module,name;
             
             // load router module first
-            return _octane.modules['router']._load().then(function(){
-                
-                // load each module
-                for(var j=0,m=moduleKeys.length; j<m; j++){
-                    name = moduleKeys[j];
-                    module = _octane.modules[name];
-                    // don't reload the same module
-                    if(!module.loaded){
-                        // capture closure
-                        (function(module){
-                            // set init arguments to properties of the module's constructor function
-                            module.cfg = _.isArray(options[name]) ? options[name] : [];
-                            bootLog(module.name+': not loaded, loading...');
-                            modulesLoaded.push( module._load() );
-                        })(module);
+            return _octane.modules['startup-utilities']._load()
+                .then(function(){
+                    return _octane.modules['router']._load();
+                })
+                .then(function(){
+
+                    // load each module
+                    for(var j=0,m=moduleKeys.length; j<m; j++){
+                        name = moduleKeys[j];
+                        module = _octane.modules[name];
+                        // don't reload the same module
+                        if(!module.loaded){
+                            // capture closure
+                            (function(module){
+                                // set init arguments to properties of the module's constructor function
+                                module.cfg = _.isArray(options[name]) ? options[name] : [];
+                                bootLog(module.name+': not loaded, loading...');
+                                modulesLoaded.push( module._load() );
+                            })(module);
+                        }
                     }
-                }
-                return Promise.all(modulesLoaded);
-            })
-            .catch(function(err){
-                bootLog(err);
-            });
+                    return Promise.all(modulesLoaded);
+                })
+                .catch(function(err){
+                    bootLog(err);
+                });
 		}
 		
         
@@ -1804,19 +1808,6 @@
             
             octane.name = options.name;
             
-            // initialize utilities
-            var 
-            utils = $O.library('startup-utilities') || {},
-            utilsKeys = Object.keys(utils),
-            util;
-                
-            for(var u=0,U=utilsKeys.length; u<U; u++){
-                util = utilsKeys[u];    
-                // hook for the loading message
-                $O.fire('loading:utility',{detail:util});
-                // init utility
-               _.isFunction(utils[util]) && utils[util].call();
-            }
             // add debugging support if module included, pass internal _octane app object
 			if(_octane.modules['debug']){
                 options.debug = [_octane];
