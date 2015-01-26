@@ -279,7 +279,7 @@
 							 _octane.logfile.push(message);
 						  },
 			getLog     : function(){
-							 return logfile;
+							 return _octane.logfile;
 						  }
 		});
         
@@ -1176,20 +1176,28 @@
                                 /* ------------------------------------------------------- */
                                     
                                     function update(el,attribute,fresh){
+                                        
+                                        if(attribute.indexOf('.') !== -1){
+                                            // update style on element
+                                            var 
+                                            prop = attribute.split('.')[1];
+                                            
+                                            el.style[prop] = fresh;
+                                        } else {
+                                            var o_update = new __.Switch({
+                                                'html' : function(){
 
-                                        var o_update = new __.Switch({
-                                            'html' : function(){
-
-                                                        el.innerHTML = fresh;
-                                                    },
-                                            'text' : function(){
-                                                        el.textContent = fresh;
-                                                    },
-                                            'default' : function(){
-                                                        el.setAttribute(attribute,fresh);
-                                                    }
-                                        });
-                                        o_update.run(attribute);
+                                                            el.innerHTML = fresh;
+                                                        },
+                                                'text' : function(){
+                                                            el.textContent = fresh;
+                                                        },
+                                                'default' : function(){
+                                                            el.setAttribute(attribute,fresh);
+                                                        }
+                                            });
+                                            o_update.run(attribute);
+                                        }
                                     }
                                 
                                 /* ------------------------------------------------------- */
@@ -1560,7 +1568,7 @@
                                             // module is already loaded, continue
                                             bootLog(message[2]);
                                             // remove dependency from list
-                                            _.pull(deps,depName);
+                                            //_.pull(deps,depName);
                                             return Promise.resolve();
                                         } else {
                                             // module is not loaded, try to load it
@@ -1596,7 +1604,7 @@
                                     }
                                 },
             _abort              : function(){
-                                    this.define({loaded:false});
+                                    this.loaded = false;
                                     delete octane[this.name];
                                     return Promise.reject(this.name+': failed to initialize!');
                                 },
@@ -1618,7 +1626,6 @@
                                         .define({
                                             loaded : true,
                                             name    : this.name
-                                            //exports : this.constructor.prototype.exports
                                         })
                                         .define(this.constructor.__construct(this.cfg));
 
@@ -1627,6 +1634,13 @@
                                             writatble : false,
                                             configurable : false
                                         });
+                                        
+                                        try{
+                                            this.initialize && this.initialize();
+                                        }catch(ex){
+                                            octane.log(ex);
+                                        }
+                                        
                                         bootLog(message[1]);
                                         $O.goose("application",{
                                             "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
@@ -1738,11 +1752,17 @@
         
         
         $O.define.call($O.dom,{
-            container : function(){
-                return document.getElementsByTagName('o-container')[0] || document.createElement('o-container');
+            loadingContainer : function(){
+                return document.getElementsByTagName('o-loading-container')[0] || document.createElement('o-loading-container');
             },
-            canvas  : function(){
-                return document.getElementsByTagName('o-canvas')[0] || document.createElement('o-canvas');
+            bgContainer : function(){
+                return document.getElementsByTagName('o-background')[0] || document.createElement('o-background');
+            },
+            appContainer : function(){
+                return document.getElementsByTagName('o-app-container')[0] || document.createElement('o-app-container');
+            },
+            viewContainer  : function(){
+                return document.getElementsByTagName('o-view-container')[0] || document.createElement('o-view-container');
 
             },
             views    : function(){
@@ -1802,21 +1822,7 @@
                 options.debug = [_octane];
             }
             return initModules(options).then(function(){
-                
-                // unhide the rest of content hidden behind the loader
-                setTimeout(function(){
-                    var klass = $O.dom.container().getAttribute('class');
-                    klass = klass ? klass.split(' ') : [];
-                    _.pull(klass,'hidden');
-                    klass = klass.join(' ');
-                    $O.dom.container().setAttribute('class',klass);
-                    //$($O.dom.container()).removeClass('hidden'); 
-                },1000);
-                // route to url-parsed view|| home
-                // var view = $O.parseView() || 'home';
-                //$O.route(view);
-                $O.fire('octane:ready');
-            
+                $O.fire('octane:ready');    
             });
 		}
         
