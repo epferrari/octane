@@ -34,7 +34,7 @@ module.exports = function(grunt) {
                 "!src/modules/debug/**"
             ],
             debug:[
-                "src/modules/debug/debug.js"
+                "src/modules/debug/module.debug.js"
             ]
 		},
 		css	:{
@@ -42,8 +42,7 @@ module.exports = function(grunt) {
 			bower:"src/assets/css/_bower.css",
 			concatMe:[
                 "src/assets/css/<%= pkg.name %>.css"
-			],
-			devdocs:"src/assets/css/devdocs.css"
+			]
 		},
 		img	:{
 			dir:"src/assets/img/",
@@ -59,8 +58,7 @@ module.exports = function(grunt) {
 		},
 		sass:{
 			watchMe:"src/**/*.scss",
-			octane:["src/assets/scss/octane.scss","!src/assets/scss/devdocs.scss"],
-			devdocs:"src/assets/scss/devdocs.scss"
+			octane:["src/assets/scss/octane.scss"]
 		},
 			
         
@@ -80,8 +78,7 @@ module.exports = function(grunt) {
 		css	:{
 			dir		: "build/assets/css/",
 			bower	: "build/assets/css/_bower.css",
-			main	: "build/assets/css/<%= pkg.name %>.js",
-			devdocs : "build/assets/css/devdocs.css"
+			main	: "build/assets/css/<%= pkg.name %>.js"
 		},
 		img	:{
 			dir:"build/assets/img/"
@@ -106,8 +103,7 @@ module.exports = function(grunt) {
 			dir		: "dist/assets/css/",
 			bower	: "dist/assets/css/_bower.css",
 			main	: "dist/assets/css/<%= pkg.name %>.css",
-			mini	: "dist/assets/css/<%= pkg.name %>-min.css",
-			devdocs : "dist/assets/css/devdocs.css"
+			mini	: "dist/assets/css/<%= pkg.name %>-min.css"
 		},
 		img	:{
 			dir:"dist/assets/img/"
@@ -150,9 +146,6 @@ module.exports = function(grunt) {
 							files:[{
 								src		: src.sass.octane,
 								dest	: src.css.concatMe[0],
-							},{
-								src     : src.sass.devdocs,
-                                dest    : src.css.devdocs
 							}]
 						}
 					},
@@ -253,12 +246,6 @@ module.exports = function(grunt) {
 								src		: src.img.glob,
 								dest	: dist.img.dir
 							},{
-								// copy devdocs css
-								flatten	:true,
-								expand	:true,
-								src 	: src.css.devdocs,
-								dest	: dist.css.dir
-							},{
 								src		:"bower.json",
 								dest	:"dist/bower.json"
 							}]
@@ -284,12 +271,6 @@ module.exports = function(grunt) {
 								],
 								dest	: build.css.dir
 							},{
-								// copy devdocs css
-								flatten: true,
-								expand	: true,
-								src 	: src.css.devdocs,
-								dest	: build.css.dir
-							},{
 								expand	: true,
 								cwd		: src.fonts.dir,
 								src		: ['*'],
@@ -303,61 +284,6 @@ module.exports = function(grunt) {
 						}
 					},
 		
-        // create developer documentation (index.html)
-		htmlbuild : {
-						dist: {
-							src: src.html.index,
-							dest: dist.html.index,
-							options:{
-								beautify:true,
-								relative:true,
-								prefix:"dist/",
-								scripts:{
-									bundle: [
-                                        // include _bower.js
-										dist.js.bower,
-										dist.js.mini
-									]
-								},
-								styles:{
-									bundle:[
-                                        // include _bower.css & devdocs.css
-										dist.css.bower,
-										dist.css.mini,
-                                        dist.css.devdocs
-									]
-								}
-							}
-						},
-						build: {
-							src: src.html.index,
-							dest: build.html.index,
-							options:{
-								beautify:true,
-								relative:true,
-								prefix:"build/",
-								scripts:{
-									bundle: [ 
-										// include _bower.js
-                                        build.js.bower,
-                                        [build.js.dir+'doubleUnder.js'],
-                                        build.js.main,
-										[build.js.dir+'*.js']
-									]
-								},
-								styles:{
-									bundle:[ 
-										// include _bower.css & devdocs.css
-										//build.css.bower,
-										[build.css.dir+'*.css']
-                                       // build.css.devdocs
-									]
-								}
-							}
-						}
-					},
-		
-					
 		watch:		{
 						options:{livereload:true},
 						js:{
@@ -367,10 +293,6 @@ module.exports = function(grunt) {
 						sass:{
 							files:[ src.sass.watchMe ],
 							tasks:['build']
-						},
-						html:{
-							files: [src.html.index],
-							tasks:["build"]
 						},
 						copy:{
 							files:[
@@ -426,9 +348,6 @@ module.exports = function(grunt) {
 		// copy assets to release directory
 			'copy:dist',
 		
-		// build html
-			'htmlbuild:dist',
-		
 		// lint
 			//'jshint'
      		
@@ -449,10 +368,7 @@ module.exports = function(grunt) {
 			'uglify:build',
 			
 		// copy files to build dir
-			'copy:build',
-			
-		// build html
-			'htmlbuild:build'
+			'copy:build'
 	]);
 	
 	
