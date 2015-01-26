@@ -4,7 +4,7 @@ o-modal-container{
     width:100%;
     top:0;
     left:0;
-    z-index:999999998;
+    z-index:0;
     pointer-events:none;
    
     opacity:0;
@@ -26,6 +26,7 @@ o-modal-container{
 }
 
 o-modal-container.active{
+    z-index:999999998;
     pointer-events:auto;
     opacity:1;
     transition: opacity 0.4s cubic-bezier(0.465,0.183,0.153,0.946); 
