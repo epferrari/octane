@@ -1,8 +1,12 @@
+
+$transition : 0.465,0.183,0.153,0.946;
+
 @import '_mixins';
-@import '../../modules/router/scss/_router';
-@import '../../modules/router/scss/_view';
+@import '../../modules/views/scss/_views';
 @import '../../modules/translator/scss/_translator';
 @import '../../modules/modals/scss/_modal';
+@import '../../modules/loading/scss/_loading';
+
 
 html,body{
     height:100%;
@@ -22,29 +26,63 @@ div.row{
     margin-right:0px !important;
 }
 
-o-container{
+o-background{
+    z-index:-1;
+    position:fixed;
+    height:100%;
+    width:100%;
+    top:0;
+    left:0;
+   
+    opacity:0;
+    will-change: opacity;
+    transition: opacity 0.3s cubic-bezier($transition); 
+}
+
+o-background.active{
+    opacity:1;
+    transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+    
+    canvas{
+        width:101%;
+        margin-left:-0.5%;
+        margin-top:-0.5%;
+        filter:blur(3px);
+        /*
+            -webkit-filter:blur(3px);
+            -moz-filter:blur(3px);
+            -o-filter:blur(3px);
+            -ms-filter:blur(3px);
+        */
+        transform: translate-3d(0,0,0);
+        /*
+            -webkit-transform:translate-3d(0,0,0);
+            -moz-transform:translate-3d(0,0,0);
+        */
+    }
+}
+
+o-app-container{
     overflow-x:hidden;
     overflow-y:hidden;
-    height:auto;
+    z-index: 1;
     float:left;
+    
     padding-bottom:30px;
+    height:auto;
     width:100%;
+    
+    background-color:white;
+    opacity:1;
+    transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+    
+    &.hidden{
+        opacity:0;
+        transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+    }
 }
 
-o-canvas{
-	position:relative;
-	display:block;
-	width:100%;
-}
 
-o-view {
-	position:absolute;
-    visibility:hidden;
-    display:none;
-    opacity:0;
-	width:100%;
-    overflow-x:hidden;
-}
 
 .o-btn {
 	cursor:pointer;
