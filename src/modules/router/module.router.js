@@ -14,9 +14,11 @@ octane.module(
 
             octane.extend.call(parsed,params);
 
-            var fragment = [],
-                parsedKeys = Object.keys(parsed),
-                key;
+            var 
+            fragment = [],
+            parsedKeys = Object.keys(parsed),
+            key;
+            
             for(var k=0,K=parsedKeys.length; k<K; k++){
                 key = parsedKeys[k];
                 fragment.push(key+'='+parsed[key]);
@@ -25,14 +27,17 @@ octane.module(
             fragment = fragment.join('&');
             fragment = '?'+fragment;
 
-            var language = octane.translator && octane.translator.getLang(),
-                title = __.titleize(params.view) || __.titleize(currentView);
+            var 
+            language = octane.translator && octane.translator.getLang(),
+            title = __.titleize(params.view) || currentView.title;
 
             History.pushState( 
                 { lang: language },
-                octane.name +' | '+ title,
+                octane.get('application.name') +' | '+ title,
                 fragment
             );
+            
+            document.querySelector('head>title').innerHTML = octane.get('application.name')+' | '+title;
         }
 
         var 
@@ -67,15 +72,13 @@ octane.module(
             if(!_.isArray(routeConditions[viewID])){
                 routeConditions[viewID] = [];
             }
-            if(_.isFunction(condition)){
-                condition = condition;
-            } else {
-                condition = function(){return true;};
-                octane.error('condition passed to .routeIf() for must be a function. View ID: '+viewID);
+            if(!_.isFunction(condition)){
+                condition = function(){
+                    return true;
+                }
             }
-            
             routeConditions[viewID].push({
-                condition : condition,
+                check     : condition,
                 onFail    : failCallback
             });
         }
@@ -123,7 +126,6 @@ octane.module(
                             reject('Routing condition not fulfilled for route "'+viewID+'"');
                             return;
                         }                                                               //      //
-                                                                                        //      //
                         octane.fire('routing:begin');                                   //      //
                                                                                         //      //
                         enRoute = viewID;                                               //      //
@@ -193,43 +195,80 @@ octane.module(
         
         // helper
         function checkRouteIf(viewID){
-                    
-            var conditions = routeConditions[viewID] || [];
-
-                for(var c=0,C=conditions.length; c<C; c++){
-                    if(conditions[c].condition.call()){
-                        // meets routing condition
-                        continue;
-                    }else{
-                        // does not meet routing condition, call fail callback
-                        _.isFunction(conditions[c].onFail) && conditions[c].onFail.call();
-                        return false;
-                    }
+            
+            var 
+            conditions = routeConditions[viewID] || [],
+            checkCondition = function(condition){
+               
+                if(condition.check()){
+                    // meets routing condition
+                    return true;
+                }else{
+                    // does not meet routing condition, call fail callback
+                    _.isFunction(condition.onFail) && condition.onFail();
+                    return false;
                 }
-                return true;
+            };
+
+            for(var i=0,n=conditions.length; i<n; i++){
+                if (checkCondition(conditions[i])){
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+                     
+                     
         }
 
         function setRoutingButtons(){
 
-            var btns = document.querySelectorAll('[o-route]');
-            
-            var n = btns.length;
+            var 
+            btns = document.querySelectorAll('[o-route]'),
+            n = btns.length,
+            setBtn = function(btn){
+                var route = btn.getAttribute('o-route');
+               
+                octane.handle('click',btn,function(){
+                    octane.route(route);
+                });
+            }
 
             while(n--){
                 // closure to capture the button and route during the loop
-               setRoutingButtonsHelper(btns[n]);
+               setBtn(btns[n]);
             }
         }
-
-        function setRoutingButtonsHelper(btn){
-            var route = btn.getAttribute('o-route');
-            btn.addEventListener('click',function(){
-                octane.route(route)
-                    .then()
-                    .catch(octane.log);
+        
+        function setBackButtons(){
+            var
+            btns = document.querySelectorAll('.o-back'),
+            n= btns.length,
+            setBtn = function(btn){
+                
+                octane.handle('click',btn,function(){
+                    History.go(-1);
+                });
+            };
+            
+            while(n--){
+                setBtn(btns[n]);
+            }
+        }
+                
+        function handleStateChange(){
+            
+            var
+            history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+            stateChangeEvent = history ? 'popstate' : 'hashchange';
+            
+            // change the view with browser's forward/back buttons
+            octane.handle(stateChangeEvent,function(){       
+                var view = parseView();
+                view && octane.route(view);
             });
-         }
-
+        }
 
         // parse URL for a view  
         function parseView(){
@@ -281,22 +320,11 @@ octane.module(
         
         this.initialize= function(){
 
-            var
-            history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
-            stateChangeEvent = history ? 'popstate' : 'hashchange',
-            id, config;
-
-            setRoutingButtons(); 
-            // change the view with browser's forward/back buttons
-            window.addEventListener(stateChangeEvent,function(){       
-                var view = parseView();
-                view && octane.route(view).then( function(){
-                    //
-                })
-                .catch(function(ex){
-                    octane.log(ex);
-                })
-            });
+            octane.compiler( setRoutingButtons ); 
+            octane.compiler( setBackButtons );
+            octane.compiler( handleStateChange );
+            
+           
             // resize canvas to proper dimensions
             octane.handle('translated resize orientationchange',function(){
                 currentView && currentView.setCanvasHeight();
