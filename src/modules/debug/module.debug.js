@@ -12,14 +12,14 @@
            getControllers : function(){
                return _octane.controllers;
            },
-           getTasks :	function(controller){
-                return controller.tasks && controller.tasks.getCases();
-            },
            getEvents	: function(){
                return _octane.eventRegister;
            },
-           getLog : function(){ 
-                return _octane.getLog();
-            }   
+           getLog : function(full){ 
+                return full ? _octane.bootlog.concat(_octane.logfile) : _octane.logfile;
+           },
+            bootlog : function(){
+                return _octane.bootlog;
+            }
         });
     });
