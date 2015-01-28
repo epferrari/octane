@@ -1686,7 +1686,8 @@
                 name            : name,
                 constructor     : constructor,
                 dependencies    : (__.typeOf(arguments[1]) == 'array') ? arguments[1] : [],
-                loaded          : false
+                loaded          : false,
+                cfg             : [{}]
             });
 		}
 		
@@ -1716,8 +1717,7 @@
                             // capture closure
                             (function(module){
                                 // set init arguments to properties of the module's constructor function
-                                module.cfg = _.isArray(options[name]) ? options[name] : [];
-                                delete $O.config[name];
+                                module.cfg = _.isArray(options[name]) ? options[name] : [{}];
                                 bootLog(module.name+': not loaded, loading...');
                                 modulesLoaded.push( module._load() );
                             })(module);
@@ -1852,7 +1852,6 @@
             initialize : function initialize (config){
                 
                 config = _.isObject(config) ? config : {};
-                $O.config = config;
                 
                 // don't reinitialize
                 if($O.initialized){
