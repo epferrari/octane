@@ -7,7 +7,24 @@ octane.module('viewPrototype',
         $exits = this.import('viewExitAnimations');
         
         this.export({
-            
+            configureLoading : function(){
+                
+                            var 
+                            isClassed = false,
+                            viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'],
+                            n;
+
+                            _.isArray(cfg.extraViewClasses) && viewClasses.concat(cfg.extraViewClasses);
+                            n = viewClasses.length;
+
+                            while(n--){
+                                if(this.elem.classList.contains(viewClasses[n]) ){
+                                    isClassed = true;
+                                    break;
+                                }
+                            }
+                            !isClassed && this.elem.classList.add('view-left');
+                        },
             configure : function(config){
                 var        
                 positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],

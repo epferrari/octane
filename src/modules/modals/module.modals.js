@@ -12,12 +12,9 @@ octane.module(
         $Modals = {},
         bg = document.getElementsByTagName('o-modal-container')[0];
             
-        function oModal(elem,config){
+        function oModal(elem){
             if(!_.isString(elem.id)) return {instanced:false};
 
-            config = _.isObject(config) ? config : {};
-
-            this.configure(config);
             this.define({
 
                 instanced	: true,
@@ -28,38 +25,15 @@ octane.module(
                 todoAfterLoad : [],
                 todoBeforeLoad : []
             });
-            this.elem.classList.add('view-'+this.loadsFrom);
-
-            var 
-            dismissers = this.elem.querySelectorAll('[o-dismiss="'+this.id+'"]');
-
-            for(var d=0,D=dismissers.length; d<D; d++){   
-                this.addDismissHandler(dismissers[d]);
-            }
+            
+            this.configureLoading();
             this.adjustSize();
         }
 
         oModal.prototype = new Base('Octane Modal');
         oModal.prototype.define({
             constructor :  oModal,
-            configure : function(config){
-                            var        
-                            positions 	= ['left','right','top','bottom','behind','invisible','onscreen'],
-                            loadConfig = _.isObject(config.loads),
-                            exitConfig = _.isObject(config.exits);
-
-                            this.define({
-                                loadsBy         : loadConfig && config.loads.by || 'slide',
-                                loadsFrom       : loadConfig && __.inArray(positions,config.loads.from) ? config.loads.from : 'bottom',
-                                loadEasing      : loadConfig && config.loads.ease || 'swing',
-                                loadDuration    : loadConfig && _.isNumber(config.loads.dur) ? config.loads.dur : 500,
-
-                                exitsBy         : exitConfig && config.exits.by || 'slide',
-                                exitsTo         : exitConfig && __.inArray(positions,config.exits.to) ? config.exits.to : 'bottom',
-                                exitEasing      : exitConfig && config.exits.ease || 'swing',
-                                exitDuration	: exitConfig && _.isNumber(config.exits.dur) ? config.exits.dur : 500
-                            });
-                        },
+            configureLoading : $viewProto.configureLoading,    
             loadThen    : $viewProto.loadThen,
             doLoadThen  : $viewProto.doLoadThen,       
             load        : function (){
@@ -98,18 +72,8 @@ octane.module(
                                 'min-width' : w,
                                 'max-width' : w
                             });
-                        },
-            addDismissHandler : function(dismisser){
-                            var $this = this;
-
-                            dismisser.addEventListener('click',dismisser);
-                            dismisser.handleEvent = function(e){
-                                e.stopPropagation;
-                                e.stopImmediatePropagation;
-                                dismissModal($this.id);
-                                return false;
-                            }
-                        }    
+                        }
+                
         });
         // end oModal prototype
         
@@ -165,7 +129,7 @@ octane.module(
         // helper
         function initModal(elem){
             var 
-            id = elem.id,
+            id = elem.id;/*,
             config = elem.getAttribute('o-config');
 
             try{
@@ -173,10 +137,10 @@ octane.module(
             } catch(ex){
                 octane.error('invalid o-config attribute for o-modal '+id+'. '+ex.message);
                 config = null;
-            }
+            }*/
            
             if(!$Modals[id]){
-               $Modals[id] = new oModal(elem,config);
+               $Modals[id] = new oModal(elem);
             }
         }
         // end helper
@@ -185,23 +149,44 @@ octane.module(
             
             var 
             triggers = document.querySelectorAll('[o-modal]'),
-            addHandler = function($trigger){
-                 octane.handle('click',$trigger,function(e){
+            n = triggers.length,
+            addHandler = function(elem){
+               
+                elem.removeEventListener('click');
+                elem.addEventListener('click',function(e){
 
-                    var modalID = $trigger.getAttribute('o-modal');
+                    var modalID = elem.getAttribute('o-modal');
                     callModal(modalID);
                 });
             };
 
-            for(var t=0,T=triggers.length; t<T; t++){
-                addHandler(triggers[t]);  
+            while(n--){ 
+                addHandler(triggers[n]);  
             } 
+        }
+        
+        function setDismissHandlers(){
+            
+            var 
+            elems = document.querySelectorAll('.o-modal-dismiss'),
+            n = elems.length,
+            setHandler = function(elem){
+                
+                elem.removeEventListener('click');
+                elem.addEventListener('click', function(e){
+                    e.stopPropagation;
+                    e.stopImmediatePropagation;
+                    dismissModal(currentModal.id);
+                    return false;
+                });
+            };
+            
+            while(n--){   
+                setHandler(elems[n]);
+            }
         }
 
         this.initialize = function(){
-            
-            //modalBG.setAttribute('id','o-modal-bg');
-            //document.body.appendChild(modalBG);
             
             $modals = document.getElementsByTagName('o-modal')
 
@@ -209,7 +194,8 @@ octane.module(
                 initModal($modals[m]);  
             }
 
-            setTriggerHandlers();
+            octane.compiler( setTriggerHandlers );
+            octane.compiler( setDismissHandlers );
 
             // dismiss modal automatically on route
             octane.handle('routing:begin',function(){
@@ -217,7 +203,7 @@ octane.module(
                 dismissModal(currentModal.id);  
             });
 
-            // re-enable
+            // re-enable modal calling after routing completes
             octane.handle('routing:complete',function(){
                 block = false;
                 callModal(modalQueue.pop());

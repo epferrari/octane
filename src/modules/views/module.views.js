@@ -4,7 +4,7 @@ octane.module(
     'oView',
     ['viewPrototype'],
     function(cfg){
-            
+           
         var 
         Base = octane.constructor, 
         $Views = {},
@@ -21,17 +21,14 @@ octane.module(
     // @opton exits[to,easing,duration]
     /* ------------------------------------------------------- */
 
-        function View(elem,config){
+        function View(elem){
             if(!_.isString(elem.id)) return {instanced:false};
 
-            config = _.isObject(config) ? config : {};
-
-            this.configure(config);
             this.define({
 
                 instanced	: true,
                 id			: elem.id,
-                title       : elem.getAttribute('title') || '',
+                title       : elem.getAttribute('title') || __.titleize(elem.id),
                 elem		: elem,
                 $elem 		: $(elem),
                 _guid		: octane.GUID(),
@@ -39,7 +36,7 @@ octane.module(
                 todoAfterLoad : [],					
             });
             
-            this.elem.classList.add('view-'+this.loadsFrom);
+            this.configureLoading();
         }
 
         View.prototype = new Base('octane View');
