@@ -47,7 +47,7 @@
         swapCanvas = octane.controller('swapCanvas').extend({
             // swap out the app container with a static image of itself
             applyCanvas : function(){
-                console.log(doppelganger);
+                
                 bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
                 bgContainer.appendChild(doppelganger);
                 bgContainer.classList.add('active');
