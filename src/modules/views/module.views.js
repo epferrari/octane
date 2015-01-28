@@ -1,9 +1,6 @@
 // set-up for Views constructor
 
-octane.module(
-    'oView',
-    ['viewPrototype'],
-    function(cfg){
+octane.module('oView',['viewPrototype'],function(cfg){
            
         var 
         Base = octane.constructor, 
@@ -39,7 +36,7 @@ octane.module(
             this.configureLoading();
         }
 
-        View.prototype = new Base('octane View');
+        View.prototype = new Base('Octane View');
         View.prototype.define({
             constructor : View
         });

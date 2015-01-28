@@ -1,13 +1,8 @@
-octane.module(
-    'modal',
-    ['oView','viewLoadAnimations','viewExitAnimations','UI-Overlay'],
-    function(cfg){
+octane.module('modal',['oView','UI-Overlay'],function(cfg){
     
         var 
         Base = octane.constructor,
         $viewProto = this.import('viewPrototype'),
-        $loads = this.import('viewLoadAnimations'),
-        $exits = this.import('viewExitAnimations'),
         $overlay = this.import('UI-Overlay'),
         $Modals = {},
         bg = document.getElementsByTagName('o-modal-container')[0];
@@ -129,15 +124,7 @@ octane.module(
         // helper
         function initModal(elem){
             var 
-            id = elem.id;/*,
-            config = elem.getAttribute('o-config');
-
-            try{
-                config = config ? JSON.parse(config) : null;
-            } catch(ex){
-                octane.error('invalid o-config attribute for o-modal '+id+'. '+ex.message);
-                config = null;
-            }*/
+            id = elem.id;
            
             if(!$Modals[id]){
                $Modals[id] = new oModal(elem);

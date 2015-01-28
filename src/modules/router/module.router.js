@@ -1,9 +1,6 @@
 // JavaScript Document
 
-octane.module(
-    'router',
-    ['oView'],
-    function (cfg) {
+octane.module('router',['oView'],function (cfg) {
 	
         // octane's own pushstate method
         function pushState(params){
