@@ -43,22 +43,20 @@
 			});
             
             octane.handle('octane:ready',function(e){
-                
                 // unhide the rest of content hidden behind the loader    
                 var
                 loadingContainer = octane.dom.loadingContainer(),
                 appContainer = octane.dom.appContainer(),
-                view = octane.parseView() || 'home';
-                if(_.isArray(cfg.restricted) && __.inArray(cfg.restricted,view)){
-                    view = cfg.defaultView || 'home';
-                }
+                view = octane.parseView() || cfg.defaultView || 'home';
+               
                 appContainer.classList.remove('hidden');
 
-                octane.route(view).then(function(){
-                    return $.Velocity(loadingContainer,'fadeOut',{duration:500})
-                }).then(function(){
-                    document.body.removeChild(loadingContainer);
-                });
-
+                setTimeout(function(){
+                    octane.route(view).then(function(){
+                        return $.Velocity(loadingContainer,'fadeOut',{duration:500})
+                    }).then(function(){
+                        document.body.removeChild(loadingContainer);
+                    });
+                },500);
             });
 		});
