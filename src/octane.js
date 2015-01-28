@@ -81,7 +81,7 @@
 	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
-		function Base(name){ this.name = _.isString(name) && name; }
+		function Base(){}
         
 		
 		// extend an object with the properties and method of another object
@@ -165,16 +165,16 @@
 	// define public octane constructor
 	/* ------------------------------------------------------- */
         
-        function Octane(name){
-            this.name = name;
+        function Octane(){
+            this.name = 'Octane Application';
         };
         
-        var $O = Octane.prototype = new Base('Octane Application');
+        var $O = Octane.prototype = new Base();
         $O.constructor = Octane;
         $O.initialized = false;
         $O.define({
-            base : function(name){
-                return new Base(name);
+            base : function(){
+                return new Base();
             }
         });
 		
@@ -182,7 +182,7 @@
 	// internal application object and properties
 	/* ------------------------------------------------------- */
 		
-		var _octane = new Base('octane protected');
+		var _octane = new Base();
 		_octane.define({
 				modules		    : {},
 				models		    : {},
@@ -194,7 +194,7 @@
         
         // simple promise implementation
         function Pact(){}    
-        Pact.prototype = new Base('Simple Promise');
+        Pact.prototype = new Base();
         Pact.prototype.extend({
             state : 'pending',
             result : null,
@@ -253,7 +253,34 @@
                 }
             }
         });
-	  
+
+    /* ------------------------------------------------------- */
+	/*                     COMPILER AND HOOK                   */
+	/* ------------------------------------------------------- */
+        
+        _octane.compilationTasks = [];
+        
+        $O.define({
+            compiler : function(task){
+                _octane.compilationTasks.push(task);
+            },
+            compile : function(){
+                
+                var 
+                task,
+                tasksCompleted = [];
+                
+                for(var i=0,n=_octane.compilationTasks.length; i<n; i++){
+                    tasksCompleted.push((function(task){
+                        return new Promise(function(resolve){
+                            _.isFunction(task) && task.call();
+                            resolve();
+                        });    
+                    })(_octane.compilationTasks[i]));
+                }
+                return Promise.all(tasksCompleted);
+            }
+        });
 	
 	/* ------------------------------------------------------- */
 	/*                       GUID                              */
@@ -270,17 +297,14 @@
 		});
 	
 	/* ------------------------------------------------------- */
-	/*                       LOGGING                           */
+	/*                   ERRORS & LOGGING                      */
 	/* ------------------------------------------------------- */		
 		
 		_octane.extend({
 			logfile    : [],
 			log 	   : function(message){
-							 _octane.logfile.push(message);
-						  },
-			getLog     : function(){
-							 return _octane.logfile;
-						  }
+                 _octane.logfile.push(message);
+            }
 		});
         
         $O.define({
@@ -389,6 +413,7 @@
                         }
                     }); // end Promise()
                 }, // end Octane.xhr()
+            
             getLibrary : function(url,fn){
                 return new Promise(function(resolve,reject){
                      
@@ -445,8 +470,32 @@
 	/*                          EVENTS                         */
 	/* ------------------------------------------------------- */		
 		
+        _octane.eventHandlerMap = {};
+        _octane.handleMappedEvents = function(e){
+            
+            var 
+            elem = e.srcElement,
+            handler = _octane.eventHandlerMap[elem._guid+'-'+e.type],
+            swatch = new __.Switch({
+                'function' : function(e){
+                   try{
+                       handler.apply(elem,[e]);
+                   }catch(ex){
+                       _octane.log(ex);
+                   }
+                },
+                'object' : function(elem,e){
+                    try{
+                        handler.handleEvent.apply(handler,[e]);
+                    }catch(ex){
+                        _octane.log(e);
+                    }
+                }
+            }).run(__.typeOf(handler),[elem,e]);
+        };
        
-       $O.define({
+            
+        $O.define({
            
 			handle		: 	function(type,elem,handler){
                                 
@@ -454,45 +503,28 @@
                                 
                                 var 
                                 types = type ? type.split(' ') : [],
+                                argsLength = arguments.length,
                                 numArgs = new __.Switch();
                                
-                                numArgs
-                                .addCase('2',function(type,handler){
-
-                                    window.addEventListener(types[i],handler,false);
+                                numArgs.addCase('2',function(type,handler){
+                                    
+                                    window.addEventListener(type,handler,false);
                                     if( !_.isArray(_octane.eventRegister[types[i]]) ){ 
-                                        _octane.eventRegister[types[i]] = [];
+                                        _octane.eventRegister[type] = [];
                                     }
-                                    _octane.eventRegister[types[i]].push(handler);
+                                    _octane.eventRegister[type].push(handler);
 
                                 })
                                 .addCase('3',function(type,handler,elem){
-
-                                    window.addEventListener(type,function(e){
-                                       
-                                        if(e.srcElement == elem){
-                                            var swatch = new __.Switch({
-                                                'function' : function(e){
-                                                   try{
-                                                       handler.apply(elem,[e]);
-                                                   }catch(exception){
-                                                       _octane.log(exception);
-                                                   }
-                                                },
-                                                'object' : function(elem,e){
-                                                    try{
-                                                        handler.handleEvent.apply(handler,[e]);
-                                                    }catch(exception){
-                                                        _octane.log(exception);
-                                                    }
-                                                }
-                                            }).run(__.typeOf(handler),[elem,e]);
-                                        }
-                                    });
+                                    if(!elem._guid){
+                                        elem._guid = $O.GUID();
+                                    }
+                                    _octane.eventHandlerMap[elem._guid+'-'+type] = handler;
+                                    window.addEventListener(type,_octane.handleMappedEvents,false);
                                 });
                                 
                                 for(var i=0,n=types.length; i<n; i++){
-                                    numArgs.run(arguments.length,[types[i],handler,elem]);   
+                                    numArgs.run(argsLength,[types[i],handler,elem]);   
                                 }
 							},
 			fire 		: 	function(type,detail){
@@ -530,22 +562,22 @@
             return template;
         }
         
-        function getTemplates(){
-            var tmpls = document.querySelectorAll('[type="text/octane"]');
-            for(var i=0,t=tmpls.length; i<t; i++){
-                setTemplate(tmpls[i]);
-            }
-            
-            // helper
-            function setTemplate(template){
+         $O.compiler( function getTemplates(){
+            var 
+            tmpls = document.querySelectorAll('[type="text/octane"]'),
+            t = tmpls.length,
+            setTemplate = function setTemplate(template){
                 if(!_octane.templates[template.id]){
                     _octane.templates[template.id] = template.innerHTML;
                 }else{
-                    _octane.log('Could not create template '+template.id+'. Already exists');
+                    $O.error('Could not create template '+template.id+'. Already exists');
                 }
-            }
-                
-        }
+            };
+            
+            while(t--){
+                setTemplate(tmpls[t]);
+            }        
+        });
                                   
         $O.define({
             
@@ -555,7 +587,7 @@
                     if(!_octane.templates[id]){
                         _octane.templates[id] = markup;
                     }else{
-                        _octane.log('Could not create template '+id+'. Already exists');
+                        $O.error('Could not create template '+id+'. Already exists');
                     }
                 }
             },
@@ -1021,8 +1053,7 @@
 				scope		    : {},
 			});
 			
-			
-			// initialize
+            // initialize
             this.init();
 		}
 		
@@ -1472,7 +1503,6 @@
                                     return new Controller(name,viewID);
                                 } else {
                                     return _octane.controllers[name];
-                                    //$O.error('Controller '+name+' already exists!');
                                 }
                             }                    
 		});
@@ -1483,15 +1513,9 @@
 	/* ------------------------------------------------------- */
 		
         _octane.bootlog = [];
-        $O.model('bootlog',{
-            singleton : true
-        });
+        
         function bootLog(message){
             _octane.bootlog.push(message);
-            $O.set({
-                'bootlog.log':_octane.bootlog,
-                'bootlog.status':message
-            });
         }
         
         _octane.moduleExports = {};
@@ -1693,6 +1717,7 @@
                             (function(module){
                                 // set init arguments to properties of the module's constructor function
                                 module.cfg = _.isArray(options[name]) ? options[name] : [];
+                                delete $O.config[name];
                                 bootLog(module.name+': not loaded, loading...');
                                 modulesLoaded.push( module._load() );
                             })(module);
@@ -1719,7 +1744,7 @@
     /* ------------------------------------------------------- */
 	/*                         CIRCUIT                         */
 	/* ------------------------------------------------------- */
-        
+      
         $O.define({
             // artificially start the uptake circuit
             goose : function(model,$state){
@@ -1740,20 +1765,19 @@
 
                         elem.dispatchEvent && elem.dispatchEvent(e);
                     },
-         })
+         });
         
     /* ------------------------------------------------------- */
-	/*                          MISC                           */
+	/*                          DOM                            */
 	/* ------------------------------------------------------- */
+        
+        
         
         // global model and controller
         // octane DOM elements
-            .define({
-                appModel : $O.model('application',{singleton:true}),
-                appController : $O.controller('AppController'),
-                dom:{} 
-            });
+            
         
+        $O.define({ dom : {} });
         
         $O.define.call($O.dom,{
             loadingContainer : function(){
@@ -1771,51 +1795,94 @@
             },
             views    : function(){
                 return document.getElementsByTagName('o-view') || [];
-            },
-            zIndexOverlay   : 999999999,
-            zIndexMenu      : 99999998,
-            zIndexView      : 99999997,
-            zIndexHidden    : -1
+            }
         });
         
-        
-        $O.controller('AppController')
-            .hook('application.loadingProgress',function($state){
-                var currentProgress = $O.get('application.loadingProgress') || 0;
-                $state.loadingProgress = currentProgress + $state.loadingProgress;
-            });
-        
+        $O.compiler( function applyActionHandlers(){
+            
+            var 
+            triggers = document.querySelectorAll('[o-action]'),
+            t = triggers.length,
+            setHandler = function(elem){
+                
+                var 
+                o_action = elem.getAttribute('o-action'),
+                actionObj,
+                action,
+                event,
+                controller,
+                method;
+                
+                try{
+                    actionObj = JSON.parse(o_action);
+                    event = Object.keys(actionObj)[0];
+                    action = actionObj[event];
+                }catch(ex){
+                    event = 'click';
+                    action = o_action;
+                }
+                
+                controller = _octane.controllers[ action.split('.')[0] ];
+                method = action.split('.')[1];
+                
+                octane.handle(event,elem,function(e){
+                    try{
+                        controller[method].apply(controller);
+                    } catch (ex){
+                        $O.log(ex);
+                    }
+                });
+            };
+            
+            while(t--){
+                setHandler(triggers[t]);
+            }
+        });
     
     /* ------------------------------------------------------- */
 	/*                          INIT                           */
 	/* ------------------------------------------------------- */
         
         $O.define({
-            initialize :init
-		});
+                appModel : $O.model('application',{singleton:true}),
+                appController : $O.controller('AppController')
+            });
         
-		function init (options){
-			options = options || {};
-            
-            // don't reinitialize
-            if($O.initialized){
-                return;
-            } else {
-                $O.define({
-                    initialized : true 
+        $O.define({
+            initialize : function initialize (config){
+                
+                config = _.isObject(config) ? config : {};
+                $O.config = config;
+                
+                // don't reinitialize
+                if($O.initialized){
+                    return;
+                } else {
+                    $O.define({
+                        initialized : true 
+                    });
+                }
+                
+                $O.appModel.set('name',config.appName);
+                $O.appController.hook('application.loadingProgress',function($state){
+                    var currentProgress = $O.appModel.get('loadingProgress') || 0;
+                    $state.loadingProgress = currentProgress + $state.loadingProgress;
+                });
+
+                // add debugging support if module included, 
+                // pass internal _octane app object as module config
+                if(_octane.modules['debug']){
+                    config.debug = [_octane];
+                }
+                
+                // load modules -> compile -> ready
+                return initModules(config).then(function(){
+                    return $O.compile();
+                }).then(function(){
+                    $O.fire('octane:ready');    
                 });
             }
-            
-            octane.name = options.name;
-            
-            // add debugging support if module included, pass internal _octane app object
-			if(_octane.modules['debug']){
-                options.debug = [_octane];
-            }
-            return initModules(options).then(function(){
-                $O.fire('octane:ready');    
-            });
-		}
+        });
         
         window.octane = window.$o = new Octane();
         
