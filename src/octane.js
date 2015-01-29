@@ -1798,7 +1798,19 @@
             template : function(templateID,data){
                 
                 return  parseTemplate(_octane.templates[templateID],data);
+            },
+            
+            addTemplate : function(id,markup){
+                
+                if(_.isString(id) && _.isString(markup)){
+                    if(!_octane.templates[id]){
+                        _octane.templates[id] = markup;
+                    }else{
+                        $O.error('Could not create template '+id+'. Already exists');
+                    }
+                }
             }
+                
         });
         
     /* ------------------------------------------------------- */
