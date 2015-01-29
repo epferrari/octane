@@ -257,7 +257,8 @@ octane.module('router',['oView'],function (cfg) {
         function handleStateChange(){
             
             var
-            history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history'),
+            html = document.getElementsByTagName('html')[0],
+            history =  html && html.classList.contains('history'),
             stateChangeEvent = history ? 'popstate' : 'hashchange';
             
             // change the view with browser's forward/back buttons
@@ -272,7 +273,9 @@ octane.module('router',['oView'],function (cfg) {
 
             // for HTML5 vs. HTML4 browsers
             // detect with modernizr   
-            var  history = __.inArray(document.getElementsByTagName('html')[0].getAttribute('class').split(' '),'history');
+            var  
+            html = document.getElementsByTagName('html')[0],
+            history =  html && html.classList.contains('history');
 
             if(history){
                 return __.location().searchObject.view || false;
