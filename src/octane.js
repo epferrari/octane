@@ -1825,6 +1825,7 @@
                 var 
                 div = document.createElement('div'),
                 nodes,
+                node,
                 firstChild = elem.firstChild;
                 
                 div.innerHTML = this.content;
@@ -1833,11 +1834,17 @@
                 
                 if(prepend){
                      for(var i=0,n=nodes.length; i<n; i++){
-                        elem.insertBefore(nodes[i],firstChild);
+                        node = nodes[i];
+                        if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+                            elem.insertBefore(node,firstChild);
+                        }
                     }
                 } else {
                     for(var i=0,n=nodes.length; i<n; i++){
-                        elem.appendChild(nodes[i]);
+                        node = nodes[i];
+                        if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+                            elem.appendChild(nodes[i]);
+                        }
                     }
                 }
             }
