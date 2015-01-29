@@ -1777,7 +1777,7 @@
             return template;
         }
         
-         (function getTemplates(){
+         (function parseTemplatesFromDOM(){
             var 
             tmpls = document.querySelectorAll('script[type="text/octane-template"]'),
             t = tmpls.length,
@@ -1794,24 +1794,63 @@
             }        
         })();
         
-        $O.define({
-            template : function(templateID,data){
-                
-                return  parseTemplate(_octane.templates[templateID],data);
-            },
+        
+        function Template(id){
+            this.id = id;
+            this.content = _octane.templates[this.id] || '';
             
-            addTemplate : function(id,markup){
-                
-                if(_.isString(id) && _.isString(markup)){
-                    if(!_octane.templates[id]){
-                        _octane.templates[id] = markup;
+        }
+        Template.prototype = new Base();
+        Template.prototype.define({
+            create : function(content){
+                if(_.isString(content)){
+                    if(!_octane.templates[this.id]){
+                        _octane.templates[this.id] = content;
                     }else{
-                        $O.error('Could not create template '+id+'. Already exists');
+                        $O.error('Could not create template '+this.id+'. Already exists');
+                    }
+                }
+            },
+            get : function(data){
+                
+                return this.content;
+            },
+            inject : function(data){
+                
+                this.content = parseTemplate(_octane.templates[this.id],data);
+                return this; // chainable
+            },
+            into : function(elem,prepend){
+                
+                var 
+                div = document.createElement('div'),
+                nodes,
+                firstChild = elem.firstChild;
+                
+                div.innerHTML = this.content;
+                div.normalize();
+                nodes = div.childNodes;
+                
+                if(prepend){
+                     for(var i=0,n=nodes.length; i<n; i++){
+                        elem.insertBefore(nodes[i],firstChild);
+                    }
+                } else {
+                    for(var i=0,n=nodes.length; i<n; i++){
+                        elem.appendChild(nodes[i]);
                     }
                 }
             }
-                
         });
+            
+            
+        
+        $O.define({
+            template : function(id){
+                return new Template(id);
+            }
+        });
+            
         
     /* ------------------------------------------------------- */
 	/*             O-ACTION HANDLER ASSIGNMENT                 */
