@@ -536,68 +536,7 @@
 		});
 	
         
-    /* ------------------------------------------------------- */
-	/*                       TEMPLATES                         */
-	/* ------------------------------------------------------- */
-        
-        _octane.templates = {};
-        
-        function parseTemplate(template,data){
-            
-            template = _.isString(template) ? template : '',
-            data = _.isObject(data) ? data : {};
-            
-            var
-            pattern = /\{\{([^{^}]+)\}\}/g,
-            matches = template.match(pattern),
-            key,re;
-            
-            if(_.isArray(matches)){
-                for(var i=0,n=matches.length; i<n; i++){
-                    key = matches[i].replace(/[{}]+/g,''); // 'something'
-                    re = new RegExp("(\\{\\{"+key+"\\}\\})","g");
-                    template = template.replace(re,data[key]);
-                }
-            }
-            return template;
-        }
-        
-         $O.compiler( function getTemplates(){
-            var 
-            tmpls = document.querySelectorAll('[type="text/octane"]'),
-            t = tmpls.length,
-            setTemplate = function setTemplate(template){
-                if(!_octane.templates[template.id]){
-                    _octane.templates[template.id] = template.innerHTML;
-                }else{
-                    $O.error('Could not create template '+template.id+'. Already exists');
-                }
-            };
-            
-            while(t--){
-                setTemplate(tmpls[t]);
-            }        
-        });
-                                  
-        $O.define({
-            
-            addTemplate : function(id,markup){
-                
-                if(_.isString(id) && _.isString(markup)){
-                    if(!_octane.templates[id]){
-                        _octane.templates[id] = markup;
-                    }else{
-                        $O.error('Could not create template '+id+'. Already exists');
-                    }
-                }
-            },
-            template : function(id,data){
-                
-                var wrapper = document.createElement('o-template');
-                wrapper.innerHTML = parseTemplate(_octane.templates[id],data);
-                return wrapper;
-            }            
-        });
+    
         
 	
 	/* ------------------------------------------------------- */
@@ -1513,6 +1452,7 @@
 	/* ------------------------------------------------------- */
 		
         _octane.bootlog = [];
+        _octane.moduleConfigs = {};
         
         function bootLog(message){
             _octane.bootlog.push(message);
@@ -1651,7 +1591,7 @@
                                             loaded : true,
                                             name    : this.name
                                         })
-                                        .define(this.constructor.__construct(this.cfg));
+                                        .define(this.constructor.__construct([this.cfg]));
 
                                         Object.defineProperty(octane,$this.name, {
                                             value :$this,
@@ -1696,33 +1636,41 @@
 			
 			options = options || {};
 
-            var 
-            moduleKeys = Object.keys(_octane.modules),
-            modulesLoaded = [],
-            module,name;
-            
             // load router module first
             return _octane.modules['startup-utilities']._load()
                 .then(function(){
                     return _octane.modules['router']._load();
                 })
                 .then(function(){
-
-                    // load each module
-                    for(var j=0,m=moduleKeys.length; j<m; j++){
-                        name = moduleKeys[j];
-                        module = _octane.modules[name];
-                        // don't reload the same module
+                
+                    var 
+                    moduleName,
+                    moduleKeys = Object.keys(_octane.modules),
+                    modulesLoaded = [],
+                    tryLoading = function(moduleName){
+                        
+                        var 
+                        initConfig,
+                        moduleConfig,
+                        module = _octane.modules[moduleName];
+                        
                         if(!module.loaded){
-                            // capture closure
-                            (function(module){
-                                // set init arguments to properties of the module's constructor function
-                                module.cfg = _.isArray(options[name]) ? options[name] : [{}];
-                                bootLog(module.name+': not loaded, loading...');
-                                modulesLoaded.push( module._load() );
-                            })(module);
+                            bootLog(moduleName+': not loaded, loading...');
+                            
+                            // assign config properties, those
+                            initConfig = _.isPlainObject(options[moduleName]) ? options[moduleName] : {};
+                            moduleConfig = _.isPlainObject(_octane.moduleConfigs[moduleName]) ? _octane.moduleConfigs[moduleName] : {};
+                            module.cfg = $O.extend.apply(moduleConfig,[initConfig,true]);
+                            modulesLoaded.push( module._load() );
                         }
+                    };
+                            
+                    // load each module
+                    for(var i=0,m=moduleKeys.length; i<m; i++){
+                        var moduleName = moduleKeys[i];
+                        tryLoading(moduleName);
                     }
+                
                     return Promise.all(modulesLoaded);
                 })
                 .catch(function(err){
@@ -1738,7 +1686,12 @@
                         },
             hasModule : function (name){ 
                             return _octane.modules[name] ? _octane.modules[name].loaded : false; 
-                        }	
+                        },
+            moduleConfig : function(module,cfg){
+                            if(_.isPlainObject(cfg)){
+                                _octane.moduleConfigs[module] = cfg;
+                            }
+                        }
         });
         
     /* ------------------------------------------------------- */
@@ -1797,6 +1750,60 @@
                 return document.getElementsByTagName('o-view') || [];
             }
         });
+        
+    /* ------------------------------------------------------- */
+	/*                       TEMPLATES                         */
+	/* ------------------------------------------------------- */
+        
+        _octane.templates = {};
+        
+        function parseTemplate(template,data){
+            
+            template = _.isString(template) ? template : '',
+            data = _.isObject(data) ? data : {};
+            
+            var
+            pattern = /\{\{([^{^}]+)\}\}/g,
+            matches = template.match(pattern),
+            key,regexp;
+            
+            if(_.isArray(matches)){
+                for(var i=0,n=matches.length; i<n; i++){
+                    key = matches[i].replace(/[{}]+/g,''); // 'something'
+                    regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                    template = template.replace(regexp,data[key]);
+                }
+            }
+            return template;
+        }
+        
+         (function getTemplates(){
+            var 
+            tmpls = document.querySelectorAll('script[type="text/octane-template"]'),
+            t = tmpls.length,
+            setTemplate = function setTemplate(template){
+                if(!_octane.templates[template.id]){
+                    _octane.templates[template.id] = template.innerHTML;
+                }else{
+                    $O.error('Could not create template '+template.id+'. Already exists');
+                }
+            };
+            
+            while(t--){
+                setTemplate(tmpls[t]);
+            }        
+        })();
+        
+        $O.define({
+            template : function(templateID,data){
+                
+                return  parseTemplate(_octane.templates[templateID],data);
+            }
+        });
+        
+    /* ------------------------------------------------------- */
+	/*             O-ACTION HANDLER ASSIGNMENT                 */
+	/* ------------------------------------------------------- */
         
         $O.compiler( function applyActionHandlers(){
             
@@ -1871,7 +1878,7 @@
                 // add debugging support if module included, 
                 // pass internal _octane app object as module config
                 if(_octane.modules['debug']){
-                    config.debug = [_octane];
+                    config.debug = {protected : _octane};
                 }
                 
                 // load modules -> compile -> ready

@@ -231,7 +231,7 @@ octane.module('router',['oView'],function (cfg) {
                     octane.route(route);
                 });
             }
-
+            
             while(n--){
                 // closure to capture the button and route during the loop
                setBtn(btns[n]);
