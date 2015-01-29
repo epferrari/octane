@@ -47,11 +47,12 @@
         swapCanvas = octane.controller('swapCanvas').extend({
             // swap out the app container with a static image of itself
             applyCanvas : function(){
-                
                 bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
-                bgContainer.appendChild(doppelganger);
-                bgContainer.classList.add('active');
-                return Promise.resolve();
+                return doppelganger.then(function(canvas){
+                    bgContainer.appendChild(canvas);
+                }).then(function(){
+                    bgContainer.classList.add('active');
+                });
             },
             removeCanvas : function(){
                 bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
@@ -62,7 +63,7 @@
                 return new Promise(function(resolve){
                     html2canvas(appContainer,{
                         onrendered : function(canvas){
-                            doppelganger = canvas;
+                            doppelganger = Promise.resolve(canvas);
                             resolve();
                         }
                     });
@@ -107,6 +108,7 @@
         
         this.initialize = function init(){
             var $this = this;
+            swapCanvas.getSwapCanvas()
             // cache screenshot as soon as routing completes
             if(hasCssFilterSupport){
                 octane.handle('routing:complete',function(){
