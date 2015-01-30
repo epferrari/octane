@@ -106,12 +106,14 @@ octane.module('router',['oView'],function (cfg) {
                 
                 ghost = _.isBoolean(ghost) ? ghost : false;
                 var 
-                $view = octane.view(viewID);
+                $view = octane.view(viewID),
+                viewOnScreen = ($view == currentView),
+                modalOnScreen = (octane.modal.current());
             
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
                                                                                                 //
-                if( $view && $view != currentView){                                             //
+                if( $view && (!viewOnScreen || modalOnScreen)){                                  //
                                                                                                 //
                 // ensure a route isn't triggered while another route is animating              //
                 // or while routing has been blocked by another module                          //
@@ -227,7 +229,18 @@ octane.module('router',['oView'],function (cfg) {
             setBtn = function(btn){
                 var route = btn.getAttribute('o-route');
                
-                octane.handle('click',btn,function(){
+                // catch a click event from a child node
+                // re-purpose it to be used by the octane event mediator
+                btn.addEventListener('click',function(e){
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    btn.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
+                },false);
+                
+                // set up the octane event mediator
+                // so event won't get a second listener
+                // if you call .compile() again after .initialize()
+                octane.handle('octane:route',btn,function(){
                     octane.route(route);
                 });
             }
