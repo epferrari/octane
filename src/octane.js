@@ -1147,6 +1147,9 @@
                                     
                                     function update(el,attribute,fresh){
                                         
+                                        if(fresh == undefined){
+                                            fresh = null;
+                                        }
                                         if(attribute.indexOf('.') !== -1){
                                             // update style on element
                                             var 
