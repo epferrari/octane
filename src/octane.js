@@ -333,86 +333,113 @@
 	/*                     XMLHttpRequest                      */
 	/* ------------------------------------------------------- */
         
-    
-        $O.define({
+        function URIencodeObject(source){
             
-            xhr : function(cfg){
-                    return new Promise(function(RESOLVE,REJECT){
+            source = _.isObject(source) ? source : {};
+            var 
+            keys = Object.keys(source),
+            n = keys.length,
+            array = [];
 
-                        var
-                        xhr,
-                        error,
-                        params = {
-                            url : false,
-                            method : 'POST',
-                            send : null,
-                            responseType : 'text',
-                        };
+          while(n--) {
+             array.push(encodeURIComponent(keys[n]) + "=" + encodeURIComponent(source[keys[n]]));
+          }
 
-                        if(_.isString(cfg) && cfg.length !== 0){
-                           params.url = cfg;
-                        } else if(_.isObject(cfg)){
-                            $O.extend(params,cfg);
-                        } else {
-                            error = $O.error('Octane.ajax must have a url');
-                            REJECT(error);
-                            return;
-                        }
+          return array.join("&");
+        }
+            
+            
+        function http(url,method,data,headers){
+            return new Promise(function(resolve,reject){
+                var
+                encoded = URIencodeObject(data),
+                $headers = {
+                    'Content-Type':'application/x-www-form-urlencoded',
+                    'Content-Length':encoded.length
+                },
+                request,
+                headerKeys,
+                $headers,
+                header,
+                value;
+                
+                $O.extend.apply($headers,[headers]);
+                headerKeys = Object.keys($headers);
+                
+                try{
+                    request = new(window.XMLHttpRequest || window.ActiveXObject)("MSXML2.XMLHTTP.3.0");
+                } catch(ex){
+                    $O.error('Could not create XMLHttpRequest object');
+                }
+                
+                request.onreadystatechange = function(){
+                    if(request.readyState === 4){
+                        new __.Switch({
+                            '200' : function(resolve,reject){
+                                var response;
 
-                        if (window.XMLHttpRequest) {
-                          xhr = new XMLHttpRequest();
-                        } else if (window.ActiveXObject){
-                            try {
-                                xhr = new ActiveXObject("Msxml2.XMLHTTP");
-                            }catch(e){
                                 try {
-                                    xhr = new ActiveXObject("Microsoft.XMLHTTP");
-                                }catch(e){
-                                    error = $O.error('Could not create XMLHttpRequest '+e.message);
-                                    REJECT(error);
+                                    response = JSON.parse(request.responseText);
+                                } catch(ex){
+                                    response = request.responseText;
                                 }
+                                console.log(request.getAllResponseHeaders());
+                                resolve(response);
+                            },
+                            '404' : function(reslove,reject){
+                                reject($O.error('The server responded with 400 not found'));
+                            },
+                            '500' : function(resolve,reject){
+                                 reject($O.error('An internal server error occurred'));
                             }
-                        }
-
-                        xhr.onreadystatechange = checkRequest;
-                        xhr.open(params.method,params.url);
-                        xhr.send(params.send);
-
-                        function checkRequest(){
-                            if(xhr.readyState === 4){
-                                new __.Switch({
-                                    '200' : function(xhr,params,RESOLVE,REJECT){
-                                         var response;
-                                        
-                                        if(params.responseType == ('json' || "JSON")){
-                                            response = returnJSON(xhr.responseText);
-                                        } else {
-                                            response = xhr.responseText;
-                                        }
-                                        response ? 
-                                            RESOLVE(response) :
-                                            REJECT($O.error('Error parsing response as JSON: Octane.xhr()')); 
-                                    },
-                                    '404' : function(xhr,params,RESOLVE,REJECT){
-                                        REJECT($O.error('The server responded with 400 not found'));
-                                    },
-                                    '500' : function(xhr,params,RESOLVE,REJECT){
-                                         REJECT($O.error('An internal server error occurred'));
-                                    }
-                                }).run(xhr.status,[xhr,params,RESOLVE,REJECT]);
-                            }
-                        }
-
-                        function returnJSON(response){
-
-                            try{
-                                return JSON.parse(response);
-                            }catch(e){
-                                return false;
-                            }
-                        }
-                    }); // end Promise()
-                }, // end Octane.xhr()
+                        }).run(request.status,[resolve,reject]);
+                    }
+                }    
+               
+                request.open(method,url,true);
+                
+               for(var i=0,n = headerKeys.length; i<n; i++){
+                    header = headerKeys[i];
+                    value = $headers[header];
+                    request.setRequestHeader(header,value);
+                }
+                request.send(encoded);
+            });
+                
+            
+        }
+        
+        function Http(url,headers){
+            this.url = url;
+            this.headers = _.isObject(headers) ? headers : {};
+        }
+        
+        Http.prototype = new Base();
+        Http.prototype.define({
+            
+            get : function(){
+                return http(this.url,'GET',null,this.headers);
+            },
+            post : function(data){
+                return http(this.url,'POST',data,this.headers);
+            },    
+            put : function(data){
+                return http(this.url,'PUT',data,this.headers);
+            },
+            delete : function(){
+                return http(this.url,'DELETE',null,this.headers);
+            }
+        });
+        
+        $O.define({
+            http : function(url,headers){
+                return new Http(url,headers);
+            }
+        });
+        
+        _octane.loadedCache = [];
+        
+        $O.define({
             
             getLibrary : function(url,fn){
                 return new Promise(function(resolve,reject){
@@ -429,7 +456,7 @@
                     } else {
                         
                         $O.handle('script:loaded:'+cleanURL,function(){
-                            content = _octane.cacheJSON.pop();
+                            content = _octane.loadedCache.pop();
                             $O.addLibrary(cleanURL,content).then(resolve,reject);
                         });
                         $O.handle('script:failed:'+cleanURL,function(){
@@ -455,16 +482,16 @@
                     try{
                         json = JSON.parse(json);
                     }catch(ex){
-                       $O.error('failed to parse JSON from Octane.jsonp() '+ex.message); 
+                       $O.log('failed to parse JSON from Octane.jsonp() '+ex.message); 
                     }
                 } 
                 if(_.isObject(json)){
-                    _octane.cacheJSON.push(json);
+                    _octane.loadedCache.push(json);
                 }       
             }       
         });
       
-        _octane.cacheJSON = [];
+        
         
 	/* ------------------------------------------------------- */
 	/*                          EVENTS                         */
