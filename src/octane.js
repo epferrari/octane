@@ -186,6 +186,7 @@
 		_octane.define({
 				modules		    : {},
 				models		    : {},
+                Models          : [],
 				views		    : {},
 				controllers     : {},
                 eventRegister   : {}
@@ -640,7 +641,7 @@
         Library.prototype = new Pact();
        
 		$O.define({
-			addLibrary : function(name,lib){
+			library : function(name,lib){
                 if(_.isObject(lib)){
 				    return _octane.libraries[name] = new Library(name,lib);
                 } else {
@@ -648,7 +649,7 @@
                 }
                 
 			},
-            library : function(name){
+            getLib : function(name){
                 return $O.hasLibrary(name).then(function(data){
                     return data;
                 });
@@ -663,7 +664,80 @@
 			}
 		});
 	
-	
+    /* ------------------------------------------------------- */
+	/*                        DataStores                       */
+	/* ------------------------------------------------------- */ 
+    
+    _octane.datastores = {};
+        
+    function DataStore(id,db){
+        
+        this.id = id;
+        var $db = db;
+        
+        this.define({
+            query : function(keystring){ 
+                                                
+                        var dbData,keyArray;
+
+                        if(keystring){
+                            keyArray = keystring.split('.');
+
+                            try{
+                                dbData = keyArray.reduce(function(o,x,i){
+                                    return o[x];
+                                },$db);
+                            }catch(ex){
+                                dbData = null;
+                                $O.log('Unable to get DataStore data "'+keystring+'". Error: '+ex.message);
+                            }
+                            return dbData;
+                        }
+                    },
+            rebase  : function(db) {
+                        $db = _.isObject(db) && db;
+                    }
+        });
+        
+    }
+        
+    DataStore.prototype = new Base();
+        
+    $O.define({
+        storage : function(storeId,db){
+        
+                    if(!_octane.datastores[storeId]){
+                        _octane.datastores[storeId]= new DataStore(storeId,db);
+                    }else{
+                        $O.error('cannot recreate storage object '+storeId+'. Use .rebase() instead');
+                    }
+                },
+        hasStore : function(storeId){
+                    return new Promise(function(resolve){
+                        if(_octane.datastores[storeId]){
+                            resolve();
+                        }
+                    });
+                },
+        lookup : function(storeKey){
+                    var 
+                    storeID = storeKey.split('.')[0],
+                    dbKey = storeKey.split('.').slice(1).join('.'),
+                    $store =  _octane.dataStores[storeID];
+                    if(!$store){
+                        return false;
+                    };
+                    if($store && dbKey){
+                        return $store.query(dbKey);
+                    }
+        },
+        rebase : function(storeID,data){
+            
+                    _octane.dataStores[storeID] && _octane.dataStores[storeID].rebase(data);
+        }
+    });
+   
+        
 	/* ------------------------------------------------------- */
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
@@ -784,7 +858,7 @@
                                 return this.state;
                             }
 						},
-            clear       : function(){
+            clear : function(){
                             var 
                             stateProps = Object.keys(this.state),
                             cleared = {};
@@ -801,83 +875,68 @@
 		});
 		
 		$O.define({
-			model 		: function (name,config){
-                           
-                            config = config || {};
-                
-                            var 
-                            defaults = config.defaults || {},
-                            extend = config.extend || {},
-                            initialize = config.initialize || false,
-                            singleton = config.singleton || false;
+            Model       : function(Name,config){
                             
-                            function _Model(name,db){
-                                
-                                if(!name){
-                                    $O.error('model must have name');
-                                    return {created : false};
-                                }
-                                if(_octane.models[name]){
-                                    $O.error('cannot create duplicate model '+name);
-                                    return {created : false};
-                                }
+                            config = config || {};
+                            
+                            var 
+                            classDefaults = config.defaults || {},
+                            extend = config.extend || {},
+                            initialize = config.initialize || false;
+                            
+                            
+                            function _Model(name,instanceDefaults){
                                 
                                 this.define({name: name});
                                 
+                                
                                 // protected
-                                var 
-                                $db = _.isObject(db) ? db : {},
-                                vm = new ViewModel(this);
-
+                                var
+                                vm = new ViewModel(this),
+                                _defaults = _.isObject(instanceDefaults) ? $O.extend.apply(classDefaults,[instanceDefaults,true]) : classDefaults;
+                                
                                 this.define({
                                     state		: {},
-                                    access	: function(keystring) { 
-                                                
-                                                var dbData,keyArray;
-
-                                                if(keystring){
-                                                    keyArray = keystring.split('.');
-
-                                                    try{
-                                                        dbData = keyArray.reduce(function(o,x,i){
-                                                            return o[x];
-                                                        },$db);
-                                                    }catch(ex){
-                                                        dbData = null;
-                                                        $O.log('Unable to get model db data "'+keystring+'". Error: '+ex.message);
-                                                    }
-                                                    return dbData;
-                                                }
-                                            },
-                                    rebase  : function(db) {
-                                                $db = _.isObject(db) && db;
-                                            },
                                     rescope : vm.parse.bind(vm)
                                 });
                                 
-                                this.set(defaults);
+                                this.set(_defaults);
                                 _octane.models[this.name] = this;
+                                try{
+                                    _octane.Models[Name].push(this);
+                                } catch (ex){
+                                    _octane.Models[Name] = [];
+                                    _octane.Models[Name].push(this);
+                                }
                                 
-                                _.isFunction(initialize) && initialize.apply(this);   
+                                _.isFunction(initialize) && initialize.apply(this);
                             }
-                            
-                            _Model.prototype = new Model(name);
+                
+                            _Model.prototype = new Model(Name);
                             _Model.prototype.extend(extend);
                             _Model.prototype.define({
                                 reset : function(){
-                                    this.clear().set(defaults);
+                                    
+                                    this.clear().set(_defaults);
                                 }
                             });
-                            
-                            if(singleton){
-                               
-                                var db = _.isObject(singleton) ? singleton : {};
-                                var model = new _Model(name,db);
-                                
-                                return model;
-                            } else {
-                                return _Model;
+                
+                            return _Model;
+                        },
+                         
+			model 		: function (name,defaults){
+                           
+                            if(!name){
+                                $O.error('model must have name');
+                                return false;
                             }
+                            if(_octane.models[name]){
+                                return _octane.models[name];
+                            }
+                            
+                            var singleton = $O.Model(name);
+                            
+                            return new singleton(name,defaults);
                         },
             
             get         : function(modelStateKey){
@@ -971,16 +1030,6 @@
                                 model = _octane.models[model];
                                
                                 model && model.unset(key);
-                            }
-                        },              
-            fetch       : function(modelDbKey){
-                            var 
-                            modelName = modelDbKey.split('.')[0],
-                            dbKey = modelDbKey.split('.').slice(1).join('.'),
-                            model =  _octane.models[modelName];
-                
-                            if(model && dbKey){
-                                return model.access(dbKey);
                             }
                         },
             _parseModelName  : function(bind){
@@ -1667,9 +1716,9 @@
 			options = options || {};
 
             // load router module first
-            return _octane.modules['startup-utilities']._load()
+            return _octane.modules['StartupUtilities']._load()
                 .then(function(){
-                    return _octane.modules['router']._load();
+                    return _octane.modules['Router']._load();
                 })
                 .then(function(){
                 
@@ -1965,8 +2014,8 @@
 
                 // add debugging support if module included, 
                 // pass internal _octane app object as module config
-                if(_octane.modules['debug']){
-                    config.debug = {protected : _octane};
+                if(_octane.modules['Debug']){
+                    config.Debug = {protected : _octane};
                 }
                 
                 // load modules -> compile -> ready
