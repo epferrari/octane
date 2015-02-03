@@ -1,6 +1,6 @@
  // init external dependencies/utilities that help octane run
  
- octane.module('startup-utilities',function(cfg){
+ octane.module('StartupUtilities',function(cfg){
     
     var utils = {
         fastclickJS : function(){

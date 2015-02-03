@@ -1,5 +1,5 @@
 
-    octane.module('UI-Overlay',function(cfg){
+    octane.module('UiOverlay',function(cfg){
         
         var 
         bgContainer = octane.dom.bgContainer(),

@@ -3,7 +3,7 @@
 	/* ------------------------------------------------------- */
 	
 	
-		octane.module('appLoading', function (cfg){
+		octane.module('AppLoading', function (cfg){
 			
             cfg = _.isObject(cfg) ? cfg : {};
             

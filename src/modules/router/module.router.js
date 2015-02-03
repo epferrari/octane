@@ -1,6 +1,6 @@
 // JavaScript Document
 
-octane.module('router',['oView'],function (cfg) {
+octane.module('Router',['OctaneViews'],function (cfg) {
 	
         // octane's own pushstate method
         function pushState(params){
@@ -108,7 +108,7 @@ octane.module('router',['oView'],function (cfg) {
                 var 
                 $view = octane.view(viewID),
                 viewOnScreen = ($view == currentView),
-                modalOnScreen = (octane.modal.current());
+                modalOnScreen = (octane.Modal.current());
             
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////

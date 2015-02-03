@@ -1,13 +1,12 @@
-octane.module('modal',['oView','UI-Overlay'],function(cfg){
+octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
     
-        var 
-        Base = octane.constructor,
-        $viewProto = this.import('viewPrototype'),
-        $overlay = this.import('UI-Overlay'),
+        var
+        $viewProto = this.import('ViewPrototype'),
+        $overlay = this.import('UiOverlay'),
         $Modals = {},
         bg = document.getElementsByTagName('o-modal-container')[0];
             
-        function oModal(elem){
+        function OctaneModal(elem){
             if(!_.isString(elem.id)) return {instanced:false};
 
             this.define({
@@ -25,9 +24,9 @@ octane.module('modal',['oView','UI-Overlay'],function(cfg){
             this.adjustSize();
         }
 
-        oModal.prototype = new Base('Octane Modal');
-        oModal.prototype.define({
-            constructor :  oModal,
+        OctaneModal.prototype = octane.base();
+        OctaneModal.prototype.define({
+            constructor :  OctaneModal,
             configureLoading : $viewProto.configureLoading,    
             loadThen    : $viewProto.loadThen,
             doLoadThen  : $viewProto.doLoadThen,       
@@ -81,7 +80,7 @@ octane.module('modal',['oView','UI-Overlay'],function(cfg){
 
             var $modal = $Modals[modalID];
 
-            if(!($modal && ($modal instanceof oModal))){  return };
+            if(!($modal && ($modal instanceof OctaneModal))){  return };
 
             if(!block){
                 octane.blockRouting();
@@ -110,7 +109,7 @@ octane.module('modal',['oView','UI-Overlay'],function(cfg){
             
             var $modal = $Modals[modalID];
 
-            if($modal && $modal instanceof oModal){
+            if($modal && $modal instanceof OctaneModal){
                 
                 octane.blockRouting();
                 
@@ -127,7 +126,7 @@ octane.module('modal',['oView','UI-Overlay'],function(cfg){
             id = elem.id;
            
             if(!$Modals[id]){
-               $Modals[id] = new oModal(elem);
+               $Modals[id] = new OctaneModal(elem);
             }
         }
         // end helper

@@ -24,7 +24,7 @@
         //  @config defaultLang [string]: a default language or (default:English)
         //  @config langSupport [array]: supported languages for the translator (default:['English'])
 
-    octane.module('translator', function (config){
+    octane.module('Translator', function (config){
 
             // dummy
             var $M = {};
@@ -325,10 +325,12 @@
         /* ------------------------------- */
         // init
         /* ------------------------------- */
-                octane.handle('view:routed',translate);
-                findLang();
-                renderControls($M.langSupport);
-                translate();
+        this.initialize = function(){
+            octane.handle('view:routed',translate);
+            findLang();
+            renderControls($M.langSupport);
+            translate();
+        }
     });
 
 	

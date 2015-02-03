@@ -1,5 +1,5 @@
 
-    octane.module('debug',function(cfg){
+    octane.module('Debug',function(cfg){
         var _octane = cfg.protected;
         
         octane.extend({

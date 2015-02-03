@@ -1,4 +1,4 @@
-octane.module('viewPrototype',function(cfg){
+octane.module('ViewPrototype',function(cfg){
         
         this.export({
             configureLoading : function(){
@@ -32,7 +32,7 @@ octane.module('viewPrototype',function(cfg){
                         break;  
                 }
             },
-             load : function(){
+            load : function(){
                 var $this = this;
                 octane.dom.viewContainer().style.height = $(window).height()+'px';
                 return this.doThenLoad().finally(function(){

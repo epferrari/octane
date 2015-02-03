@@ -1,11 +1,10 @@
 // set-up for Views constructor
 
-octane.module('oView',['viewPrototype'],function(cfg){
+octane.module('OctaneViews',['ViewPrototype'],function(cfg){
            
         var 
-        Base = octane.constructor, 
         $Views = {},
-        $proto = this.import('viewPrototype');
+        $proto = this.import('ViewPrototype');
     
     /* ------------------------------------------------------- */
     //  Application View Constructor
@@ -18,7 +17,7 @@ octane.module('oView',['viewPrototype'],function(cfg){
     // @opton exits[to,easing,duration]
     /* ------------------------------------------------------- */
 
-        function View(elem){
+        function OctaneView(elem){
             if(!_.isString(elem.id)) return {instanced:false};
 
             this.define({
@@ -36,12 +35,12 @@ octane.module('oView',['viewPrototype'],function(cfg){
             this.configureLoading();
         }
 
-        View.prototype = new Base('Octane View');
-        View.prototype.define({
-            constructor : View
+        OctaneView.prototype = octane.base();
+        OctaneView.prototype.define({
+            constructor : OctaneView
         });
         
-        View.prototype.extend($proto);
+        OctaneView.prototype.extend($proto);
         
         this.initialize = function(){
             
@@ -53,7 +52,7 @@ octane.module('oView',['viewPrototype'],function(cfg){
             for(var i=0,n=$views.length; i<n; i++){
                 id = $views[i].id;
                 config = JSON.parse($views[i].getAttribute('o-config'));
-                !$Views[id] && ($Views[id] = new View($views[i],config));
+                !$Views[id] && ($Views[id] = new OctaneView($views[i],config));
             }
             octane.define({
                 view : function(id){
