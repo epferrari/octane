@@ -76,24 +76,44 @@ octane.module('ViewPrototype',function(cfg){
             },
             setCanvasHeight : function($pixels){
                 
-                // some jQuery to ensure view-canvas's height
-                var 
+                var
+                appContainer = octane.dom.appContainer(),
+                appContainerNodes = [],
+                appContainerNodeList = appContainer.childNodes,
+                appContainerHeight,
                 viewContainer = octane.dom.viewContainer(),
-                height = [],
-                totalHeight;
+                viewNodes = [],
+                viewNodeList = this.elem.childNodes,
+                windowHeight = window.document.body.offsetHeight,
+                viewTotalHeight,
+                viewContainerHeight = viewContainer.offsetHeight,
+                freeSpace;
                 
-                viewContainer.style.height = $(window).height()+'px';
                 
-                this.$elem.children().each(function (){
-                    height.push($(this).height());
-                });
-                totalHeight = _.reduce(height,function(totalHeight,num){
-                    return totalHeight + num;
-                });
-                $pixels = $pixels || totalHeight || 500;
-                this.cachedHeight = $pixels;
-                
-                $.Velocity.animate(viewContainer,{height: $pixels});
+                // convert appContainer's NodeList to real array
+                for(var i=0,n=appContainerNodeList.length; i<n; i++){
+                    appContainerNodes.push(appContainerNodeList[i]);
+                }
+                // convert current view's NodeList to real array
+                for(var j=0,m=viewNodeList.length; j<m;j++){
+                    viewNodes.push(viewNodeList[j]);
+                }
+                // get total height of app container nodes (including view container)
+                appContainerHeight = appContainerNodes.reduce(function(height,node,index){
+                    return (node && node.nodeType == (Node.ELEMENT_NODE)) ? node.offsetHeight + height : height;
+                },0);
+                // less the view container's height, if any
+                freeSpace = windowHeight - (appContainerHeight - viewContainerHeight);
+                // initially set the viewContainer as window height
+                viewContainer.style.height = windowHeight+'px';
+                // get total height of view from its inner elements
+                viewTotalHeight = viewNodes.reduce(function(height,node,index){
+                    return (node && node.nodeType == (Node.ELEMENT_NODE)) ? node.offsetHeight + height : height;
+                },0);
+                // set the view container height to the greater
+                viewContainerHeight = (viewTotalHeight > freeSpace) ? viewTotalHeight : freeSpace;
+                // animate
+                $.Velocity.animate(viewContainer,{height: viewContainerHeight+'px'});
                
             },
             
