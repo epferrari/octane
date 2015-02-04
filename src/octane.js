@@ -1843,15 +1843,33 @@
             
             var
             pattern = /\{\{([^{^}]+)\}\}/g,
-            matches = template.match(pattern),
-            key,regexp;
+            matches = template.match(pattern);
             
             if(_.isArray(matches)){
-                for(var i=0,n=matches.length; i<n; i++){
-                    key = matches[i].replace(/[{}]+/g,''); // 'something'
-                    regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
-                    template = template.replace(regexp,data[key]);
-                }
+                matches.forEach(function(match){
+                   
+                    var
+                    key = match.replace(/[{}]+/g,''),
+                    regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g"),
+                    keySplit = key.split('.'),
+                    l = keySplit.length,
+                    value;
+                    
+                    value = keySplit.reduce(function (prev,curr,index,array){
+                        //console.log('previous',prev);
+                        //console.log('current',curr);
+                        var val = prev[curr];
+                        if(index == (l-1)){ 
+                            return val; // last iteration, return value
+                        } else if(_.isObject(prev)){ 
+                            return val; // go one level deeper
+                        } else { 
+                            return null; // no further nesting, value defined in key does not exist
+                        }
+                    },data); // start with data object passed to template
+                    
+                    template = template.replace(regexp,value);
+                });
             }
             return template;
         }
