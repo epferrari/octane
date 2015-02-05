@@ -47,7 +47,7 @@
                 var
                 loadingContainer = octane.dom.loadingContainer(),
                 appContainer = octane.dom.appContainer(),
-                view = octane.parseView() || cfg.defaultView || 'home';
+                view =  cfg.defaultView || octane.parseView()  || 'home';
                
                 appContainer.classList.remove('hidden');
 

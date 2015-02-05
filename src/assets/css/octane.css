@@ -150,7 +150,7 @@ o-modal-container {
   left: 0;
   z-index: 0;
   pointer-events: none;
-  overflow-y: scroll;
+  overflow-y: hidden;
   opacity: 0;
   will-change: opacity;
   transition: opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946);
