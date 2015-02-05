@@ -42,7 +42,7 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         routingBlocked = false,
         currentView,
         // store routes called while another route is executing its loading animation
-        routesQueue = [],
+        queuedRoute = null,
         // conditions under which a route should be called, added with .routeIf()
         routeConditions = {};
         
@@ -52,16 +52,16 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             routingBlocked = true;
         }//);
         // release block and route from queue
-        //octane.handle('unblock:routing',function(){
+        // octane.handle('unblock:routing',function(){
         function unblockRouting(){
             routingBlocked = false;
-            //( routesQueue.length > 0 ) && route(routesQueue.pop());
-            var lastRouteRequested = routesQueue.pop();
-            routesQueue = [];
-            route(lastRouteRequested).catch(function(ex){
-               octane.log(ex);
-            });  
-        }//);
+            
+            if(queuedRoute){
+                route(queuedRoute.view).then(queuedRoute.resolver).catch(function(ex){
+                    octane.log(ex);
+                });
+            }
+        }
         
         // add a condition that needs to be true for the route to run
         function routeIf(viewID,condition,failCallback){
@@ -83,16 +83,16 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         // add a deferred to execute before a view is routed
         // unlike routeIf, route will initialize whether the promise resolves or rejects
         // just keeps view from routing until something is done
-        function routeAfter(viewID,deferred,argsArray){
+        function beforeRoute(viewID,deferred,argsArray){
             
-            octane.view(viewID) && octane.view(viewID).beforeLoad(deferred,argsArray);
+            octane.view(viewID) && octane.view(viewID).addBeforeLoadPromise(deferred,argsArray);
             return octane;
         }
             
         // add a callback to be executed when the specified view finishes its loading animation 
         function routeThen(viewID,callback,argsArray){
 
-            octane.view(viewID) && octane.view(viewID).loadThen(callback,argsArray);
+            octane.view(viewID) && octane.view(viewID).addAfterLoadCallback(callback,argsArray);
             return octane;
         }
         
@@ -113,7 +113,10 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
                                                                                                 //
-                if( $view && (!viewOnScreen || modalOnScreen)){                                  //
+                if( $view && viewOnScreen && modalOnScreen){                                   //
+                    octane.Modal.dismiss(modalOnScreen.id);                                     //
+                    resolve();                                                                  //
+                } else if ($view && !viewOnScreen){                                             //
                                                                                                 //
                 // ensure a route isn't triggered while another route is animating              //
                 // or while routing has been blocked by another module                          //
@@ -146,14 +149,24 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                         }                                                       //      //      //
                     //////////////////////////////////////////////////////////////      //      //
                                                                                         //      //
-                    }else{                                                              //      // 
-                        if(!__.inArray(routesQueue,viewID) && viewID !== enRoute){      //      //
-                            routesQueue.push(viewID);                                   //      //
-                        }                                                               //      //
+                    }else{                                                              //      //
+                        // a new route was called                                       //      // 
+                        //if(viewID !== enRoute){
+                            queuedRoute = {
+                                view : viewID,
+                                resolver : resolve
+                            };
+                            //      //
+                        //} else {                                                        //      //
+                            // the same route was called twice, resolve immediately
+                         //   $view.callAfterLoadCallbacks();                                                           //      //
+                        //    resolve();                                                  //      //
+                       // }                                                               //      //
                     }                                                                   //      //
                 //////////////////////////////////////////////////////////////////////////      //
                                                                                                 //
-                }else{                                                                          //
+                }else{
+                    octane.fire('routing:complete');//
                     resolve();                                                                  //
                 }                                                                               //
                                                                                                 //
@@ -182,9 +195,13 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                 // flag this route complete
                 enRoute = null; 
                // check for queued routes
-                if(routesQueue.length > 0){
-                     // route next view
-                    route(routesQueue.pop());
+                if(queuedRoute){
+                    // route next view
+                    var next = queuedRoute;
+                    route(next.view).then(function(){
+                        next.resolver();
+                        queuedRoute = null;
+                    });
                 } else{
                     // signal to any blocking listeners that routing is complete
                     octane.fire('routing:complete');
@@ -321,12 +338,15 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                                 });
                             },
             routeIf         : routeIf,
-            routeAfter      : routeAfter,
+            beforeRoute     : beforeRoute,
             routeThen		: routeThen,
             pushState		: pushState,
             currentView     : function(){
                                 return currentView
                             },
+            getRouteQueue   : function(){
+                return queuedRoute;
+            },
             blockRouting    : blockRouting,
             unblockRouting  : unblockRouting
         });

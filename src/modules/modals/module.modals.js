@@ -28,8 +28,8 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
         OctaneModal.prototype.define({
             constructor :  OctaneModal,
             configureLoading : $viewProto.configureLoading,    
-            loadThen    : $viewProto.loadThen,
-            doLoadThen  : $viewProto.doLoadThen,       
+            addAfterLoadCallback    : $viewProto.addAfterLoadCallback,
+            callAfterLoadCallbacks  : $viewProto.callAfterLoadCallbacks,       
             load        : function (){
                             var 
                             $this = this;
@@ -45,7 +45,7 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                                 $('body').velocity('scroll',{duration:600});
                                 $this.elem.classList.add('modal-active');
                             })
-                            .then($this.doLoadThen.bind($this));
+                            .then($this.callAfterLoadCallbacks.bind($this));
                         },
             exit        : function(){
                             var $this = this;
@@ -211,7 +211,7 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                 return block;
             },
             callThen : function(modalID,callback,args){
-                $Modals[modalID] && $Modals[modalID].loadThen(callback,args);
+                $Modals[modalID] && $Modals[modalID].addAfterLoadCallback(callback,args);
             }
         });
 });

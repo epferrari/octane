@@ -35,7 +35,7 @@ octane.module('ViewPrototype',function(cfg){
             load : function(){
                 var $this = this;
                 octane.dom.viewContainer().style.height = $(window).height()+'px';
-                return this.doThenLoad().finally(function(){
+                return this.callBeforeLoadPromises().finally(function(){
                     return new Promise(function(resolve){
                         // scroll to top of page
                         $('body').velocity('scroll',{duration:350});
@@ -50,7 +50,7 @@ octane.module('ViewPrototype',function(cfg){
                 }).then(function(){
                     $this.setCanvasHeight();
                 }).then(function(){
-                    $this.doLoadThen();
+                    $this.callAfterLoadCallbacks();
                 });
             },
             queueExit  : function(){
@@ -117,7 +117,7 @@ octane.module('ViewPrototype',function(cfg){
                
             },
             
-            beforeLoad : function(promise,args){
+            addBeforeLoadPromise : function(promise,args){
                 try{
                     this.todoBeforeLoad.push([promise,args]);
                 } catch(ex){
@@ -125,7 +125,7 @@ octane.module('ViewPrototype',function(cfg){
                 }
             },
                 
-            loadThen : function(callback,args){
+            addAfterLoadCallback: function(callback,args){
                 try{
                    this.todoAfterLoad.push([callback,args]);
                 }catch(ex){
@@ -133,7 +133,7 @@ octane.module('ViewPrototype',function(cfg){
                 }
             },
             
-            doThenLoad : function(){
+            callBeforeLoadPromises : function(){
                 
                 var 
                 $view = this,
@@ -162,7 +162,7 @@ octane.module('ViewPrototype',function(cfg){
                 return Promise.settle(completed);
             },
             
-            doLoadThen : function (){
+            callAfterLoadCallbacks : function (){
                 
                 var 
                 $view = this,
