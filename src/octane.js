@@ -818,18 +818,19 @@
                     },
             unset : function(){
                 
-                            var toUnset;
+                            var
+                            keys,
+                            toUnset = {};
 							
                             if(_.isString(arguments[0])){
-                                toUnset = {};
-                                toUnset[arguments[0]] = arguments[1];
-                            } else if(_.isObject(arguments[0])){
-                                toUnset = arguments[0];
+                                keys = [ arguments[0] ];
+                            } else if(_.isArray(arguments[0])){
+                                keys = arguments[0];
                             } else {
                                 return;
                             }
                 
-                            _.forOwn(toUnset,function(val,key){
+                            keys.forEach(function(key){
                                 toUnset[key] = null;
                             });
                 
@@ -1004,9 +1005,9 @@
                             swatch = new __.Switch({
                                 'string' : function(sub){
                                     toUnset = sub.split(',');
-                                    for(var i=0,n=toUnset.length; i<n; i++){
-                                        toUnset[i] = toUnset[i].trim();
-                                    }
+                                    toUnset = toUnset.map(function(key){
+                                       return key.trim();
+                                    });
                                 },
                                 'array' : function(sub){
                                     toUnset = sub;
@@ -1016,21 +1017,15 @@
                                 }
                             }).run(__.typeOf(subject),[subject]);
 
-                
-                            for(var i=0,n=toUnset.length; i<n; i++){
-                                 doUnset(toUnset[i]);   
-                            }
-                            
-                            // helper
-                            function doUnset(keystring){
+                            toUnset.forEach(function(keystring){
                                 
                                 var
                                 modelName = $O._parseModelName(keystring),
                                 key = $O._parseModelKey(keystring),
-                                model = _octane.models[model];
+                                model = _octane.models[modelName];
                                
                                 model && model.unset(key);
-                            }
+                            });
                         },
             _parseModelName  : function(bind){
                             try {
@@ -1108,80 +1103,73 @@
 						
 						var
                         $this = this,
+                        $scope = this.scope,
                         $bindScope = document.querySelectorAll('[o-bind^="'+this.model.name+'."]'),
                         $updateScope = document.querySelectorAll('[o-update*="'+this.model.name+'."]'),
-                        $scope = [];
+                        scopedElems = [];
                         
                         // union the two node lists
                         for(var b=0,B=$bindScope.length; b<B; b++){
-                            $scope.push($bindScope[b]);
+                            scopedElems.push($bindScope[b]);
                         }
                         for(var u=0,U=$updateScope.length; u<U; u++){
-                            if(!__.inArray($scope,$updateScope[u])){
-                                $scope.push($updateScope[u]);
+                            if(!__.inArray(scopedElems,$updateScope[u])){
+                                scopedElems.push($updateScope[u]);
                             }
                         }
                         
+                
                         // loop elements with this o-model
-                        for(var i=0,n=$scope.length;i<n;i++){
-                            
-                            var
-                            el = $scope[i],
-                            // remove model name from bind string
-                            $bind = el.getAttribute('o-bind'),
-                            o_update = el.getAttribute('o-update'),
-                            $update= {};
-
-                            if(o_update){
-                                // not a JSON string
-                                if(o_update.length > 0 && o_update.indexOf("{") !== 0){
-                                    $update[o_update] = 'html';
-                                } else {
-                                    try{
-                                        $update = _.invert( JSON.parse(el.getAttribute('o-update')) ) || {};
-                                    }catch(exc){
-                                        octane.log(exc);
-                                        octane.error('JSON.parse() could not parse o-update string. ViewModel.parse() on element '+el);
-                                    }
-                                }
-                            }
+                        scopedElems.__forEach(function(elem){
                             
                             // element hasn't been parsed yet
-                            if(!el._guid){
-                                el._guid = $O.GUID();
-                                el._bind = $bind;
-                                el._update = $update;
+                            if(!elem._guid){
+                                
+                                var 
+                                oBind = elem.getAttribute('o-bind'),
+                                _oUpdate = elem.getAttribute('o-update'),
+                                oUpdate = {};
+                            
+                           
+                                elem._guid = $O.GUID();
+                                elem._bind = oBind;
+                                elem._update = oUpdate;
                                 try{
-                                    el._filters = JSON.parse( el.getAttribute('o-filters') );
+                                    elem._filters = JSON.parse( elem.getAttribute('o-filters') );
                                 } catch (ex){
-                                    $O.error(ex);
+                                    $O.log(ex);
                                 }
+                    
+                                if(_oUpdate){
+                                    // not a JSON string
+                                    if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
+                                        oUpdate[_oUpdate] = 'html';
+                                    } else {
+                                        try{
+                                            oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
+                                        }catch(ex){
+                                           $O.log(ex.message + ' in ViewModel.parse(), element: '+elem );
+                                        }
+                                    }
+                                }
+
+                                // create array for this.bindings[bind] if not already an array
+                                if(oBind){
+                                    if(!$scope[oBind]) {  $scope[oBind] = []; }
+                                // push element into scope[key] for its two-way data bind
+                                    //if(!__.inArray(this.scope[oBind],[elem,'value'])){
+                                    $scope[oBind].push([oBind,elem,'value']);
+                                    //}
+                                }
+
+                                // push element+attr to scope[key] for one-way updates 
+                                _.forOwn(oUpdate,function(attr,key){
+                                    if(!$scope[key]) {  $scope[key] = []; }
+                                    $scope[key].push([key,elem,attr]); 
+                                });
+                                
                             }
-                            
-                            // create array for this.bindings[bind] if not already an array
-                            if($bind){
-                                if(!_.isArray(this.scope[$bind]) ) { 
-                                    this.scope[$bind] = []; 
-                                }
-                            // push element into scope[key] for its two-way data bind
-                                if(!__.inArray(this.scope[$bind],el)){
-                                    this.scope[$bind].push(el);
-                                }
-                            }
-                            
-                            // push element to scope[key] for updates if not already in for its data-bind
-                            var
-                            $updateKeys = Object.keys($update),
-                            key;
-                            
-                            for(var j=0,m=$updateKeys.length; j<m; j++){
-                                key = $updateKeys[j];
-                                if(!_.isArray(this.scope[key]) ) { this.scope[key] = []; }
-                                if(!__.inArray(this.scope[key],el) ){
-                                    this.scope[key].push(el);
-                                }
-                            }
-                        }
+                        });
 					},
 					
 			// update all data on the DOM bound to this ViewModel's Model
@@ -1189,67 +1177,61 @@
 								
                                 // loop bound model datapoint in scope
                                 var
-                                scopeKeys = Object.keys(this.scope),
-                                key;
+                                $scope = this.scope,
+                                scopeKeys = Object.keys($scope),
+                                toUpdate;
+                                
                 
-                                for(var j=0,J=scopeKeys.length; j<J; j++){
-                                    key = scopeKeys[j];
-                                    // loop thru each element bound to the model datapoint
-                                    for(var i=0,I=this.scope[key].length; i<I; i++){
-
-                                        var
-                                        element = this.scope[key][i],
-                                        // remove model name from string
-                                        pointer = element._bind ? $O._parseModelKey(element._bind) : '',
-                                        toUpdate = element._update,
-                                        toUpdateKeys = Object.keys(toUpdate),
-                                        ukey,
-                                        upointer;
-
-                                        element.value = this.model.get(pointer);
-
-                                        // loop thru attributes to update
-                                        for(var u=0,U = toUpdateKeys.length; u<U; u++){
-                                            ukey = toUpdateKeys[u];
-                                            // remove model name from string
-                                            upointer = $O._parseModelKey(ukey);
-                                            update(element,toUpdate[ukey],this.model.get(upointer));
-                                        }
-                                    }
-                                }
-                
-								// helper
+                               scopeKeys.__forEach( function(key){
+                                  
+                                    $scope[key].__forEach(function(group){
+                                       
+                                        update(group[0],group[1],group[2]);
+                                    })
+                                });
+                                
+                                    
+                                
+                                // helper
                                 /* ------------------------------------------------------- */
                                     
-                                    function update(el,attribute,fresh){
+                                    function update(key,elem,attr){
                                         
-                                        if(fresh == undefined){
+                                        var fresh = $O.get(key);
+                                        
+                                        if(__.isNull(fresh) || __.isUndefined(fresh)){
                                             fresh = null;
                                         }
-                                        if(attribute.indexOf('.') !== -1){
+                                        if(attr.indexOf('.') !== -1){
                                             // update style on element
                                             var 
-                                            prop = attribute.split('.')[1];
+                                            prop = attr.split('.')[1];
                                             
-                                            el.style[prop] = fresh;
+                                            elem.style[prop] = fresh;
                                         } else {
-                                            var o_update = new __.Switch({
-                                                'html' : function(){
-
-                                                            el.innerHTML = fresh;
-                                                        },
-                                                'text' : function(){
-                                                            el.textContent = fresh;
-                                                        },
-                                                'default' : function(){
-                                                            el.setAttribute(attribute,fresh);
-                                                        }
-                                            });
-                                            o_update.run(attribute);
+                                            
+                                            var updater = new __.Switch({
+                                                'html' : function(fresh){
+                                                    elem.innerHTML = fresh;
+                                                },
+                                                'text' : function(fresh){
+                                                    elem.textContent = fresh;
+                                                },
+                                                'value' : function(fresh){
+                                                    elem.value = fresh;
+                                                },
+                                                'default' : function(fresh,attr){
+                                                    console.log(elem);
+                                                    console.log(attr);
+                                                    console.log(fresh);
+                                                    elem.setAttribute(attr,fresh);
+                                                }
+                                            }).run(attr,[fresh,attr]);
                                         }
                                     }
                                 
                                 /* ------------------------------------------------------- */
+                                       
 							},
 			
 			// respond to user changes to DOM data bound to this model
@@ -1365,31 +1347,31 @@
             
             // param 1 : a model key or array of model keys to listen for change on
             // add param 2 as function(model key,data held in model[key])
-			task   : 	function(o_bind,task){
+			task   : 	function(props,task){
 				               
                                 var 
                                 $controller = this,
                                 models = {},
                                 cache ={};
                                 
-                                if(!_.isArray(o_bind)){
-                                    o_bind = [o_bind];
+                                if(!_.isArray(props)){
+                                    props = [props];
                                 }
                                 
-                                for(var m=0,M=o_bind.length; m<M; m++){
-                                    addBindHandler(o_bind[m],task);   
+                                for(var m=0,M=props.length; m<M; m++){
+                                    addBindHandler(props[m],task);   
                                 }
                                 
                                 // helper
-                                function addBindHandler(o_bind,task){
+                                function addBindHandler(prop,task){
                                     var 
-                                    model =  $O._parseModelName(o_bind),
-                                    bind = $O._parseModelKey(o_bind);
+                                    model =  $O._parseModelName(prop),
+                                    bind = $O._parseModelKey(prop);
                                     
                                     $O.handle(model+':statechange',function(e){
-                                        var currentVal = $O.get(o_bind);
-                                        if(currentVal != cache[o_bind]){
-                                            cache[o_bind] = currentVal;
+                                        var currentVal = $O.get(prop);
+                                        if(currentVal != cache[prop]){
+                                            cache[prop] = currentVal;
                                             task.apply($controller,[currentVal]);
                                         }
                                     });
