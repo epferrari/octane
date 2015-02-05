@@ -61,6 +61,10 @@
 								return ($$ instanceof jQuery);
 							},
 		
+        isEmail :       function(email){
+            
+            return /^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/.test(email);
+        },
 		// create events
 		createEvent	:	function  (type) {
             
@@ -138,9 +142,9 @@
 						var $this = this;
 						
                         // make sure the arguments are an array
-						args = _.isArray(args) ? args : (_.isString(args) ? args.split(',') : []);
+						args = _.isArray(args) ? args : [args];
                         
-                        return cases[$case] ? callAll(cases[$case],args) : cases['default'][0](args);
+                        return cases[$case] ? callAll(cases[$case],args) : cases['default'][0].apply(cases['default'][0],args);
 						
                         // helper
                         function callAll(funcArray,args){
@@ -352,6 +356,37 @@
 		writable 		: false,
 		enumerable 		: false
 	});
+    
+    Object.defineProperty(Array.prototype, '__forEach',{
+        value :function(closure){
+                    var 
+                    n=this.length,
+                    i=0;
+                  for(i;i<n;i++){
+                      closure(this[i],i);
+                  }
+        },
+        configurable : false,
+        writable : false,
+        enumerable : false
+    });
+    
+     Object.defineProperty(Array.prototype,'__map',{
+         value : function(closure){
+                    var 
+                    n = this.length,
+                    mapped = [],
+                    i=0;
+                    for(;i<n;i++){
+                        mapped[i]=closure(this[i],i);
+                    }
+                return mapped;
+                },
+         configurable : false,
+         writable : false,
+         enumerable : false
+     });
+        
 	
 	window[__] = $fn;
 	
