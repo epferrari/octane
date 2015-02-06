@@ -1077,12 +1077,12 @@
                             })
                             .addCase($this.model.name+':statechange',function(e){
                                 //$this.parse();
-                                $this.refresh(e.type);
+                                $this.refresh(e);
                             });
 
                         $O.handle('input click '+$this.model.name+':statechange',$this);
                         this.parse();    
-                        this.refresh(this.model.name);
+                        this.refresh({type : this.model.name});
                     },
 			
             // find bound elements on the DOM
@@ -1090,6 +1090,7 @@
 						
 						var
                         $this = this,
+                        $updater = this.update,
                         $scope = this.scope,
                         $bindScope = document.querySelectorAll('[o-bind^="'+this.model.name+'."]'),
                         $updateScope = document.querySelectorAll('[o-update*="'+this.model.name+'."]'),
@@ -1175,7 +1176,8 @@
                                     _.forOwn(oUpdate,function(attr,key){
                                         $O.handle('statechange:'+key,function(e){
                                             console.log('state changed, update o-update');
-                                            $this.refresh(e.type);
+                                            console.log(e.type);
+                                            $this.refresh(e);
                                         });
                                         var 
                                         deep = key.split('.'),
@@ -1183,7 +1185,7 @@
 
                                         deep.reduce(function(o,x,i,arr){
                                             
-                                            if(i == (l-1)){
+                                            if(i == (l-1)){ // last iteration
                                                 var z = {
                                                     key:key,
                                                     elem:elem,
@@ -1201,28 +1203,29 @@
                                     });
                                 }  // end if o-update
                             } // end if !elem._guid
-                            
+                         
                         });
-                       
-					},
-					
+                 console.log(this.scope);  
+					},		
 			// update all data on the DOM bound to this ViewModel's Model
-			refresh 	: 	function (eType){
+			refresh 	: 	function (e){
 								
                                 // loop bound model datapoint in scope
                                 var
+                                $updater = this.update,
                                 $scope = this.scope,
                                 toUpdate,
-                                updated = eType.split('.'),
-                                updateRecursive = function(object){
+                                updated = e.type ? e.type.replace('statechange:','').split('.') : [],
+                                updateRecursively = function(object){
                                     var keys = Object.keys(object);
                                     
                                     return keys.__map(function(key){
-                                        var prop = object[key];
+                                        var prop = object[key],
+                                            _prop;
                                         
-                                        if(_.isPlainObject(prop) ){ // nested 
-                                            if(updateRecursive(prop)[0]){
-                                                return updateRecursive(prop)[0];
+                                        if( _.isPlainObject(prop) ){
+                                           if( _prop = updateRecursively(prop)[0] ){ // nested 
+                                                return _prop;
                                             }
                                         } else if (_.isArray(prop) ){ // __binds__
                                             return prop; 
@@ -1232,54 +1235,50 @@
                                 
                                 var l= updated.length;
                                 var toRecurse = updated.reduce(function(o,x,i){
-                                    return o[x] = _.isObject(o[x]) ? o[x] : {};   
+                                    return _.isObject(o[x]) ? o[x] : {};   
                                 },$scope);
                                 
-                                toUpdate = updateRecursive(toRecurse).__concatAll();
-                                console.log(toUpdate);
+                                toUpdate = updateRecursively(toRecurse);
+                                toUpdate = _.compact(toUpdate);
+                                toUpdate = toUpdate.__concatAll();
+                                console.log('needing updates',toUpdate);
                                 toUpdate.__forEach(function(group){
-                                   update(group.key,group.elem,group.attr);
+                                   $updater(group.key,group.elem,group.attr);
                                 });    
-                                
-                                // helper
-                                /* ------------------------------------------------------- */
-                                    
-                                    function update(key,elem,attr){
-                                        
-                                        var fresh = $O.get(key);
-                                        
-                                        if(__.isNull(fresh) || __.isUndefined(fresh)){
-                                            fresh = null;
-                                        }
-                                        if(attr.indexOf('.') !== -1){
-                                            // update style on element
-                                            var 
-                                            prop = attr.split('.')[1];
-                                            
-                                            elem.style[prop] = fresh;
-                                        } else {
-                                            
-                                            var updater = new __.Switch({
-                                                'html' : function(fresh){
-                                                    elem.innerHTML = fresh;
-                                                },
-                                                'text' : function(fresh){
-                                                    elem.textContent = fresh;
-                                                },
-                                                'value' : function(fresh){
-                                                    elem.value = fresh;
-                                                },
-                                                'default' : function(fresh,attr){
-                                                    elem.setAttribute(attr,fresh);
-                                                }
-                                            }).run(attr,[fresh,attr]);
-                                        }
-                                    }
-                                
-                                /* ------------------------------------------------------- */
                                        
 							},
-			
+			update       : function(key,elem,attr){
+                                        
+                                var fresh = $O.get(key);
+                                console.log('updating key',key);
+                                console.log('with data',fresh);
+                                if(__.isNull(fresh) || __.isUndefined(fresh)){
+                                    fresh = null;
+                                }
+                                if(attr.indexOf('.') !== -1){
+                                    // update style on element
+                                    var 
+                                    prop = attr.split('.')[1];
+
+                                    elem.style[prop] = fresh;
+                                } else {
+
+                                    var updater = new __.Switch({
+                                        'html' : function(fresh){
+                                            elem.innerHTML = fresh;
+                                        },
+                                        'text' : function(fresh){
+                                            elem.textContent = fresh;
+                                        },
+                                        'value' : function(fresh){
+                                            elem.value = fresh;
+                                        },
+                                        'default' : function(fresh,attr){
+                                            elem.setAttribute(attr,fresh);
+                                        }
+                                    }).run(attr,[fresh,attr]);
+                                }
+                            },
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(element){
                                 console.log('uptake called');
@@ -1418,6 +1417,7 @@
                                     $O.handle(model+':statechange',function(e){
                                         var currentVal = $O.get(prop);
                                         if(currentVal != cache[prop]){
+                                            console.log('applying task from '+prop);
                                             cache[prop] = currentVal;
                                             task.apply($controller,[currentVal]);
                                         }
