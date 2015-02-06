@@ -770,51 +770,35 @@
                         var
                         updated = [],
                         $state 	= this.state,
-                        keyStringsToParse = Object.keys(fresh);
+                        name = this.name,
+                        keystringsToParse = Object.keys(fresh);
 
-
-                        for(var i=0,n=keyStringsToParse.length; i<n; i++){
-
+                        keystringsToParse.__forEach(function(keystring){
                             var
-                            keyString = keyStringsToParse[i],
-                            keyArray = keyString.split('.'),
-                            value = fresh[keyString],
+                            keyArray = keystring.split('.'),
+                            value = fresh[keystring],
                             k = keyArray.length,
                             modelUpdated;
-
+                           
                             try{
-                                keyArray.reduce(parseString,$state);
+                                keyArray.reduce(function(o,x,index){
+                                    if(index == (k-1)){ // last
+                                        return o[x] = value;
+                                    }else{
+                                        return o[x] = _.isObject(o[x]) ? o[x] : {};
+                                    }    
+                                },$state);
                                 modelUpdated = true;
                             }catch(e){
                                 modelUpdated = false;
-                                 $O.log('Unable to set model data "'+keyString+'". Error: '+e);
+                                 $O.log('Unable to set model data "'+keystring+'". Error: '+e);
                             }
-                            modelUpdated && updated.push(keyString);
-                        }
-
+                            modelUpdated &&  $O.fire('statechange:'+name+'.'+keystring);
+                        });
+                        
                         $O.fire(this.name+':statechange');
 
                         return fresh;
-
-                        // helpers
-                        /* ------------------------------------------------------- */
-
-                            function parseString(o,x,index){
-
-                                if(index == (k-1)){
-                                    if(value == null){
-                                        delete o[x];
-                                        return;
-                                    } else {
-                                        return o[x] = value;
-                                    }
-                                }else{
-                                    return o[x] = _.isObject(o[x]) ? o[x] : {};
-                                }
-                            }
-
-                        /* ------------------------------------------------------- */
-
                     },
             unset : function(){
                 
@@ -844,11 +828,13 @@
                             stateData;
 
                             if(keystring && _.isString(keystring)){
-                                var keyArray = keystring.split('.');
+                                var 
+                                keyArray = keystring.split('.'),
+                                l = keyArray.length;
 
                                 try{
                                     stateData = keyArray.reduce(function(o,x,i){
-                                        return o[x];
+                                        return o[x];  
                                     },$this.state);
                                 }catch(ex){
                                     stateData = '';
@@ -865,14 +851,12 @@
                             cleared = {};
                             
                             for(var i=0,n=stateProps.length; i<n; i++){
-                                //cleared[stateProps[i]] = null;
                                 delete this.state[stateProps[i]];
                             }
-                            octane.fire(this.name+':statechange');
-                           // this.set(cleared);
+                            $O.fire(this.name+':statechange');
+                            $O.fire('statechange:'+this.name);
                             return this;
-                        }                   
-          
+                        }      
 		});
 		
 		$O.define({
@@ -888,13 +872,15 @@
                             
                             function _Model(name,instanceDefaults){
                                 
-                                this.define({name: name});
-                                
+                                this.define({  name: name });
                                 
                                 // protected
                                 var
                                 vm = new ViewModel(this),
-                                _defaults = _.isObject(instanceDefaults) ? $O.extend.apply(classDefaults,[instanceDefaults,true]) : classDefaults;
+                                _defaults = {};
+                                
+                                $O.extend.apply(_defaults,[classDefaults]);
+                                _.isObject(instanceDefaults) && $O.extend.apply(_defaults,[instanceDefaults,true]);
                                 
                                 this.define({
                                     state		: {},
@@ -902,7 +888,7 @@
                                 });
                                 
                                 this.set(_defaults);
-                                _octane.models[this.name] = this;
+                                
                                 try{
                                     _octane.Models[Name].push(this);
                                 } catch (ex){
@@ -910,17 +896,18 @@
                                     _octane.Models[Name].push(this);
                                 }
                                 
-                                _.isFunction(initialize) && initialize.apply(this);
+                                _.isFunction(initialize) && initialize.bind(this).call();
+                                _octane.models[this.name] = this;
+                                
+                                this.define({
+                                    reset : function(){
+                                        this.clear().set(_defaults);
+                                    }
+                                });
                             }
                 
                             _Model.prototype = new Model(Name);
                             _Model.prototype.extend(extend);
-                            _Model.prototype.define({
-                                reset : function(){
-                                    
-                                    this.clear().set(_defaults);
-                                }
-                            });
                 
                             return _Model;
                         },
@@ -1090,12 +1077,12 @@
                             })
                             .addCase($this.model.name+':statechange',function(e){
                                 //$this.parse();
-                                $this.refresh();
+                                $this.refresh(e.type);
                             });
 
                         $O.handle('input click '+$this.model.name+':statechange',$this);
                         this.parse();    
-                        this.refresh();
+                        this.refresh(this.model.name);
                     },
 			
             // find bound elements on the DOM
@@ -1118,29 +1105,61 @@
                             }
                         }
                         
+                        
                 
                         // loop elements with this o-model
                         scopedElems.__forEach(function(elem){
                             
+                            
                             // element hasn't been parsed yet
                             if(!elem._guid){
-                                
-                                var 
-                                oBind = elem.getAttribute('o-bind'),
-                                _oUpdate = elem.getAttribute('o-update'),
-                                oUpdate = {};
-                            
-                           
                                 elem._guid = $O.GUID();
-                                elem._bind = oBind;
-                                elem._update = oUpdate;
+                                
                                 try{
                                     elem._filters = JSON.parse( elem.getAttribute('o-filters') );
                                 } catch (ex){
                                     $O.log(ex);
                                 }
-                    
+                                
+                                var 
+                                oBind = elem.getAttribute('o-bind'),
+                                _oUpdate = elem.getAttribute('o-update'),
+                                oUpdate, 
+                                deep,
+                                l;
+                                
+                                if(oBind){
+                                    elem._bind = oBind;
+                                     $O.handle('statechange:'+oBind,function(e){
+                                         console.log('state changed, update o-bind!');
+                                            $this.refresh(e.type);
+                                        });
+                                    
+                                    deep = oBind.split('.'),
+                                    l = deep.length;
+                                    
+                                    deep.reduce(function(o,x,i){
+                                        if(i == (l-1)){
+                                            var z = {
+                                                key:oBind,
+                                                elem:elem,
+                                                attr:'value'
+                                            };
+                                            if(_.isObject(o[x]) ){
+                                                o[x].__binds__.push(z);
+                                            }else{
+                                                o[x] = {__binds__ :[z]}
+                                            };
+                                        } else {   
+                                            return o[x] = _.isObject(o[x]) ? o[x] : {__binds__ :[]};
+                                        }
+                                    },$scope);   
+                                } // end if o-bind
+                                
                                 if(_oUpdate){
+                                    elem._update = oUpdate;
+                                    oUpdate = {}
+                                    
                                     // not a JSON string
                                     if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
                                         oUpdate[_oUpdate] = 'html';
@@ -1151,46 +1170,76 @@
                                            $O.log(ex.message + ' in ViewModel.parse(), element: '+elem );
                                         }
                                     }
-                                }
+                                    
+                                    // push element+attr to scope[key] for one-way updates 
+                                    _.forOwn(oUpdate,function(attr,key){
+                                        $O.handle('statechange:'+key,function(e){
+                                            console.log('state changed, update o-update');
+                                            $this.refresh(e.type);
+                                        });
+                                        var 
+                                        deep = key.split('.'),
+                                        l = deep.length;
 
-                                // create array for this.bindings[bind] if not already an array
-                                if(oBind){
-                                    if(!$scope[oBind]) {  $scope[oBind] = []; }
-                                // push element into scope[key] for its two-way data bind
-                                    //if(!__.inArray(this.scope[oBind],[elem,'value'])){
-                                    $scope[oBind].push([oBind,elem,'value']);
-                                    //}
-                                }
-
-                                // push element+attr to scope[key] for one-way updates 
-                                _.forOwn(oUpdate,function(attr,key){
-                                    if(!$scope[key]) {  $scope[key] = []; }
-                                    $scope[key].push([key,elem,attr]); 
-                                });
-                                
-                            }
+                                        deep.reduce(function(o,x,i,arr){
+                                            
+                                            if(i == (l-1)){
+                                                var z = {
+                                                    key:key,
+                                                    elem:elem,
+                                                    attr:attr
+                                                };
+                                                if(_.isObject(o[x]) ){
+                                                    o[x].__binds__.push(z);
+                                                }else{
+                                                    o[x] = { __binds__ : [z] }
+                                                };
+                                            } else {    
+                                                return o[x] = _.isObject(o[x]) ? o[x] : {__binds__:[]};
+                                            }
+                                        },$scope);
+                                    });
+                                }  // end if o-update
+                            } // end if !elem._guid
+                            
                         });
+                       
 					},
 					
 			// update all data on the DOM bound to this ViewModel's Model
-			refresh 	: 	function (e){
+			refresh 	: 	function (eType){
 								
                                 // loop bound model datapoint in scope
                                 var
                                 $scope = this.scope,
-                                scopeKeys = Object.keys($scope),
-                                toUpdate;
-                                
-                
-                               scopeKeys.__forEach( function(key){
-                                  
-                                    $scope[key].__forEach(function(group){
-                                       
-                                        update(group[0],group[1],group[2]);
-                                    })
-                                });
-                                
+                                toUpdate,
+                                updated = eType.split('.'),
+                                updateRecursive = function(object){
+                                    var keys = Object.keys(object);
                                     
+                                    return keys.__map(function(key){
+                                        var prop = object[key];
+                                        
+                                        if(_.isPlainObject(prop) ){ // nested 
+                                            if(updateRecursive(prop)[0]){
+                                                return updateRecursive(prop)[0];
+                                            }
+                                        } else if (_.isArray(prop) ){ // __binds__
+                                            return prop; 
+                                        }
+                                    });
+                                };
+                                
+                                var l= updated.length;
+                                var toRecurse = updated.reduce(function(o,x,i){
+                                    return o[x] = _.isObject(o[x]) ? o[x] : {};   
+                                },$scope);
+                                
+                                toUpdate = updateRecursive(toRecurse).__concatAll();
+                                console.log(toUpdate);
+                                toUpdate.__forEach(function(group){
+                                   update(group.key,group.elem,group.attr);
+                                });    
                                 
                                 // helper
                                 /* ------------------------------------------------------- */
@@ -1221,9 +1270,6 @@
                                                     elem.value = fresh;
                                                 },
                                                 'default' : function(fresh,attr){
-                                                    console.log(elem);
-                                                    console.log(attr);
-                                                    console.log(fresh);
                                                     elem.setAttribute(attr,fresh);
                                                 }
                                             }).run(attr,[fresh,attr]);
@@ -1236,14 +1282,15 @@
 			
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(element){
-                                
+                                console.log('uptake called');
                                 var 
                                 o_bind = element._bind,
                                 // remove model name from string
+                                modelName = o_bind ? $O._parseModelName(o_bind) : null,
                                 pointer = o_bind ? $O._parseModelKey(o_bind) : null,
                                 $state={};
-
-                                if( this.scope[o_bind] && element.value != this.model.get(pointer) ){
+                                
+                                if( this.scope[modelName] && element.value != this.model.get(pointer) ){
                                     $state[pointer] = element.value;
                                     
                                     var 

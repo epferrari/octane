@@ -144,7 +144,7 @@
                         // make sure the arguments are an array
 						args = _.isArray(args) ? args : [args];
                         
-                        return cases[$case] ? callAll(cases[$case],args) : cases['default'][0].apply(cases['default'][0],args);
+                        return cases[$case] ? callAll(cases[$case],args) : cases['default'][0].apply(null,args);
 						
                         // helper
                         function callAll(funcArray,args){
@@ -381,6 +381,22 @@
                         mapped[i]=closure(this[i],i);
                     }
                 return mapped;
+                },
+         configurable : false,
+         writable : false,
+         enumerable : false
+     });
+    
+    Object.defineProperty(Array.prototype,'__concatAll',{
+         value : function(){
+                    var results = [];
+  
+                    this.forEach(function(subArray) {
+                        subArray.forEach(function(item) {
+                            results.push(item);    
+                        });
+                    });
+                    return results;
                 },
          configurable : false,
          writable : false,
