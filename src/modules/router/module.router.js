@@ -30,11 +30,11 @@ octane.module('Router',['OctaneViews'],function (cfg) {
 
             History.pushState( 
                 { lang: language },
-                octane.get('application.name') +' | '+ title,
+                octane.get('APP.name') +' | '+ title,
                 fragment
             );
             
-            document.querySelector('head>title').innerHTML = octane.get('application.name')+' | '+title;
+            document.querySelector('head>title').innerHTML = octane.get('App.name')+' | '+title;
         }
 
         var 
@@ -64,20 +64,19 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         }
         
         // add a condition that needs to be true for the route to run
-        function routeIf(viewID,condition,failCallback){
-           
+        function routeIf(viewID,conditions){
+            conditions = _.isObject(conditions) ? conditions : {};
+            
             if(!_.isArray(routeConditions[viewID])){
                 routeConditions[viewID] = [];
             }
-            if(!_.isFunction(condition)){
-                condition = function(){
+            if(!_.isFunction(conditions.predicate)){
+                conditions.predicate = function(){
                     return true;
                 }
             }
-            routeConditions[viewID].push({
-                check     : condition,
-                onFail    : failCallback
-            });
+            routeConditions[viewID].push(conditions);
+            return octane; // chainable
         }
         
         // add a deferred to execute before a view is routed
@@ -174,7 +173,7 @@ octane.module('Router',['OctaneViews'],function (cfg) {
 
             });
         }
-        
+       
         // helper
         function loadView($view,ghost,previousView){
             octane.fire('view:loading');
@@ -185,10 +184,10 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                 !ghost && pushState({view:$view.id});
                 // update the current view
                 currentView = $view;
-                // update current view in global state, jumpstart Circuit                          
-                octane.goose('application',{
-                    viewID : $view.id,
-                    viewTitle : $view.title   
+                // update current view in global state, jumpstart Circuit
+                octane.set({
+                    "App.viewID" : $view.id,
+                    "App.viewTitle" : $view.title   
                 });
                 // send previous view back intot the hidden view stack
                 previousView && previousView.exit();
@@ -214,19 +213,20 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             
             var 
             conditions = routeConditions[viewID] || [],
+            i=0,n=conditions.length,
             checkCondition = function(condition){
                
-                if(condition.check()){
+                if(condition.predicate()){
                     // meets routing condition
                     return true;
                 }else{
                     // does not meet routing condition, call fail callback
-                    _.isFunction(condition.onFail) && condition.onFail();
+                    _.isFunction(condition.onfail) && condition.onfail();
                     return false;
                 }
             };
 
-            for(var i=0,n=conditions.length; i<n; i++){
+            for(;i<n;i++){
                 if (checkCondition(conditions[i])){
                     continue;
                 } else {
@@ -249,8 +249,8 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                 // catch a click event from a child node
                 // re-purpose it to be used by the octane event mediator
                 btn.addEventListener('click',function(e){
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
+                    //e.stopPropagation();
+                    //e.stopImmediatePropagation();
                     btn.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
                 },false);
                 
