@@ -167,7 +167,7 @@
         
         function Octane(){
             this.name = 'Octane Application';
-        };
+        }
         
         var $O = Octane.prototype = new Base();
         $O.constructor = Octane;
@@ -177,6 +177,8 @@
                 return new Base();
             }
         });
+        
+        window.octane = window.$o = new Octane();
 		
 	/* ------------------------------------------------------- */
 	// internal application object and properties
@@ -268,17 +270,20 @@
             compile : function(){
                 
                 var 
-                task,
-                tasksCompleted = [];
+                tasksCompleted = [],
+                i=0,n=_octane.compilationTasks.length,
+                callTask = function(task){
+                    return new Promise(function(resolve){
+                        _.isFunction(task) && task.call();
+                        resolve();
+                    });    
+                };
                 
-                for(var i=0,n=_octane.compilationTasks.length; i<n; i++){
-                    tasksCompleted.push((function(task){
-                        return new Promise(function(resolve){
-                            _.isFunction(task) && task.call();
-                            resolve();
-                        });    
-                    })(_octane.compilationTasks[i]));
+                for(; i<n; i++){
+                    tasksCompleted.push(callTask(_octane.compilationTasks[i]));
                 }
+                
+                
                 return Promise.all(tasksCompleted);
             }
         });
@@ -334,7 +339,7 @@
 	/*                     XMLHttpRequest                      */
 	/* ------------------------------------------------------- */
         
-        function URIencodeObject(source){
+        function uriEncodeObject(source){
             
             source = _.isObject(source) ? source : {};
             var 
@@ -353,14 +358,13 @@
         function http(url,method,data,headers){
             return new Promise(function(resolve,reject){
                 var
-                encoded = URIencodeObject(data),
+                encoded = uriEncodeObject(data),
                 $headers = {
                     'Content-Type':'application/x-www-form-urlencoded',
                     'Content-Length':encoded.length
                 },
                 request,
                 headerKeys,
-                $headers,
                 header,
                 value;
                 
@@ -368,7 +372,7 @@
                 headerKeys = Object.keys($headers);
                 
                 try{
-                    request = new(window.XMLHttpRequest || window.ActiveXObject)("MSXML2.XMLHTTP.3.0");
+                    request = new (window.XMLHttpRequest || window.ActiveXObject)("MSXML2.XMLHTTP.3.0");
                 } catch(ex){
                     $O.error('Could not create XMLHttpRequest object');
                 }
@@ -384,7 +388,7 @@
                                 } catch(ex){
                                     response = request.responseText;
                                 }
-                                console.log(request.getAllResponseHeaders());
+                                //console.log(request.getAllResponseHeaders());
                                 resolve(response);
                             },
                             '404' : function(reslove,reject){
@@ -395,7 +399,7 @@
                             }
                         }).run(request.status,[resolve,reject]);
                     }
-                }    
+                };  
                
                 request.open(method,url,true);
                 
@@ -442,7 +446,7 @@
         
         $O.define({
             
-            getLibrary : function(url,fn){
+            getLibrary : function(url){
                 return new Promise(function(resolve,reject){
                      
                     var
@@ -499,62 +503,107 @@
 	/* ------------------------------------------------------- */		
 		
         _octane.eventHandlerMap = {};
-        _octane.handleMappedEvents = function(e){
+        _octane.eventHandler = function(e){
             
             var 
             elem = e.srcElement,
-            handler = _octane.eventHandlerMap[elem._guid+'-'+e.type],
+            handlers = _octane.eventHandlerMap[elem._guid] ? _octane.eventHandlerMap[elem._guid][e.type] : [],
             swatch = new __.Switch({
-                'function' : function(e){
+                'function' : function(elem,handler,e){
                    try{
-                       handler.apply(elem,[e]);
+                       handler(e,elem);
                    }catch(ex){
-                       _octane.log(ex);
+                       //_octane.log(ex);
                    }
                 },
-                'object' : function(elem,e){
+                'object' : function(elem,handler,e){
                     try{
-                        handler.handleEvent.apply(handler,[e]);
+                        handler.handleEvent(e,elem);
                     }catch(ex){
-                        _octane.log(e);
+                        //_octane.log(ex);
                     }
                 }
-            }).run(__.typeOf(handler),[elem,e]);
+            });
+            try{
+                handlers.__forEach(function(handler){
+                    swatch.run(__.typeOf(handler),[elem,handler,e]);
+                });
+            }catch(ex){
+                // do nothing
+            }
         };
        
             
         $O.define({
-           
-			handle		: 	function(type,elem,handler){
-                                
-                                handler = (arguments.length == 3) ? arguments[2] : arguments[1];
+			handle		: 	function(type,$elem,$handler){
                                 
                                 var 
                                 types = type ? type.split(' ') : [],
-                                argsLength = arguments.length,
-                                numArgs = new __.Switch();
+                                i=0,n=types.length,
+                                handler,elem;
+                                
+                                if(arguments.length == 3){
+                                    handler = arguments[2];
+                                    elem = arguments[1];
+                                } else if (arguments.length == 2){
+                                    handler = arguments[1],
+                                    elem = window;
+                                }
                                
-                                numArgs.addCase('2',function(type,handler){
-                                    
-                                    window.addEventListener(type,handler,false);
-                                    if( !_.isArray(_octane.eventRegister[types[i]]) ){ 
-                                        _octane.eventRegister[type] = [];
-                                    }
-                                    _octane.eventRegister[type].push(handler);
-
-                                })
-                                .addCase('3',function(type,handler,elem){
+                                function addHandler(type,elem,handler){
                                     if(!elem._guid){
                                         elem._guid = $O.GUID();
                                     }
-                                    _octane.eventHandlerMap[elem._guid+'-'+type] = handler;
-                                    window.addEventListener(type,_octane.handleMappedEvents,false);
-                                });
-                                
-                                for(var i=0,n=types.length; i<n; i++){
-                                    numArgs.run(argsLength,[types[i],handler,elem]);   
+                                    var guid = elem._guid;
+                                    try{
+                                        _octane.eventHandlerMap[guid][type].push(handler);
+                                    } catch(ex){
+                                       try{
+                                            _octane.eventHandlerMap[guid][type] = [];
+                                            _octane.eventHandlerMap[guid][type].push(handler);
+                                       } catch (ex){
+                                           _octane.eventHandlerMap[guid] = {};
+                                           _octane.eventHandlerMap[guid][type] = [];
+                                          _octane.eventHandlerMap[guid][type].push(handler);
+                                       }
+                                    } 
                                 }
+                                
+                                for(;i<n;i++){
+                                    addHandler(types[i],elem,handler); 
+                                    window.addEventListener(types[i],_octane.eventHandler,false);
+                                }
+                                return this; // chainable
 							},
+            drop      : function(){
+                
+                                var 
+                                type,elem,handler,swatch = new Switch({
+                                    '3' :function(args){
+                                        handler = args[2];
+                                        elem = args[1];
+                                        type = args[0];
+                                        try{
+                                            _.pull(_octane.eventHandlerMap[elem._guid][type],handler);
+                                        }catch(ex){}
+                                    },
+                                    '2' : function(args){
+                                        elem = args[1];
+                                        type = args[0];
+                                        try{
+                                            delete _octane.eventHandlerMap[elem._guid][type];
+                                        }catch(ex){}
+                                    },
+                                    '1' : function(args){
+                                        elem = arguments[0];
+                                        try{
+                                            delete _octane.eventHandlerMap[elem._guid];
+                                        }catch(ex){}
+                                    }
+                                }).run(arguments.length,[arguments]);
+                               
+                                return this; // chainable
+                        },
 			fire 		: 	function(type,detail){
 								if(_.isString(type)){
 									var e = detail ? __.customEvent(type,detail) : __.createEvent(type);
@@ -726,7 +775,7 @@
                     $store =  _octane.dataStores[storeID];
                     if(!$store){
                         return false;
-                    };
+                    }
                     if($store && dbKey){
                         return $store.query(dbKey);
                     }
@@ -742,47 +791,121 @@
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 	
-		function Model(name){
+		function OctaneModel(name){
             this.name = name;
-            this.state = {};
+            this.define({
+                state : {}
+            });
+            this._register()
         }
 		
 	/* prototype Model */	
 		
-		Model.prototype = new Base();
-        Model.prototype.constructor = Model;
-		Model.prototype.define({
-           
-			set	: function(){
+		OctaneModel.prototype = new Base();
+        OctaneModel.prototype.constructor = OctaneModel;
+		OctaneModel.prototype.define({
+            _register : function(){
+                    _octane.models[this.name] = this;
+            },
+            _create : function(Name,config){
                 
-                        var fresh;
+                        if(_octane.Models[Name]){
+                            return _octane.Models[Name];
+                        }
+
+                        config = config || {};
+
+                        var 
+                        classDefaults = config.defaults || {},
+                        extend = config.extend || {},
+                        initialize = config.initialize || false;
+
+                        function Model(name,instanceDefaults){
+
+                            this.define({ name: name });
+
+                            // protected
+                            var defaults = {};
+
+                            $O.extend.apply(defaults,[classDefaults]);
+                            _.isObject(instanceDefaults) && $O.extend.apply(defaults,[instanceDefaults,true]);
+
+                            this.set(defaults);
+
+                            try{
+                                _octane.Models[Name].push(this);
+                            } catch (ex){
+                                _octane.Models[Name] = [];
+                                _octane.Models[Name].push(this);
+                            }
+
+                            this.define({
+                                reset : function(){
+                                    this.clear().set(defaults);
+                                }
+                            });
+                            
+                            this._register();
+                            
+                             _.isFunction(initialize) && initialize.bind(this).call();
+                        }
+
+                        Model.prototype = new OctaneModel();
+                        Model.prototype.extend(extend);
+
+                        return Model;
+                },
+			_set	: function(){
+                        
+                        var 
+                        setObject,
+                        keystrings,
+                        i,n,j,m;
 
                         if(_.isString(arguments[0])){
-                            fresh = {};
-                            fresh[arguments[0]] = arguments[1];
-                        } else if(_.isObject(arguments[0])){
-                            fresh = arguments[0];
+                            setObject = {};
+                            setObject[arguments[0]] = arguments[1];
+                        } else if(_.isPlainObject(arguments[0])){
+                            setObject = arguments[0];
                         } else {
                             return;
                         }
 
                         // array for state properties changed
-                        var
-                        updated = [],
-                        $state 	= this.state,
-                        name = this.name,
-                        keystringsToParse = Object.keys(fresh);
+                        keystrings = Object.keys(setObject);
+                        n = keystrings.length;
+                        i=0;
+                        
+                        // apply the hooks
+                        for(;i<n;i++){
+                            _octane.hooks[this.name+'.'+keystrings[i]] && this._applyHooks(keystrings[i],setObject);
+                        }
+                        
+                        // re-measure in case there have been additional properties
+                        // added to the setObject via hooks
+                        keystrings = Object.keys(setObject);
+                        j=0;m = keystrings.length;
+                
+                        // set each key in model state
+                        for(;j<m;j++){
+                            this._setKey(keystrings[j],setObject);
+                        }
+                        // alert any subscribers
+                        $O.fire(this.name+':statechange');
 
-                        keystringsToParse.__forEach(function(keystring){
+                        return setObject;
+                    },
+            _setKey : function(keystring,setObject){
                             var
+                            $state = this.state,
                             keyArray = keystring.split('.'),
-                            value = fresh[keystring],
+                            value = setObject[keystring],
                             k = keyArray.length,
                             modelUpdated;
-                           
+                            
                             try{
                                 keyArray.reduce(function(o,x,index){
-                                    if(index == (k-1)){ // last
+                                    if(index == (k-1)){ // last iteration
                                         return o[x] = value;
                                     }else{
                                         return o[x] = _.isObject(o[x]) ? o[x] : {};
@@ -791,16 +914,23 @@
                                 modelUpdated = true;
                             }catch(e){
                                 modelUpdated = false;
-                                 $O.log('Unable to set model data "'+keystring+'". Error: '+e);
+                                $O.log('Unable to set model data "'+keystring+'". Error: '+e);
                             }
-                            modelUpdated &&  $O.fire('statechange:'+name+'.'+keystring);
-                        });
+                            modelUpdated &&  $O.fire('statechange:'+this.name+'.'+keystring);
                         
-                        $O.fire(this.name+':statechange');
-
-                        return fresh;
+                    }, 
+            _applyHooks : function(keystring,setObject){
+                            
+                            var 
+                            name = this.name,
+                            hooks = _octane.hooks[name+'.'+keystring];
+                            if(_.isArray(hooks)){
+                                hooks.__forEach(function(hook){
+                                    $O.extend.apply( setObject,[hook(setObject),true]);
+                                });
+                            }
                     },
-            unset : function(){
+            _unset : function(){
                 
                             var
                             keys,
@@ -821,7 +951,7 @@
                             this.set(toUnset);
                         
                         },
-			get	: 	function(keystring){
+			_get	: 	function(keystring){
                 
                             var
                             $this = this,
@@ -845,72 +975,39 @@
                                 return this.state;
                             }
 						},
-            clear : function(){
+            _clear : function(){
                             var 
                             stateProps = Object.keys(this.state),
-                            cleared = {};
+                            i=0,n=stateProps.length;
                             
-                            for(var i=0,n=stateProps.length; i<n; i++){
+                            for(;i<n;i++){
                                 delete this.state[stateProps[i]];
+                                $O.fire('statechange:'+this.name+'.'+stateProps[i]);
                             }
                             $O.fire(this.name+':statechange');
-                            $O.fire('statechange:'+this.name);
                             return this;
                         }      
-		});
+		}).extend({
+            get : function(keystring){
+                    return this._get(keystring);
+            },
+            set :  function(){
+                    var args = arguments;
+                    return this._set.apply(this,[args[0],args[1]]);
+            },
+            unset :  function(keystring){
+                    return this._unset(keystring);
+            },
+            create :  function(Name,config){
+                return this._create(Name,config);
+            },
+            clear : function(){
+                return this._clear();
+            }
+        });
 		
 		$O.define({
-            Model       : function(Name,config){
-                            
-                            config = config || {};
-                            
-                            var 
-                            classDefaults = config.defaults || {},
-                            extend = config.extend || {},
-                            initialize = config.initialize || false;
-                            
-                            
-                            function _Model(name,instanceDefaults){
-                                
-                                this.define({  name: name });
-                                
-                                // protected
-                                var
-                                vm = new ViewModel(this),
-                                _defaults = {};
-                                
-                                $O.extend.apply(_defaults,[classDefaults]);
-                                _.isObject(instanceDefaults) && $O.extend.apply(_defaults,[instanceDefaults,true]);
-                                
-                                this.define({
-                                    state		: {},
-                                    rescope : vm.parse.bind(vm)
-                                });
-                                
-                                this.set(_defaults);
-                                
-                                try{
-                                    _octane.Models[Name].push(this);
-                                } catch (ex){
-                                    _octane.Models[Name] = [];
-                                    _octane.Models[Name].push(this);
-                                }
-                                
-                                _.isFunction(initialize) && initialize.bind(this).call();
-                                _octane.models[this.name] = this;
-                                
-                                this.define({
-                                    reset : function(){
-                                        this.clear().set(_defaults);
-                                    }
-                                });
-                            }
-                
-                            _Model.prototype = new Model(Name);
-                            _Model.prototype.extend(extend);
-                
-                            return _Model;
-                        },
+            Model       : new OctaneModel('App'),
                          
 			model 		: function (name,defaults){
                            
@@ -921,10 +1018,10 @@
                             if(_octane.models[name]){
                                 return _octane.models[name];
                             }
-                            
-                            var singleton = $O.Model(name);
-                            
-                            return new singleton(name,defaults);
+                            // singleton constructor
+                            var Singleton = $O.Model.create(name);
+                            // singleton instance
+                            return new Singleton(name,defaults);
                         },
             
             get         : function(modelStateKey){
@@ -954,7 +1051,7 @@
                                     fresh = {};
                                     fresh[arg0] = arg1;
                                 },
-                                'object' : function(arg0,arg1){
+                                'object' : function(arg0){
                                     fresh = arg0;
                                 },
                                 'default' : function(){
@@ -964,7 +1061,8 @@
                             
                            
                             keys = Object.keys(fresh);
-                            for(var i=0,F=keys.length; i<F; i++){
+                            var i=0,n=keys.length;
+                            for(;i<n;i++){
                                doSet( keys[i] );
                             }
                             
@@ -1034,24 +1132,14 @@
 		});
         
     /* ------------------------------------------------------- */
-	/*                      VIEW MODELS                        */
+	/*                      VIEW MODEL                        */
 	/* ------------------------------------------------------- */		
 		
-		function ViewModel($model){
-			
-			// use $this in function scope
-			var $this = this;
-			
-			//public
+		function ViewModel(){
+            
 			this.define({
-				instanced		: true,
-				model			: $model,
-				watcher			: new __.Switch(),
-				scope		    : {},
+				scope : {},
 			});
-			
-            // initialize
-            this.init();
 		}
 		
 		
@@ -1061,151 +1149,117 @@
 		ViewModel.prototype.define({
             
             init : function(){
-				        
-                        var $this = this;
-                        this.watcher
-                            .addCase('input',function(e){
-                                //console.log('dispatch element: ',e.srcElement);
-                                //console.log('value at event handler: ',e.srcElement.value);
-                                $this.uptake(e.srcElement);
-                            })
-                            .addCase('select',function(e){
-                                $this.uptake(e.srcElement);
-                            })
-                            .addCase('click',function(e){
-                                $this.uptake(e.srcElement);
-                            })
-                            .addCase($this.model.name+':statechange',function(e){
-                                //$this.parse();
-                                $this.refresh(e);
-                            });
-
-                        $O.handle('input click '+$this.model.name+':statechange',$this);
                         this.parse();    
-                        this.refresh({type : this.model.name});
+                        this.refresh({type:'statechange:App'});
                     },
-			
+                        
+			watch : function(elem){
+                        var
+                        $this = this,
+                        $sender = this.uptake,
+                        $scope = this.scope;
+                        // element hasn't been parsed yet
+                        if(!elem._watched){
+                            elem._watched = true;
+                            if(!elem._guid) { elem._guid = $O.GUID() };
+
+                            try{
+                                elem._filters = JSON.parse( elem.getAttribute('o-filters') );
+                            } catch (ex){
+                                $O.log(ex);
+                            }
+
+                            var 
+                            oBind = elem.getAttribute('o-bind'),
+                            _oUpdate = elem.getAttribute('o-update'),
+                            oUpdate, 
+                            deep,
+                            l;
+
+                            if(oBind){
+                                elem._bind = oBind;
+
+                                $O
+                                .handle('input click select',elem,$this.uptake)
+                                .handle('statechange:'+oBind,$this.refresh);
+
+                                deep = oBind.split('.'),
+                                l = deep.length;
+
+                                deep.reduce(function(o,x,i){
+                                    if(i == (l-1)){
+                                        var z = {
+                                            key:oBind,
+                                            elem:elem,
+                                            attr:'value'
+                                        };
+                                        if(_.isObject(o[x]) ){
+                                            o[x].__binds__.push(z);
+                                        }else{
+                                            o[x] = {__binds__ :[z]};
+                                        }
+                                    } else {   
+                                        return o[x] = _.isObject(o[x]) ? o[x] : {__binds__ :[]};
+                                    }
+                                },$scope);   
+                            } // end if o-bind
+
+                            if(_oUpdate){
+                                elem._update = oUpdate;
+                                oUpdate = {};
+
+                                // not a JSON string
+                                if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
+                                    oUpdate[_oUpdate] = 'html';
+                                } else {
+                                    try{
+                                        oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
+                                    }catch(ex){
+                                       $O.log(ex.message + ' in ViewModel.parse(), element: '+elem );
+                                    }
+                                }
+
+                                // push element+attr to scope[key] for one-way updates 
+                                _.forOwn(oUpdate,function(attr,key){
+                                    
+                                    $O.handle('statechange:'+key,$this.refresh.bind($this));
+                                    
+                                    var 
+                                    deep = key.split('.'),
+                                    l = deep.length;
+
+                                    deep.reduce(function(o,x,i,arr){
+
+                                        if(i == (l-1)){ // last iteration
+                                            var z = {
+                                                key:key,
+                                                elem:elem,
+                                                attr:attr
+                                            };
+                                            if(_.isObject(o[x]) ){
+                                                o[x].__binds__.push(z);
+                                            }else{
+                                                o[x] = { __binds__ : [z] };
+                                            }
+                                        } else {    
+                                            return o[x] = _.isObject(o[x]) ? o[x] : {__binds__:[]};
+                                        }
+                                    },$scope);
+                                });
+                            }  // end if o-update
+                        } // end if !elem._guid
+            },
             // find bound elements on the DOM
 			parse	: function(){
 						
 						var
                         $this = this,
-                        $updater = this.update,
-                        $scope = this.scope,
-                        $bindScope = document.querySelectorAll('[o-bind^="'+this.model.name+'."]'),
-                        $updateScope = document.querySelectorAll('[o-update*="'+this.model.name+'."]'),
-                        scopedElems = [];
-                        
-                        // union the two node lists
-                        for(var b=0,B=$bindScope.length; b<B; b++){
-                            scopedElems.push($bindScope[b]);
-                        }
-                        for(var u=0,U=$updateScope.length; u<U; u++){
-                            if(!__.inArray(scopedElems,$updateScope[u])){
-                                scopedElems.push($updateScope[u]);
-                            }
-                        }
-                        
-                        
+                        $bindScope = document.querySelectorAll('[o-bind],[o-update]'),
+                        i=0,n=$bindScope.length;
                 
-                        // loop elements with this o-model
-                        scopedElems.__forEach(function(elem){
-                            
-                            
-                            // element hasn't been parsed yet
-                            if(!elem._guid){
-                                elem._guid = $O.GUID();
-                                
-                                try{
-                                    elem._filters = JSON.parse( elem.getAttribute('o-filters') );
-                                } catch (ex){
-                                    $O.log(ex);
-                                }
-                                
-                                var 
-                                oBind = elem.getAttribute('o-bind'),
-                                _oUpdate = elem.getAttribute('o-update'),
-                                oUpdate, 
-                                deep,
-                                l;
-                                
-                                if(oBind){
-                                    elem._bind = oBind;
-                                     $O.handle('statechange:'+oBind,function(e){
-                                         console.log('state changed, update o-bind!');
-                                            $this.refresh(e.type);
-                                        });
-                                    
-                                    deep = oBind.split('.'),
-                                    l = deep.length;
-                                    
-                                    deep.reduce(function(o,x,i){
-                                        if(i == (l-1)){
-                                            var z = {
-                                                key:oBind,
-                                                elem:elem,
-                                                attr:'value'
-                                            };
-                                            if(_.isObject(o[x]) ){
-                                                o[x].__binds__.push(z);
-                                            }else{
-                                                o[x] = {__binds__ :[z]}
-                                            };
-                                        } else {   
-                                            return o[x] = _.isObject(o[x]) ? o[x] : {__binds__ :[]};
-                                        }
-                                    },$scope);   
-                                } // end if o-bind
-                                
-                                if(_oUpdate){
-                                    elem._update = oUpdate;
-                                    oUpdate = {}
-                                    
-                                    // not a JSON string
-                                    if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
-                                        oUpdate[_oUpdate] = 'html';
-                                    } else {
-                                        try{
-                                            oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
-                                        }catch(ex){
-                                           $O.log(ex.message + ' in ViewModel.parse(), element: '+elem );
-                                        }
-                                    }
-                                    
-                                    // push element+attr to scope[key] for one-way updates 
-                                    _.forOwn(oUpdate,function(attr,key){
-                                        $O.handle('statechange:'+key,function(e){
-                                            console.log('state changed, update o-update');
-                                            console.log(e.type);
-                                            $this.refresh(e);
-                                        });
-                                        var 
-                                        deep = key.split('.'),
-                                        l = deep.length;
-
-                                        deep.reduce(function(o,x,i,arr){
-                                            
-                                            if(i == (l-1)){ // last iteration
-                                                var z = {
-                                                    key:key,
-                                                    elem:elem,
-                                                    attr:attr
-                                                };
-                                                if(_.isObject(o[x]) ){
-                                                    o[x].__binds__.push(z);
-                                                }else{
-                                                    o[x] = { __binds__ : [z] }
-                                                };
-                                            } else {    
-                                                return o[x] = _.isObject(o[x]) ? o[x] : {__binds__:[]};
-                                            }
-                                        },$scope);
-                                    });
-                                }  // end if o-update
-                            } // end if !elem._guid
-                         
-                        });
-                 console.log(this.scope);  
+                        for(;i<n;i++){
+                           this.watch($bindScope[i]);
+                        }
 					},		
 			// update all data on the DOM bound to this ViewModel's Model
 			refresh 	: 	function (e){
@@ -1216,42 +1270,43 @@
                                 $scope = this.scope,
                                 toUpdate,
                                 updated = e.type ? e.type.replace('statechange:','').split('.') : [],
-                                updateRecursively = function(object){
-                                    var keys = Object.keys(object);
-                                    
-                                    return keys.__map(function(key){
-                                        var prop = object[key],
-                                            _prop;
-                                        
-                                        if( _.isPlainObject(prop) ){
-                                           if( _prop = updateRecursively(prop)[0] ){ // nested 
-                                                return _prop;
-                                            }
-                                        } else if (_.isArray(prop) ){ // __binds__
-                                            return prop; 
-                                        }
-                                    });
-                                };
-                                
-                                var l= updated.length;
-                                var toRecurse = updated.reduce(function(o,x,i){
+                                l= updated.length,
+                                toRecurse = updated.reduce(function(o,x,i){
                                     return _.isObject(o[x]) ? o[x] : {};   
                                 },$scope);
                                 
-                                toUpdate = updateRecursively(toRecurse);
+                                toUpdate = ViewModel.prototype.updateRecursively(toRecurse);
                                 toUpdate = _.compact(toUpdate);
                                 toUpdate = toUpdate.__concatAll();
-                                console.log('needing updates',toUpdate);
+                                //console.log('needing updates',toUpdate);
                                 toUpdate.__forEach(function(group){
                                    $updater(group.key,group.elem,group.attr);
                                 });    
                                        
 							},
+            updateRecursively : function(object){
+                                
+                                var
+                                keys = Object.keys(object);
+                                    
+                                return keys.__map(function(key){
+                                    var prop = object[key],
+                                        _prop;
+
+                                    if( _.isPlainObject(prop) ){
+                                       if( _prop = ViewModel.prototype.updateRecursively(prop)[0] ){ // nested 
+                                            return _prop;
+                                        }
+                                    } else if (_.isArray(prop) ){ // __binds__
+                                        return prop; 
+                                    }
+                                });
+                            },
 			update       : function(key,elem,attr){
                                         
                                 var fresh = $O.get(key);
-                                console.log('updating key',key);
-                                console.log('with data',fresh);
+                                //console.log('updating key',key);
+                                //console.log('with data',fresh);
                                 if(__.isNull(fresh) || __.isUndefined(fresh)){
                                     fresh = null;
                                 }
@@ -1280,45 +1335,88 @@
                                 }
                             },
 			// respond to user changes to DOM data bound to this model
-			uptake		: 	function(element){
-                                console.log('uptake called');
+			uptake		: 	function(event,element){
                                 var 
-                                o_bind = element._bind,
+                                oBind = element._bind,
                                 // remove model name from string
-                                modelName = o_bind ? $O._parseModelName(o_bind) : null,
-                                pointer = o_bind ? $O._parseModelKey(o_bind) : null,
-                                $state={};
+                                modelName = oBind ? $O._parseModelName(oBind) : null,
+                                pointer = oBind ? $O._parseModelKey(oBind) : null;
                                 
-                                if( this.scope[modelName] && element.value != this.model.get(pointer) ){
-                                    $state[pointer] = element.value;
-                                    
-                                    var 
-                                    parsed = false,
-                                    controllerIDs = Object.keys(_octane.controllers),
-                                    controller;
-                                    
-                                    for(var c=0,C=controllerIDs.length; c<C; c++){
-                                        controller = _octane.controllers[controllerIDs[c]];
-                                        if(controller.hooks[o_bind]){
-                                            controller.applyHooks(this.model.name,$state);
-                                            parsed = true;
-                                        }
-                                    }
-                                    !parsed && this.model.set($state);
-                                   
-                                    /*if(_octane.controllers[this.model.name]){
-                                        _octane.controllers[this.model.name].applyHooks(this.model.name,$state);
-                                    } else {
-                                        this.model.set($state);
-                                    }*/
+                                if(element.value != $O.get(oBind) ){
+                                   $O.set(oBind,element.value);
                                 }				
-							},
-			handleEvent	: 	function (e){ 
-								this.watcher.run(e.type,[e]);
 							}
 		});
+        
+        _octane.ViewModel = new ViewModel();
+        
+        $O.define({
+            rescope : function(){
+                _octane.ViewModel.parse();
+            }
+            
+        });
+        
+       /* ------------------------------------------------------- */
+	   /*                          TASKS                          */
+	   /* ------------------------------------------------------- */
+        
+        
+        // param 1 : a model key to listen for change on
+        // add param 2 as function(data held in model[key])
+        function task(key,$task){
+				               
+            var
+            cache ={},
+            keyArray = key.split('.');
+            
+            keyArray.reduce(function(o,x,i,a){
+                var $watch = o+'.'+x;
+                $O.handle('statechange:'+$watch,function(e){
+                    var currentVal = $O.get(key);
+                    if(currentVal != cache[key]){
+                        cache[key] = currentVal;
+                        $task(currentVal,key);
+                    }
+                });
+                return $watch;
+            });    
+        }
+        
+        $O.define({ 
+            task : function(key,$task){
+                task(key,$task);
+                return this;
+            }
+        });
+                                
+        
+    /* ------------------------------------------------------- */
+	/*                          HOOKS                          */
+	/* ------------------------------------------------------- */
+	   
+        _octane.hooks = {};
+        
+        // a function to be applied before the setting of data in the model
+        // if one model data value changes depending on another, a hook is the place for that logic
+        // key is the incoming data key to parse for, func is the function to apply
+         
+         $O.define({ 
+             hook : function hook(oBind,func){
 
-	
+                try{
+                    _octane.hooks[oBind].push(func);
+                } catch(ex){
+                    $O.log(ex);
+                    _octane.hooks[oBind] = [];
+                    _octane.hooks[oBind].push(func);
+                }
+
+                return this; // chainable	
+            }
+         });
+            
+    
 	/* ------------------------------------------------------- */
 	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
@@ -1332,8 +1430,6 @@
 			// semi-public	API	
 			this.define({
 				name		: name,
-				filters     : {},
-                hooks       : {},
                 view        : document.querySelector('o-view#'+viewID)
 			});
 			
@@ -1345,202 +1441,7 @@
 		
 		Controller.prototype = new Base();
         Controller.prototype.constructor = Controller;
-		Controller.prototype.define({
-            
-            // a function to be applied in between filtering and the setting of data in the model
-            // if one model data value changes depending on another, a hook is the place for that logic
-            // key is the incoming data key to parse for, fn is the function to apply
-            // hook param 'func' can take 2 arguments, the first is the bound dirty data,
-            // the second is an arbitrarily named flag that tells the hook it should be a Promise
-            // remember to resolve the promise or the data won't be set in the model
-            hook			: function(o_bind,func){
-                                   
-                                var 
-                                funcDeclaration= func.toString().split('{')[0],
-                                pattern = /\(([^)]+)\)/,
-                                argsString = pattern.exec(funcDeclaration)[1],
-                                argsArray = argsString.split(','),
-                                $this = this;
-                                
-                                // confirm we have an array of hooks
-                                this.hooks[o_bind] = _.isArray(this.hooks[o_bind]) ? this.hooks[o_bind] : [];
-                
-                                if(_.isFunction(func)){
 
-                                    if(argsArray.length == 2){
-                                        this.hooks[o_bind].push(function($state){
-                                            return new Promise(function(resolve,reject){
-                                                // create object to resolve/reject promise in our hook function
-                                                var promise = {
-                                                    resolve:resolve,
-                                                    reject:reject
-                                                };
-                                                // make sure 'this' in our hooks refers to this Controller
-                                                func.bind($this)($state,promise);
-                                            });
-                                        });
-                                    }else{
-                                        this.hooks[o_bind].push(function($state){
-                                            // make sure 'this' in our hooks refers to this Controller
-                                            return func.bind($this,$state)();
-                                        });
-                                    }
-                                }
-                                return this; // chainable	
-                          },
-
-
-            
-            // param 1 : a model key or array of model keys to listen for change on
-            // add param 2 as function(model key,data held in model[key])
-			task   : 	function(props,task){
-				               
-                                var 
-                                $controller = this,
-                                models = {},
-                                cache ={};
-                                
-                                if(!_.isArray(props)){
-                                    props = [props];
-                                }
-                                
-                                for(var m=0,M=props.length; m<M; m++){
-                                    addBindHandler(props[m],task);   
-                                }
-                                
-                                // helper
-                                function addBindHandler(prop,task){
-                                    var 
-                                    model =  $O._parseModelName(prop),
-                                    bind = $O._parseModelKey(prop);
-                                    
-                                    $O.handle(model+':statechange',function(e){
-                                        var currentVal = $O.get(prop);
-                                        if(currentVal != cache[prop]){
-                                            console.log('applying task from '+prop);
-                                            cache[prop] = currentVal;
-                                            task.apply($controller,[currentVal]);
-                                        }
-                                    });
-                                }
-                                
-								return $controller; // chainable
-							},
-			
-			
-			applyHooks	: function(model,$state){
-                                
-                                var
-                                $this = this;
-                                if(_.isObject($state)){
-                                    
-                                    var 
-                                    stateKeys = Object.keys($state),
-                                    o_bind,hooks;
-									
-                                    for(var i=0,I=stateKeys.length; i<I; i++){
-                                        
-                                        (function(key){
-                                            o_bind = model+'.'+key;
-                                            hooks = $this.hooks[o_bind];
-
-                                            if(hooks && _.isArray(hooks)){
-                                                for(var p=0,P=hooks.length; p<P; p++){
-                                                    applyHook($state,hooks[p],hooks);    
-                                                }  
-                                            } else {
-                                                _octane.models[model].set($state);
-                                            }
-                                        })(stateKeys[i]);
-                                    }
-                                }
-                
-                                // helper
-                                function applyHook($state,hook,hooks){
-                                    var
-                                    nextHook = hooks.indexOf(hook) +1, // resolves to 0 if no next hook
-                                    $maybePromise = hook && hook($state);
-                                    
-                                    if(_.isObject($maybePromise) && _.isFunction($maybePromise.then)){
-                                        if(nextHook){
-                                            $maybePromise.then(function(data){
-                                                applyHook(data,hooks[nextHook],hooks);
-                                            });
-                                        } else {
-                                            try {
-                                                $maybePromise.then(_octane.models[model].set);
-                                            }catch(ex){
-                                                $O.log(ex);
-                                            }
-                                        }
-                                    } else {
-                                        if(nextHook){
-                                            applyHook($state,hooks[nextHook],hooks);
-                                        } else {
-                                            try{
-                                                _octane.models[model].set($state);
-                                            }catch(ex){
-                                                $O.log(ex);
-                                            }
-                                        }
-                                    }
-                                }
-							},
-             // assign an _octane filter to be run on a 'dirty' data property
-            filter		: function(o_bind,filter){
-                                this.filters[o_bind] = filter;
-                                return this; // chainable
-                        },
-            // add a new Switch instance with a case object to be processed
-            // when a filter is called on the defined property
-            /*hook			: function(o_bind,caseObject){
-                                this.hooks[o_bind] = new __.Switch(caseObject);
-                                return this; // chainable
-                            },
-			doFilter : function($dirty){
-								var $this = this;
-								    
-                                function filterAll($data){
-									
-                                    $data = _.isObject($data) ? $data : {};
-									
-                                    var 
-                                    dataKeys = Object.keys($data),
-                                    o_bind,
-                                    $filter;
-                                    
-									for(var i=0,I=dataKeys.length; i<I; i++){
-                                        o_bind = dataKeys[i];
-                                        // look for an filter assigned to this o-bind keystring
-                                        $filter = $this.filters[o_bind];
-                                        // purge the dirty data, execture hooks, and return
-                                        $data = $this.filters[o_bind] ? filterOne($filter,o_bind,$data) : $data;
-                                    }
-									return $data;   
-								}
-								
-								this.applyHooks( filterAll($dirty) );	
-                
-                                // helper
-                                /* ------------------------------------------------------- 
-
-                                    function filterOne(filter,o_bind,$data){
-                                        // if a filter exists, run it on the data
-                                        // return object filtered data and detail about its filtration
-                                        // 'valid','invalid', or 'undefined'
-                                        var result = _octane.filters.run(filter,[$data[o_bind]]);
-                                        // return the filtered data to the data object
-                                        $data[o_bind] = result.data;
-
-                                        // if hook exists for bindID, execute the hook with the result's filtered data
-                                        // else return the filtered data
-                                        return $this.hooks[o_bind] ? $this.hooks[o_bind].run(result.status,[$data]) : $data;
-                                    }
-
-                                /* ------------------------------------------------------- 
-                                
-							},*/
-		});
 	
 		$O.define({
 			controller 	: function (name,viewID){
@@ -1677,7 +1578,7 @@
                                 },
             _abort              : function(){
                                     this.loaded = false;
-                                    delete octane[this.name];
+                                    delete window.octane[this.name];
                                     return Promise.reject(this.name+': failed to initialize!');
                                 },
             _initialize         : function(){
@@ -1701,7 +1602,7 @@
                                         })
                                         .define(this.constructor.__construct([this.cfg]));
 
-                                        Object.defineProperty(octane,$this.name, {
+                                        Object.defineProperty(window.octane,$this.name, {
                                             value :$this,
                                             writatble : false,
                                             configurable : false
@@ -1710,11 +1611,11 @@
                                         try{
                                             this.initialize && this.initialize();
                                         }catch(ex){
-                                            octane.log(ex);
+                                            $O.log(ex);
                                         }
                                         
                                         bootLog(message[1]);
-                                        $O.goose("application",{
+                                        $O.Model.set({
                                             "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
                                         });
                                         // hook-in for updating a loading screen
@@ -1772,10 +1673,11 @@
                             modulesLoaded.push( module._load() );
                         }
                     };
-                            
+                     
+                    var i=0,m=moduleKeys.length;
                     // load each module
-                    for(var i=0,m=moduleKeys.length; i<m; i++){
-                        var moduleName = moduleKeys[i];
+                    for(;i<m; i++){
+                        moduleName = moduleKeys[i];
                         tryLoading(moduleName);
                     }
                 
@@ -1807,17 +1709,7 @@
 	/* ------------------------------------------------------- */
       
         $O.define({
-            // artificially start the uptake circuit
-            goose : function(model,$state){
-                        var
-                        controllers = _octane.controllers,
-                        controllerIDs = Object.keys(controllers),
-                        id;
-                
-                        for(var i=0,c=controllerIDs.length; i<c; i++){
-                            controllers[controllerIDs[i]].applyHooks(model,$state);
-                        }
-                    },
+            
             // a custom event for the app to fire when user data changes 
             trip       :   function(elem){
 
@@ -1884,7 +1776,7 @@
                     l = keySplit.length,
                     value;
                     
-                    value = keySplit.reduce(function (prev,curr,index,array){
+                    value = keySplit.reduce(function (prev,curr,index,arr){
                         //console.log('previous',prev);
                         //console.log('current',curr);
                         var val = prev[curr];
@@ -1937,8 +1829,7 @@
                     }
                 }
             },
-            get : function(data){
-                
+            get : function(){
                 return this.content;
             },
             inject : function(data){
@@ -1958,15 +1849,16 @@
                 div.normalize();
                 nodes = div.childNodes;
                 
+                var i=0,n=nodes.length;
                 if(prepend){
-                     for(var i=0,n=nodes.length; i<n; i++){
+                     for(;i<n;i++){
                         node = nodes[i];
                         if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
                             elem.insertBefore(node,firstChild);
                         }
                     }
                 } else {
-                    for(var i=0,n=nodes.length; i<n; i++){
+                    for(;i<n;i++){
                         node = nodes[i];
                         if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
                             elem.appendChild(nodes[i]);
@@ -1975,8 +1867,6 @@
                 }
             }
         });
-            
-            
         
         $O.define({
             template : function(id){
@@ -2016,7 +1906,7 @@
                 controller = _octane.controllers[ action.split('.')[0] ];
                 method = action.split('.')[1];
                 
-                octane.handle(event,elem,function(e){
+               $O.handle(event,elem,function(e){
                     try{
                         controller[method].apply(controller);
                     } catch (ex){
@@ -2034,10 +1924,7 @@
 	/*                          INIT                           */
 	/* ------------------------------------------------------- */
         
-        $O.define({
-                appModel : $O.model('application',{singleton:true}),
-                appController : $O.controller('AppController')
-            });
+        
         
         $O.define({
             initialize : function initialize (config){
@@ -2052,11 +1939,19 @@
                         initialized : true 
                     });
                 }
+               
+                // parse the DOM initially to create virtual DOM model
+                _octane.ViewModel.init();
                 
-                $O.appModel.set('name',config.appName);
-                $O.appController.hook('application.loadingProgress',function($state){
-                    var currentProgress = $O.appModel.get('loadingProgress') || 0;
+                $O.Model.set({
+                    loadingProgess : 0,
+                    name : config.appName
+                });
+                
+                $O.hook('App.loadingProgress',function($state){
+                    var currentProgress = $O.get('App.loadingProgress') || 0;
                     $state.loadingProgress = currentProgress + $state.loadingProgress;
+                    return $state;
                 });
 
                 // add debugging support if module included, 
@@ -2074,7 +1969,7 @@
             }
         });
         
-        window.octane = window.$o = new Octane();
+        
         
 	})($,_,__);
 
