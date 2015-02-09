@@ -14,7 +14,7 @@
                return _octane.controllers;
            },
            getEvents	: function(){
-               return _octane.eventRegister;
+               return _octane.eventHandlerMap;
            },
            getLog : function(full){ 
                 return full ? _octane.bootlog.concat(_octane.logfile) : _octane.logfile;
