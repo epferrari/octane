@@ -121,7 +121,7 @@ octane.module('ViewPrototype',function(cfg){
                 try{
                     this.todoBeforeLoad.push([promise,args]);
                 } catch(ex){
-                    octane.error('cannot push "beforeLoad" callback to view '+this.id+', reason: '+ex.message);
+                    octane.log('cannot push "beforeLoad" callback to view '+this.id+', reason: '+ex.message);
                 }
             },
                 
@@ -129,7 +129,7 @@ octane.module('ViewPrototype',function(cfg){
                 try{
                    this.todoAfterLoad.push([callback,args]);
                 }catch(ex){
-                    octane.error('cannot push "afterLoad" callback to view '+this.id+', reason: '+ex.message);
+                    octane.log('cannot push "afterLoad" callback to view '+this.id+', reason: '+ex.message);
                 }
             },
             
@@ -144,7 +144,7 @@ octane.module('ViewPrototype',function(cfg){
                     try{
                         execute(todos[i]);
                     } catch(ex){
-                        octane.error('could not call "beforeLoad" function for view '+this.id+' , reason: '+ex.message);
+                        octane.log('could not call "beforeLoad" function for view '+this.id+' , reason: '+ex.message);
                         continue;
                     }
                 }
@@ -172,7 +172,7 @@ octane.module('ViewPrototype',function(cfg){
                     try{
                         execute(todos[i]);
                     } catch (ex){
-                        octane.error('could not call afterLoad" callback for view '+this.id+' , reason: '+ex.message);
+                        octane.log('could not call afterLoad" callback for view '+this.id+' , reason: '+ex.message);
                         continue;
                     }
                 }
