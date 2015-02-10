@@ -38,9 +38,8 @@ octane.module('ViewPrototype',function(cfg){
                 return this.callBeforeLoadPromises().finally(function(){
                     return new Promise(function(resolve){
                         // scroll to top of page
-                        $('body').velocity('scroll',{duration:350});
+                        $('body').velocity('scroll',{duration:100});
                         $this.elem.classList.add('view-active');
-
                         // adjust the canvas height and load the view,
                         // use cached height if available
                         setTimeout(function(){
