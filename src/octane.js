@@ -623,44 +623,15 @@
 		_octane.filters = new __.Switch();
 		
 		$O.define({
-			addFilter : function (name,valid,invalid){
+			filter : function (name,func){
                 
-                valid = valid || /.*/;
-                invalid = invalid || /.*/;
-                
-                var func = function($data){
-                    
-                    switch(true){
-                        case valid.test($data):
-                            return {
-                                data 	: $data,
-                                status	: 'valid'
-                            };
-                        case (_.isEmpty($data) || _.isUndefined($data)):
-                            return {
-                                data 	: null,
-                                status	: 'undefined'
-                            };
-                        case invalid.test($data):
-                             return {
-                                data 	: null,
-                                status	: 'invalid'
-                            };
-                        default: 
-                            return {
-                                data 	: $data,
-                                status	: 'default'
-                            };
-                        }
-                };
-                
-				_octane.filters.addCase(name,func,true);	
+                _octane.filters[name] = func;	
 			}
 		});
 		
-		$O.addFilter('number',/^[-\d]+$/);
-        $O.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        $O.addFilter('tel',/^[-0-9\.]{7,12}$/);
+		//$O.addFilter('number',/^[-\d]+$/);
+        //$O.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
+        //$O.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
@@ -1210,7 +1181,7 @@
 
                                 // not a JSON string
                                 if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
-                                    oUpdate[_oUpdate] = 'html';
+                                    oUpdate[_oUpdate] = 'text';
                                 } else {
                                     try{
                                         oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
@@ -1323,6 +1294,12 @@
                                             elem.innerHTML = fresh;
                                         },
                                         'text' : function(fresh){
+                                            var filter;
+                                            if(filter = elem.getAttribute('o-filter')){
+                                                try {
+                                                    fresh = _octane.filters[filter].apply(null,[fresh]);
+                                                } catch(ex){}
+                                            }
                                             elem.textContent = fresh;
                                         },
                                         'value' : function(fresh){

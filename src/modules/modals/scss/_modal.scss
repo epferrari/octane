@@ -12,10 +12,10 @@ o-modal-container{
     will-change: opacity;
     transition: opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
     
-    background-image:url(../img/octane-modal-bg.png);
+    //background-image:url(../img/octane-modal-bg.png);
     background-repeat:repeat;
     
-    /*&:before{
+    &:before{
         background-color:black;
         @include opacity(0.8);
         z-index:-1;
@@ -27,7 +27,7 @@ o-modal-container{
         right:0;
         width:100%;
         height:100%;
-    }*/
+    }
 }
 
 o-modal-container.active{

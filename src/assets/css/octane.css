@@ -154,21 +154,21 @@ o-modal-container {
   opacity: 0;
   will-change: opacity;
   transition: opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946);
-  background-image: url(../img/octane-modal-bg.png);
-  background-repeat: repeat;
-  /*&:before{
-      background-color:black;
-      @include opacity(0.8);
-      z-index:-1;
-      content:"";
-      position:absolute;
-      top:0;
-      bottom:0;
-      left:0;
-      right:0;
-      width:100%;
-      height:100%;
-  }*/ }
+  background-repeat: repeat; }
+  o-modal-container:before {
+    background-color: black;
+    opacity: 0.8;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+    filter: alpha(opacity=80);
+    z-index: -1;
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%; }
 
 o-modal-container.active {
   z-index: 999999998;
