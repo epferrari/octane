@@ -5,7 +5,7 @@
                     // @author Ethan Ferrari
                     // ethanferrari.com/octane
                     // onefiremedia.com
-                    // version 0.0.2
+                    // version 0.0.4
                     // January 2015
             
                 /* API Methods */
@@ -42,25 +42,12 @@
 
                 /* Module methods */
 
-                    // .model(name,options)
-                    // .controller($model)
+                   
 
                 /* Model methods */
 
-                    // .set({key:value,...})	
-                    // .get([stateKey])
-                    // .access(dbKey)
-                    // .rescope()
+                  
 
-                /* Controller methods */
-
-                    // .filter(o-bind,filter)
-                    // .hook(o-bind,$caseObject)
-                    // .hook(o-bind,func(data[,async]))
-                    // .task(o-bind,func(o-bind,data))
-
-                    // .doFilter($data)
-                    // .applyHooks($data)
 
                 /* ViewModel methods */
 
@@ -360,8 +347,8 @@
                 var
                 encoded = uriEncodeObject(data),
                 $headers = {
-                    'Content-Type':'application/x-www-form-urlencoded',
-                    'Content-Length':encoded.length
+                    'Content-Type':'application/x-www-form-urlencoded'
+                    //'Content-Length':encoded.length
                 },
                 request,
                 headerKeys,
@@ -388,7 +375,6 @@
                                 } catch(ex){
                                     response = request.responseText;
                                 }
-                                //console.log(request.getAllResponseHeaders());
                                 resolve(response);
                             },
                             '404' : function(reslove,reject){
@@ -512,25 +498,19 @@
                 'function' : function(elem,handler,e){
                    try{
                        handler(e,elem);
-                   }catch(ex){
-                       //_octane.log(ex);
-                   }
+                   }catch(ex){/* ignore */}
                 },
                 'object' : function(elem,handler,e){
                     try{
                         handler.handleEvent(e,elem);
-                    }catch(ex){
-                        //_octane.log(ex);
-                    }
+                    }catch(ex){/* ignore */}
                 }
             });
             try{
                 handlers.__forEach(function(handler){
                     swatch.run(__.typeOf(handler),[elem,handler,e]);
                 });
-            }catch(ex){
-                // do nothing
-            }
+            }catch(ex){/* ignore */}
         };
        
             
@@ -539,7 +519,7 @@
                                 
                                 var 
                                 types = type ? type.split(' ') : [],
-                                i=0,n=types.length,
+                                n=types.length,
                                 handler,elem;
                                 
                                 if(arguments.length == 3){
@@ -556,22 +536,22 @@
                                     }
                                     var guid = elem._guid;
                                     try{
-                                        _octane.eventHandlerMap[guid][type].push(handler);
+                                       _octane.eventHandlerMap[guid][type].push(handler);
                                     } catch(ex){
                                        try{
                                             _octane.eventHandlerMap[guid][type] = [];
                                             _octane.eventHandlerMap[guid][type].push(handler);
                                        } catch (ex){
-                                           _octane.eventHandlerMap[guid] = {};
-                                           _octane.eventHandlerMap[guid][type] = [];
-                                          _octane.eventHandlerMap[guid][type].push(handler);
+                                            _octane.eventHandlerMap[guid] = {};
+                                            _octane.eventHandlerMap[guid][type] = [];
+                                            _octane.eventHandlerMap[guid][type].push(handler);
                                        }
                                     } 
                                 }
                                 
-                                for(;i<n;i++){
-                                    addHandler(types[i],elem,handler); 
-                                    window.addEventListener(types[i],_octane.eventHandler,false);
+                                while(n--){
+                                    addHandler(types[n],elem,handler); 
+                                    window.addEventListener(types[n],_octane.eventHandler,false);
                                 }
                                 return this; // chainable
 							},
@@ -829,8 +809,8 @@
                         i=0;
                         
                         // apply the hooks
-                        for(;i<n;i++){
-                            _octane.hooks[this.name+'.'+keystrings[i]] && this._applyHooks(keystrings[i],setObject);
+                        while(n--){
+                            _octane.hooks[this.name+'.'+keystrings[n]] && this._applyHooks(keystrings[n],setObject);
                         }
                         
                         // re-measure in case there have been additional properties
@@ -868,6 +848,12 @@
                                 modelUpdated = false;
                                 $O.log('Unable to set model data "'+keystring+'". Error: '+e);
                             }
+                            /*if(modelUpdated){
+                                keyArray.reduce(function(o,x,i){
+                                    $O.fire('statechange:'+o+'.'+x);
+                                    return o+'.'+x;
+                                },this.name);
+                            }*/
                             modelUpdated &&  $O.fire('statechange:'+this.name+'.'+keystring);
                         
                     }, 
@@ -1084,6 +1070,20 @@
 		});
         
     /* ------------------------------------------------------- */
+    /*                       FILTERS                           */
+    /* ------------------------------------------------------- */
+
+        _octane.filters = {};
+        _octane.filterMap = {};
+
+        $O.define({
+            filter : function (name,func){
+
+                _octane.filters[name] = func;	
+            }
+        });
+        
+    /* ------------------------------------------------------- */
 	/*                      VIEW MODEL                        */
 	/* ------------------------------------------------------- */		
 		
@@ -1113,6 +1113,7 @@
                         $scope = this.scope;
                         // element hasn't been parsed yet
                         if(!elem._watched){
+                            
                             elem._watched = true;
                             if(!elem._guid) { elem._guid = $O.GUID() };
                             if(filter){
@@ -1123,7 +1124,7 @@
                                     $O.log(ex);
                                 }
                             }
-
+                            
                             var 
                             oBind = elem.getAttribute('o-bind'),
                             _oUpdate = elem.getAttribute('o-update'),
@@ -1140,7 +1141,9 @@
 
                                 deep = oBind.split('.'),
                                 l = deep.length;
-
+                                
+                                // store reference to element in the ViewModel
+                                // with its attr to update and the key to update with 
                                 deep.reduce(function(o,x,i){
                                     if(i == (l-1)){
                                         var z = {
@@ -1156,7 +1159,18 @@
                                     } else {   
                                         return o[x] = _.isObject(o[x]) ? o[x] : {__binds__ :[]};
                                     }
-                                },$scope);   
+                                },$scope);
+                               
+                                // set event handlers for all levels of model change
+                                deep.reduce(function(o,x,i){
+                                    if(i===0){
+                                        $O.handle('statechange:'+x,$this.refresh.bind($this));
+                                        return x;
+                                    } else {
+                                        $O.handle('statechange:'+o+'.'+x,$this.refresh.bind($this));
+                                        return o+'.'+x;
+                                    }
+                                });
                             } // end if o-bind
 
                             if(_oUpdate){
@@ -1165,7 +1179,7 @@
 
                                 // not a JSON string
                                 if(_oUpdate.length > 0 && _oUpdate.indexOf("{") !== 0){
-                                    oUpdate[_oUpdate] = 'text';
+                                    oUpdate[_oUpdate] = 'html';
                                 } else {
                                     try{
                                         oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
@@ -1173,16 +1187,27 @@
                                        $O.log(ex.message + ' in ViewModel.parse(), element: '+elem );
                                     }
                                 }
-
+                                
                                 // push element+attr to scope[key] for one-way updates 
                                 _.forOwn(oUpdate,function(attr,key){
-                                    
-                                    $O.handle('statechange:'+key,$this.refresh.bind($this));
-                                    
+                                   
                                     var 
                                     deep = key.split('.'),
                                     l = deep.length;
-
+                                    
+                                    // set event handlers for all levels of model change
+                                    deep.reduce(function(o,x,i){
+                                        if(i===0){
+                                            $O.handle('statechange:'+x,$this.refresh.bind($this));
+                                            return x;
+                                        } else {
+                                            $O.handle('statechange:'+o+'.'+x,$this.refresh.bind($this));
+                                            return o+'.'+x;
+                                        }
+                                    });
+                                   
+                                    // store reference to element in the ViewModel
+                                    // with its attr to update and the key to update with 
                                     deep.reduce(function(o,x,i,arr){
 
                                         if(i == (l-1)){ // last iteration
@@ -1196,7 +1221,7 @@
                                             }else{
                                                 o[x] = { __binds__ : [z] };
                                             }
-                                        } else {    
+                                        } else {
                                             return o[x] = _.isObject(o[x]) ? o[x] : {__binds__:[]};
                                         }
                                     },$scope);
@@ -1210,18 +1235,18 @@
 						var
                         $this = this,
                         $bindScope = document.querySelectorAll('[o-bind],[o-update]'),
-                        i=0,n=$bindScope.length;
+                        n=$bindScope.length;
                 
-                        for(;i<n;i++){
-                           this.watch($bindScope[i]);
+                        while(n--){
+                           this.watch($bindScope[n]);
                         }
 					},		
-			// update all data on the DOM bound to this ViewModel's Model
+			// run event type thru ViewModel scope to update elems
 			refresh 	: 	function (e){
 								
                                 // loop bound model datapoint in scope
                                 var
-                                $updater = this.update,
+                                $update = this.update,
                                 $scope = this.scope,
                                 toUpdate,
                                 updated = e.type ? e.type.replace('statechange:','').split('.') : [],
@@ -1233,9 +1258,8 @@
                                 toUpdate = ViewModel.prototype.updateRecursively(toRecurse);
                                 toUpdate = _.compact(toUpdate);
                                 toUpdate = toUpdate.__concatAll();
-                                //console.log('needing updates',toUpdate);
                                 toUpdate.__forEach(function(group){
-                                   $updater(group.key,group.elem,group.attr);
+                                   $update(group.key,group.elem,group.attr);
                                 });    
                                        
 							},
@@ -1245,8 +1269,9 @@
                                 keys = Object.keys(object);
                                     
                                 return keys.__map(function(key){
-                                    var prop = object[key],
-                                        _prop;
+                                    var 
+                                    prop = object[key],
+                                    _prop;
 
                                     if( _.isPlainObject(prop) ){
                                        if( _prop = ViewModel.prototype.updateRecursively(prop)[0] ){ // nested 
@@ -1260,8 +1285,6 @@
 			update       : function(key,elem,attr){
                                         
                                 var fresh = $O.get(key);
-                                //console.log('updating key',key);
-                                //console.log('with data',fresh);
                                 if(__.isNull(fresh) || __.isUndefined(fresh)){
                                     fresh = null;
                                 }
@@ -1275,13 +1298,21 @@
 
                                     var updater = new __.Switch({
                                         'html' : function(fresh){
+                                            var filter;
+                                            if(filter = _octane.filterMap[elem._guid]){
+                                                try {
+                                                    fresh = _octane.filters[filter[0]].apply(null,[fresh,filter[1]]);
+                                                } catch(ex){
+                                                    $O.log(ex);
+                                                }
+                                            }
                                             elem.innerHTML = fresh;
                                         },
                                         'text' : function(fresh){
                                             var filter;
                                             if(filter = _octane.filterMap[elem._guid]){
                                                 try {
-                                                    fresh = filter[0].apply(null,[fresh,filter[1]]);
+                                                    fresh = _octane.filters[filter[0]].apply(null,[fresh,filter[1]]);
                                                 } catch(ex){
                                                     $O.log(ex);
                                                 }
@@ -1320,19 +1351,7 @@
             
         });
         
-        /* ------------------------------------------------------- */
-        /*                       FILTERS                           */
-        /* ------------------------------------------------------- */
-
-            _octane.filters = {};
-            _octane.filterMap = {};
-
-            $O.define({
-                filter : function (name,func){
-
-                    _octane.filters[name] = func;	
-                }
-            });
+        
         
        /* ------------------------------------------------------- */
 	   /*                          TASKS                          */
@@ -1348,7 +1367,7 @@
             keyArray = key.split('.');
             
             keyArray.reduce(function(o,x,i,a){
-                var $watch = o+'.'+x;
+                var $watch = o ? o+'.'+x : x;
                 $O.handle('statechange:'+$watch,function(e){
                     var currentVal = $O.get(key);
                     if(currentVal != cache[key]){
@@ -1632,7 +1651,8 @@
                     var 
                     moduleName,
                     moduleKeys = Object.keys(_octane.modules),
-                    modulesLoaded = [],
+                    m=moduleKeys.length,
+                    modulesLoaded = [],    
                     tryLoading = function(moduleName){
                         
                         var 
@@ -1650,11 +1670,10 @@
                             modulesLoaded.push( module._load() );
                         }
                     };
-                     
-                    var i=0,m=moduleKeys.length;
+                    
                     // load each module
-                    for(;i<m; i++){
-                        moduleName = moduleKeys[i];
+                    while(m--){
+                        moduleName = moduleKeys[m];
                         tryLoading(moduleName);
                     }
                 
@@ -1754,8 +1773,6 @@
                     value;
                     
                     value = keySplit.reduce(function (prev,curr,index,arr){
-                        //console.log('previous',prev);
-                        //console.log('current',curr);
                         var val = prev[curr];
                         if(index == (l-1)){ 
                             return val; // last iteration, return value
