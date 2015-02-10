@@ -613,25 +613,6 @@
 		});
 	
         
-    
-        
-	
-	/* ------------------------------------------------------- */
-	/*                       FILTERS                           */
-	/* ------------------------------------------------------- */
-		
-		_octane.filters = new __.Switch();
-		
-		$O.define({
-			filter : function (name,func){
-                
-                _octane.filters[name] = func;	
-			}
-		});
-		
-		//$O.addFilter('number',/^[-\d]+$/);
-        //$O.addFilter('email',/^[-0-9a-zA-Z]+[-0-9a-zA-Z.+_]+@(?:[A-Za-z0-9-]+\.)+[a-zA-Z]{2,4}$/);
-        //$O.addFilter('tel',/^[-0-9\.]{7,12}$/);
                     
 	
 	/* ------------------------------------------------------- */
@@ -1128,16 +1109,19 @@
                         var
                         $this = this,
                         $sender = this.uptake,
+                        filter = elem.getAttribute('o-filter'),
                         $scope = this.scope;
                         // element hasn't been parsed yet
                         if(!elem._watched){
                             elem._watched = true;
                             if(!elem._guid) { elem._guid = $O.GUID() };
-
-                            try{
-                                elem._filters = JSON.parse( elem.getAttribute('o-filters') );
-                            } catch (ex){
-                                $O.log(ex);
+                            if(filter){
+                                try{
+                                    filter = filter.split(',');
+                                    _octane.filterMap[elem._guid] = filter;
+                                } catch (ex){
+                                    $O.log(ex);
+                                }
                             }
 
                             var 
@@ -1295,10 +1279,12 @@
                                         },
                                         'text' : function(fresh){
                                             var filter;
-                                            if(filter = elem.getAttribute('o-filter')){
+                                            if(filter = _octane.filterMap[elem._guid]){
                                                 try {
-                                                    fresh = _octane.filters[filter].apply(null,[fresh]);
-                                                } catch(ex){}
+                                                    fresh = filter[0].apply(null,[fresh,filter[1]]);
+                                                } catch(ex){
+                                                    $O.log(ex);
+                                                }
                                             }
                                             elem.textContent = fresh;
                                         },
@@ -1333,6 +1319,20 @@
             }
             
         });
+        
+        /* ------------------------------------------------------- */
+        /*                       FILTERS                           */
+        /* ------------------------------------------------------- */
+
+            _octane.filters = {};
+            _octane.filterMap = {};
+
+            $O.define({
+                filter : function (name,func){
+
+                    _octane.filters[name] = func;	
+                }
+            });
         
        /* ------------------------------------------------------- */
 	   /*                          TASKS                          */
