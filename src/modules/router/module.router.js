@@ -273,11 +273,16 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             btns = document.querySelectorAll('.o-back'),
             n= btns.length,
             setBtn = function(btn){
-                
-                octane.handle('click',btn,function(){
-                    History.go(-1);
-                });
-            };
+                btn.addEventListener('click',function(e){
+                    btn.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
+                },false);
+           
+                octane.handle('octane:routeback',btn,goBack);
+            }
+            
+            function goBack(){
+                History.go(-1);
+            }
             
             while(n--){
                 setBtn(btns[n]);
