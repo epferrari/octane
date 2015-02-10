@@ -5,10 +5,13 @@
         bgContainer = octane.dom.bgContainer(),
         appContainer = octane.dom.appContainer(),
         viewContainer = octane.dom.viewContainer(),
-        modalContainer = document.getElementsByTagName('o-modal-container')[0],
-        doppelganger,
-        overlayMode,
-        swapCanvas;
+        modalContainer = octane.dom.modalContainer(),
+        Overlay, // controller
+        Background, // controller
+        AppContainer, // controller
+        ModalContainer, // controller
+        Velocity = Velocity || $.Velocity, // library
+        method = octane.viewAnimationMethod || 'css';
         
     /* ------------------------------------------------------------------- */
     /*                            UTILITY                                  */
@@ -38,37 +41,140 @@
             );
             //combining test results
             return test1 && test2;
-        } 
+        }
         
-    /* ------------------------------------------------------------------- */
-    /*                            CONTROLLERS                              */
-    /* ------------------------------------------------------------------- */
+        /* ------------------------------------------------------------------- */
+        /*                            CONTROLLERS                              */
+        /* ------------------------------------------------------------------- */
         
-        swapCanvas = octane.controller('swapCanvas').extend({
-            // swap out the app container with a static image of itself
-            applyCanvas : function(){
-                return new Promise(function(resolve){
-                    bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
-                    doppelganger.then(function(canvas){
-                        bgContainer.appendChild(canvas);
-                        bgContainer.classList.add('active');
-                        resolve();
-                    });
-                });
+        ModalContainer = octane.controller('ModalContainerController').extend({
+            // darken the modal background and disable click-thrus
+            activate : {
+                // css animation
+                css : function(){
+                        return new Promise(function(resolve){
+                            modalContainer.classList.add('active');
+                            setTimeout(resolve,405);
+                        });          
+                },
+                // js animation with Velocity.js
+                js : function(){
+                        return new Promise(function(resolve){
+                             Velocity(modalContainer,'fadeIn',{duration:400})
+                             .then(function(){
+                                modalContainer.classList.add('active');
+                                return resolve();
+                            });
+                        });
+                }           
             },
-            removeCanvas : function(){
+            // re-enable click-thrus and remove darkness
+            deactivate :{
+                css : function (){
+                        return new Promise(function(resolve){
+                            modalContainer.classList.remove('active');
+                            setTimeout(resolve,505);
+                        });
+                },
+                js : function(){
+                        return new Promise(function(resolve){
+                           Velocity(modalContainer,'fadeOut',{duration:500})
+                            .then(function(){
+                                modalContainer.classList.remove('active');
+                                return resolve();
+                           });
+                        });
+                }
+            }
+        });
+        
+        AppContainer = octane.controller('AppContainerController').extend({      
+            hide : {
+                css : function (){
+                    return new Promise(function(resolve){
+                        appContainer.classList.add('hidden');
+                        setTimeout(resolve,305);
+                    });
+                },
+                js : function(){
+                    return new Promise(function(resolve){
+                        Velocity(appContainer,'fadeOut',{duration:300})
+                        .then(function(){
+                            appContainer.classList.add('hidden');
+                            return resolve();
+                        });
+                    });
+                }
+            },
+            reveal : {
+                css : function (){
+                        return new Promise(function(resolve){
+                            appContainer.classList.remove('hidden');
+                            setTimeout(resolve,305);
+                        });
+                },
+                js : function(){
+                    return new Promise(function(resolve){
+                        Velocity(appContainer,'fadeIn',{duration:300})
+                         .then(function(){
+                            appContainer.classList.remove('hidden');
+                            return resolve();
+                        });
+                    });
+                }
+            }
+        });
+        
+   
+        
+        Background = octane.controller('BackgroundController').extend({
+            // swap out the app container with a static image of itself
+            activate : {
+                css : function(){
+                    return new Promise(function(resolve){
+                        bgContainer.classList.add('active');
+                        setTimeout(resolve,305);
+                    });
+                },
+                js : function(){
+                    return new Promise(function(resolve){
+                        Velocity(bgContainer,'fadeIn',{duration:300})
+                         .then(function(){
+                            bgContainer.classList.add('active');
+                            resolve();
+                        });
+                    });
+                }
+            },
+            deactivate : {
+                css : function(){
+                    return new Promise(function(resolve){
+                        bgContainer.classList.remove('active');
+                        setTimeout(resolve,305);
+                    });
+                },
+                js : function(){
+                    return new Promise(function(resolve){
+                        Velocity(bgContainer,'fadeOut',{duration:300})
+                        .then(function(){
+                            bgContainer.classList.remove('active');
+                            resolve();
+                        });
+                    });
+                }
+            },
+            removeImage : function(){
                 bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
                 return Promise.resolve();
             },
             // get the static image
-            getSwapCanvas : function (){
+            getImage : function (){
                 return new Promise(function(resolve){
                     html2canvas(appContainer,{
                         onrendered : function(canvas){
                             bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
                             bgContainer.appendChild(canvas);
-                            doppelganger = Promise.resolve(canvas);
-                            resolve();
+                            resolve(canvas);
                         }
                     });
                 });
@@ -76,56 +182,45 @@
         });
             
        
-        overlayMode = octane.controller('overlayMode').extend({
+        Overlay = octane.controller('OverlayController').extend({
         
-            enter : function enterOverlayMode(){
-                var $this = this;
-                if(hasCssFilterSupport){
-                    return swapCanvas.applyCanvas().then($this.lockout).then($this.hideViews);
+            on : function(){
+                if(hasCssFilterSupport){    
+                    return Background.activate[method]()
+                            .then( ModalContainer.activate[method] )
+                            .then( AppContainer.hide[method] );
                 } else {
-                    return $this.lockout();
+                    return ModalContainer.activate[method]();
                 }
             },
-            exit : function exitOverlayMode(){
-                var $this= this;
-                return $this.unlock().then(swapCanvas.removeCanvas).then($this.revealViews);
-            },   
-            // darken the modal background and disable click-thrus
-            lockout : function(){
-                modalContainer.classList.add('active');
-                return Promise.resolve();
-            },
-            // re-enable click-thrus and remove darkness
-            unlock :function (){
-                modalContainer.classList.remove('active');
-                return Promise.resolve();
-            },
-            hideViews : function (){
-                appContainer.classList.add('hidden');
-                return Promise.resolve();
-            },
-            revealViews : function (){
-                appContainer.classList.remove('hidden');
-                return Promise.resolve();
+            off : function(){
+                if(hasCssFilterSupport){
+                    return  AppContainer.reveal[method]()
+                            .then( Background.deactivate[method] )
+                            .then( ModalContainer.deactivate[method] );
+                } else {
+                    return ModalContainer.deactivte[method]();
+                }
             }
         });
+            
         
         this.initialize = function init(){
-            var $this = this;
-            swapCanvas.getSwapCanvas()
+            //var $this = this;
+            //backgroundController.getImage();
             // cache screenshot as soon as routing completes
             if(hasCssFilterSupport){
                 octane.handle('routing:complete',function(){
-                    swapCanvas.getSwapCanvas();
+                    Background.getImage();
                 });
             }
         }
         
         this.export({
-            enter : overlayMode.enter.bind(overlayMode),
-            exit : overlayMode.exit.bind(overlayMode),
-            getSwapCanvas : swapCanvas.getSwapCanvas.bind(swapCanvas),
-            applySwapCanvas : swapCanvas.applyCanvas.bind(swapCanvas)
+            on : Overlay.on,
+            off : Overlay.off
+            //getBackgroundImage : backgroundController.getImage.bind(backgroundController),
+            //applySwapCanvas : backgroundController.applyCanvas.bind(backgroundController)
         });
         
     }); // end module

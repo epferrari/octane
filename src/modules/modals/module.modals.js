@@ -1,10 +1,15 @@
 octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
     
         var
-        $viewProto = this.import('ViewPrototype'),
-        $overlay = this.import('UiOverlay'),
+        ViewProto = this.import('ViewPrototype'),
+        Overlay = this.import('UiOverlay'),
+        ViewLoadAnimations = this.import('ViewLoadAnimations'),
+        ViewExitAnimations = this.import('ViewExitAnimations'),
         $Modals = {},
-        bg = document.getElementsByTagName('o-modal-container')[0];
+        Velocity = Velocity || $.Velocity,
+        bg = octane.dom.modalContainer(),
+        
+        animBy = octane.viewAnimationMethod || 'css';
             
         function OctaneModal(elem){
             if(!_.isString(elem.id)) return {instanced:false};
@@ -27,9 +32,9 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
         OctaneModal.prototype = octane.base();
         OctaneModal.prototype.define({
             constructor :  OctaneModal,
-            configureLoading : $viewProto.configureLoading,    
-            addAfterLoadCallback    : $viewProto.addAfterLoadCallback,
-            callAfterLoadCallbacks  : $viewProto.callAfterLoadCallbacks,       
+            configureLoading : ViewProto.configureLoading,    
+            addAfterLoadCallback    : ViewProto.addAfterLoadCallback,
+            callAfterLoadCallbacks  : ViewProto.callAfterLoadCallbacks,       
             load        : function (){
                             var 
                             $this = this;
@@ -37,22 +42,27 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                             this.adjustSize();
                             bg.classList.add('loading');
                             
-                            return $overlay.enter()
-                            .then(function(){
-                                bg.classList.remove('loading');
-                            })
-                            .then(function(){
-                                $('body').velocity('scroll',{duration:600});
-                                $this.elem.classList.add('modal-active');
-                            })
-                            .then($this.callAfterLoadCallbacks.bind($this));
+                            return Overlay.on()
+                                .then(function(){
+                                    bg.classList.remove('loading');
+                                })
+                                .then(function(){
+                                    Velocity(document.body,'scroll',{duration:300});
+                                    $this.elem.classList.add('modal-active');
+                                })
+                                .then($this.callAfterLoadCallbacks.bind($this));
                         },
             exit        : function(){
                             var $this = this;
                             return new Promise(function(resolve){
+                                $this.elem.classList.add('modal-transitioning');
                                 $this.elem.classList.remove('modal-active');
                                 resolve();
-                            }).then($overlay.exit);         
+                            }).then(function(){
+                                return Overlay.off();
+                            }).then(function(){
+                                 $this.elem.classList.remove('modal-transitioning')
+                            });
                         },
             adjustSize : function(){
                             var 
@@ -69,6 +79,40 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                         }
                 
         });
+    
+        ModalAnimation = octane.controller('ModalAnimationController').extend({
+            dismiss : {
+               js : function(){
+                        var modal = this;
+                        return ViewExitAnimations[direction].bind(modal)().then(function(){
+                            modal.elem.classList.remove('active');
+                        });
+               },
+                css : function(){
+                        var modal = this;
+                        return new Promise(function(resolve){
+                           model.elem.classList.remove('active');
+                            setTimeout(resolve,805);
+                        });
+                }
+            },
+            call : {
+                js : function(){
+                        var modal = this;
+                        return ViewLoadAnimations[direction].bind(modal)().then(function(){
+                            modal.elem.classList.add('active');
+                        });
+                },
+                css : function(elem){
+                        var modal = this;
+                        return new Promise(function(resolve){
+                            modal.elem.classList.add('active');
+                            setTimeout(resolve,805);
+                        });
+                }
+            }
+        });
+                    
         // end oModal prototype
         
         var
@@ -157,15 +201,16 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
             elems = document.querySelectorAll('.o-modal-dismiss'),
             n = elems.length,
             setHandler = function(elem){
-                
-                elem.removeEventListener('click');
-                elem.addEventListener('click', function(e){
-                    e.stopPropagation;
-                    e.stopImmediatePropagation;
-                    dismissModal(currentModal.id);
-                    return false;
-                });
+                //elem.removeEventListener('click',handler);
+                elem.addEventListener('click',handler);
             };
+            
+            function handler(e){
+                e.stopPropagation;
+                e.stopImmediatePropagation;
+                dismissModal(currentModal.id);
+                return false;
+            }
             
             while(n--){   
                 setHandler(elems[n]);
