@@ -492,8 +492,9 @@
         _octane.eventHandler = function(e){
             
             var 
-            elem = e.srcElement,
-            handlers = _octane.eventHandlerMap[elem._guid] ? _octane.eventHandlerMap[elem._guid][e.type] : [],
+            elem = e.target || e.srcElement,
+            id = elem._guid,
+            handlers = _octane.eventHandlerMap[id] ? _octane.eventHandlerMap[id][e.type] : [],
             swatch = new __.Switch({
                 'function' : function(elem,handler,e){
                    try{
@@ -520,31 +521,34 @@
                                 var 
                                 types = type ? type.split(' ') : [],
                                 n=types.length,
-                                handler,elem;
+                                handler,
+                                elem;
                                 
                                 if(arguments.length == 3){
                                     handler = arguments[2];
                                     elem = arguments[1];
                                 } else if (arguments.length == 2){
-                                    handler = arguments[1],
+                                    handler = arguments[1];
                                     elem = window;
                                 }
                                
                                 function addHandler(type,elem,handler){
-                                    if(!elem._guid){
-                                        elem._guid = $O.GUID();
-                                    }
-                                    var guid = elem._guid;
+                                    
+                                    var id;
+                                    
+                                    elem._guid = elem._guid || $O.GUID();
+                                    id = elem._guid;
+                                   
                                     try{
-                                       _octane.eventHandlerMap[guid][type].push(handler);
+                                       _octane.eventHandlerMap[id][type].push(handler);
                                     } catch(ex){
                                        try{
-                                            _octane.eventHandlerMap[guid][type] = [];
-                                            _octane.eventHandlerMap[guid][type].push(handler);
+                                            _octane.eventHandlerMap[id][type] = [];
+                                            _octane.eventHandlerMap[id][type].push(handler);
                                        } catch (ex){
-                                            _octane.eventHandlerMap[guid] = {};
-                                            _octane.eventHandlerMap[guid][type] = [];
-                                            _octane.eventHandlerMap[guid][type].push(handler);
+                                            _octane.eventHandlerMap[id] = {};
+                                            _octane.eventHandlerMap[id][type] = [];
+                                            _octane.eventHandlerMap[id][type].push(handler);
                                        }
                                     } 
                                 }
@@ -558,27 +562,30 @@
             drop      : function(){
                 
                                 var 
-                                type,elem,handler,swatch = new Switch({
+                                type,
+                                elem,
+                                handler,
+                                swatch = new Switch({
                                     '3' :function(args){
                                         handler = args[2];
                                         elem = args[1];
                                         type = args[0];
                                         try{
                                             _.pull(_octane.eventHandlerMap[elem._guid][type],handler);
-                                        }catch(ex){}
+                                        }catch(ex){ /* ignore */ }
                                     },
                                     '2' : function(args){
                                         elem = args[1];
                                         type = args[0];
                                         try{
                                             delete _octane.eventHandlerMap[elem._guid][type];
-                                        }catch(ex){}
+                                        }catch(ex){ /* ignore */ }
                                     },
                                     '1' : function(args){
                                         elem = arguments[0];
                                         try{
                                             delete _octane.eventHandlerMap[elem._guid];
-                                        }catch(ex){}
+                                        }catch(ex){ /* ignore */ }
                                     }
                                 }).run(arguments.length,[arguments]);
                                
@@ -762,7 +769,7 @@
                             $O.extend.apply(defaults,[classDefaults]);
                             _.isObject(instanceDefaults) && $O.extend.apply(defaults,[instanceDefaults,true]);
 
-                            this.set(defaults);
+                            this._set(defaults);
 
                             try{
                                 _octane.Models[Name].push(this);
@@ -773,7 +780,7 @@
 
                             this.define({
                                 reset : function(){
-                                    this.clear().set(defaults);
+                                    this._clear()._set(defaults);
                                 }
                             });
                             
@@ -1101,10 +1108,9 @@
 		ViewModel.prototype.define({
             
             init : function(){
-                        this.parse();    
-                        this.refresh({type:'statechange:App'});
-                    },
-                        
+                        this.parse();
+                        this.refreshAll();
+                    },            
 			watch : function(elem){
                         var
                         $this = this,
@@ -1163,14 +1169,16 @@
                                
                                 // set event handlers for all levels of model change
                                 deep.reduce(function(o,x,i){
-                                    if(i===0){
-                                        $O.handle('statechange:'+x,$this.refresh.bind($this));
-                                        return x;
-                                    } else {
-                                        $O.handle('statechange:'+o+'.'+x,$this.refresh.bind($this));
-                                        return o+'.'+x;
+                                   var watch;
+                                    if(i === 0){
+                                        watch = x;
+                                    }else{
+                                        watch = o+'.'+x;
                                     }
-                                });
+                                    
+                                    $O.handle('statechange:'+watch,$this.refresh.bind($this));
+                                     return watch;
+                                },'');
                             } // end if o-bind
 
                             if(_oUpdate){
@@ -1197,14 +1205,16 @@
                                     
                                     // set event handlers for all levels of model change
                                     deep.reduce(function(o,x,i){
-                                        if(i===0){
-                                            $O.handle('statechange:'+x,$this.refresh.bind($this));
-                                            return x;
-                                        } else {
-                                            $O.handle('statechange:'+o+'.'+x,$this.refresh.bind($this));
-                                            return o+'.'+x;
+                                        var watch;
+                                        if(i === 0){
+                                            watch = x;
+                                        }else{
+                                            watch = o+'.'+x;
                                         }
-                                    });
+                                        
+                                        $O.handle('statechange:'+watch,$this.refresh.bind($this));
+                                         return watch;
+                                    },'');
                                    
                                     // store reference to element in the ViewModel
                                     // with its attr to update and the key to update with 
@@ -1263,6 +1273,16 @@
                                 });    
                                        
 							},
+            refreshAll  : function(){
+                            
+                                var 
+                                models = Object.keys(_octane.models),
+                                n = models.length;
+
+                                while(n--){
+                                    $O.fire('statechange:'+models[n]);
+                                }
+                            },
             updateRecursively : function(object){
                                 
                                 var
@@ -1286,7 +1306,7 @@
                                         
                                 var fresh = $O.get(key);
                                 if(__.isNull(fresh) || __.isUndefined(fresh)){
-                                    fresh = null;
+                                    fresh = '';
                                 }
                                 if(attr.indexOf('.') !== -1){
                                     // update style on element
@@ -1347,8 +1367,8 @@
         $O.define({
             rescope : function(){
                 _octane.ViewModel.parse();
-            }
-            
+                _octane.ViewModel.refreshAll();
+            }    
         });
         
         
@@ -1367,16 +1387,21 @@
             keyArray = key.split('.');
             
             keyArray.reduce(function(o,x,i,a){
-                var $watch = o ? o+'.'+x : x;
-                $O.handle('statechange:'+$watch,function(e){
+                var watch;
+                if(i === 0){
+                    watch = x;
+                }else{
+                    watch = o+'.'+x;
+                }
+                $O.handle('statechange:'+watch,function(e){
                     var currentVal = $O.get(key);
                     if(currentVal != cache[key]){
                         cache[key] = currentVal;
                         $task(currentVal,key);
                     }
                 });
-                return $watch;
-            });    
+                return watch;
+            },'');    
         }
         
         $O.define({ 
@@ -1741,6 +1766,9 @@
             viewContainer  : function(){
                 return document.getElementsByTagName('o-view-container')[0] || document.createElement('o-view-container');
 
+            },
+            modalContainer : function(){
+                return document.getElementsByTagName('o-modal-container')[0] || document.createElement('o-modal-container');
             },
             views    : function(){
                 return document.getElementsByTagName('o-view') || [];
