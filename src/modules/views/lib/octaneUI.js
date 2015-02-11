@@ -54,7 +54,8 @@
                 css : function(){
                         return new Promise(function(resolve){
                             modalContainer.classList.add('active');
-                            setTimeout(resolve,405);
+                            //setTimeout(resolve,405);
+                            resolve();
                         });          
                 },
                 // js animation with Velocity.js
@@ -72,8 +73,10 @@
             deactivate :{
                 css : function (){
                         return new Promise(function(resolve){
-                            modalContainer.classList.remove('active');
-                            setTimeout(resolve,505);
+                            setTimeout(function(){
+                                modalContainer.classList.remove('active');
+                                resolve();
+                            },150);
                         });
                 },
                 js : function(){
@@ -195,9 +198,9 @@
             },
             off : function(){
                 if(hasCssFilterSupport){
-                    return  AppContainer.reveal[method]()
-                            .then( Background.deactivate[method] )
-                            .then( ModalContainer.deactivate[method] );
+                    return  ModalContainer.deactivate[method]()
+                            .then( AppContainer.reveal[method] )
+                            .then( Background.deactivate[method] );
                 } else {
                     return ModalContainer.deactivte[method]();
                 }

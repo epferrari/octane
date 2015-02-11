@@ -54,15 +54,8 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                         },
             exit        : function(){
                             var $this = this;
-                            return new Promise(function(resolve){
-                                $this.elem.classList.add('modal-transitioning');
-                                $this.elem.classList.remove('modal-active');
-                                resolve();
-                            }).then(function(){
-                                return Overlay.off();
-                            }).then(function(){
-                                 $this.elem.classList.remove('modal-transitioning')
-                            });
+                            $this.elem.classList.remove('modal-active');
+                            return Overlay.off();
                         },
             adjustSize : function(){
                             var 
