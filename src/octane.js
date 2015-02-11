@@ -724,7 +724,101 @@
                     _octane.dataStores[storeID] && _octane.dataStores[storeID].rebase(data);
         }
     });
-   
+    /* ------------------------------------------------------- */
+	/*                     COLLECTIONS                         */
+	/* ------------------------------------------------------- */
+        
+        function OctaneCollection(Name,collection){
+            var n = Object.keys(_octane.Collections).length;
+            if(!Name){
+                Name = 'Collection'+n;
+            }
+            if(!_octane.Collections[Name]){
+               _octane.Collections[Name] = this;
+            } else {
+                return _octane.Collections[Name];
+            }
+            
+            this.define({
+                name : name,
+                _models_ : []
+            });
+            
+            collection && this.expand(collection);
+        }
+        
+        OctaneCollection.prototype = new Base();
+        OctaneCollection.prototype.define({
+            get : function(index){
+                return index ? this._models_[index] : this._models_;
+            },
+            set : function(model){
+                if( model instanceof OctaneModel ){
+                    this._models_.push(model);
+                } else {
+                    $O.log('could not add model to Collection '+this.name+'. Model must be instance of Octane Model');
+                }
+            },
+            pop : function(){
+                return this._models_.pop();
+            },
+            pull : function (model){
+                return _.pull(this._models_,model);
+            },
+            length : function(){
+                return this._models_.length;
+            },
+            each : function(fn){
+                
+                if(!_.isFunction(fn)) { 
+                    $O.log('Argument passed to OctaneCollection.each must be function');
+                    return false; 
+                }
+                var 
+                i = 0,
+                n=this._models_.length,
+                model,
+                data;
+                
+                for(;i<n;i++){
+                    model = this._models_[i];
+                    data = model.get();
+                    fn.apply(model,[data]);
+                }
+            },
+            reverse : function(fn){
+                
+                if(!_.isFunction(fn) ) { 
+                    $O.log('Argument passed to OctaneCollection.reverse must be function');
+                    return false; 
+                }
+                var
+                n=this._models_.length,
+                model,
+                data;
+                
+                while(n--){
+                    model = this._models_[n];
+                    data = model.get();
+                    fn.apply(model,[data]);
+                }
+            },
+            expand : function (collection){
+                if(_.isArray(collection)){
+                    var
+                    currentLength = this._models_.length,
+                    union = _.union(this._models_,collection);
+                    
+                    this._models_.splice(0,currentLength).concat(union);
+                    return this._models_;
+                } else {
+                    return false;
+                }
+            }
+        });
+            
+                
+            
         
 	/* ------------------------------------------------------- */
 	/*                         MODELS                          */
@@ -912,7 +1006,7 @@
                                 delete this.state[keys[n]];
                             }
                             $O.fire('statechange:'+this.name);
-            },               
+                        },               
 			_get	: 	function(keystring){
                 
                             var
@@ -948,7 +1042,10 @@
                             }
                             $O.fire(this.name+':statechange');
                             return this;
-                        }      
+                        },
+            become : function(name){
+                            $O.model(name).set( this._get() );
+                        }
 		}).extend({
             // writeable aliases
             get : function(keystring){
