@@ -367,7 +367,7 @@
                 request.onreadystatechange = function(){
                     if(request.readyState === 4){
                         new __.Switch({
-                            '200' : function(resolve,reject){
+                            '200' : function(resolve){
                                 var response;
 
                                 try {
@@ -565,7 +565,7 @@
                                 type,
                                 elem,
                                 handler,
-                                swatch = new Switch({
+                                swatch = new __.Switch({
                                     '3' :function(args){
                                         handler = args[2];
                                         elem = args[1];
@@ -735,7 +735,7 @@
             this.define({
                 state : {}
             });
-            this._register()
+            this._register();
         }
 		
 	/* prototype Model */	
@@ -746,10 +746,10 @@
             _register : function(){
                     _octane.models[this.name] = this;
             },
-            _create : function(Name,config){
+            _beget : function(Name,config){
                 
                         if(_octane.Models[Name]){
-                            return _octane.Models[Name];
+                            return _octane.Models[Name].constructor;
                         }
 
                         config = config || {};
@@ -759,40 +759,44 @@
                         extend = config.extend || {},
                         initialize = config.initialize || false;
 
-                        function Model(name,instanceDefaults){
+                        _octane.Models[Name] = {
+                            constructor : function Model(name,instanceDefaults){
 
-                            this.define({ name: name });
+                                this.define({ name: name });
 
-                            // protected
-                            var defaults = {};
+                                // protected
+                                var defaults = {};
 
-                            $O.extend.apply(defaults,[classDefaults]);
-                            _.isObject(instanceDefaults) && $O.extend.apply(defaults,[instanceDefaults,true]);
+                                $O.extend.apply(defaults,[classDefaults]);
+                                _.isObject(instanceDefaults) && $O.extend.apply(defaults,[instanceDefaults,true]);
 
-                            this._set(defaults);
+                                this._set(defaults);
 
-                            try{
-                                _octane.Models[Name].push(this);
-                            } catch (ex){
-                                _octane.Models[Name] = [];
-                                _octane.Models[Name].push(this);
-                            }
-
-                            this.define({
-                                reset : function(){
-                                    this._clear()._set(defaults);
+                                try{
+                                    _octane.Models[Name].instances.push(this);
+                                } catch (ex){
+                                    _octane.models[Name] = {}; 
+                                    _octane.Models[Name].instances = [];
+                                    _octane.Models[Name].push(this);
                                 }
-                            });
-                            
-                            this._register();
-                            
-                             _.isFunction(initialize) && initialize.bind(this).call();
-                        }
 
-                        Model.prototype = new OctaneModel();
-                        Model.prototype.extend(extend);
+                                this.define({
+                                    reset : function(){
+                                        this._clear()._set(defaults);
+                                    }
+                                });
 
-                        return Model;
+                                this._register();
+
+                                 _.isFunction(initialize) && initialize.bind(this).call(defaults);
+                            },
+                            instances : []
+                        };
+                        
+                        _octane.Models[Name].constructor.prototype = new OctaneModel();
+                        _octane.Models[Name].constructor.prototype.extend(extend);
+
+                        return _octane.Models[Name].constructor;
                 },
 			_set	: function(){
                         
@@ -943,8 +947,8 @@
             unset :  function(keystring){
                     return this._unset(keystring);
             },
-            create :  function(Name,config){
-                return this._create(Name,config);
+            beget :  function(Name,config){
+                return this._beget(Name,config);
             },
             clear : function(){
                 return this._clear();
@@ -964,7 +968,7 @@
                                 return _octane.models[name];
                             }
                             // singleton constructor
-                            var Singleton = $O.Model.create(name);
+                            var Singleton = $O.Model._beget(name);
                             // singleton instance
                             return new Singleton(name,defaults);
                         },
@@ -1121,7 +1125,7 @@
                         if(!elem._watched){
                             
                             elem._watched = true;
-                            if(!elem._guid) { elem._guid = $O.GUID() };
+                            if(!elem._guid) { elem._guid = $O.GUID(); }
                             if(filter){
                                 try{
                                     filter = filter.split(',');
