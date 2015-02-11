@@ -981,9 +981,9 @@
                             model = _octane.models[modelName];
                             
                             if(model && stateKey){
-                                return model.get(stateKey);
+                                return model._get(stateKey);
                             } else if(model){
-                                return model.get();
+                                return model._get();
                             }
                         },
             set         : function(){
@@ -1024,7 +1024,7 @@
                                 value = fresh[keystring],
                                 model = _octane.models[modelName];
                                 
-                               model && model.set(key,value);
+                               model && model._set(key,value);
                             }
                 
                         },
@@ -1058,7 +1058,7 @@
                                 key = $O._parseModelKey(keystring),
                                 model = _octane.models[modelName];
                                
-                                model && model.unset(key);
+                                model && model._unset(key);
                             });
                         },
             _parseModelName  : function(bind){
