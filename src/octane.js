@@ -175,7 +175,7 @@
 		_octane.define({
 				modules		    : {},
 				models		    : {},
-                Models          : [],
+                Collections     : {},
 				views		    : {},
 				controllers     : {},
                 eventRegister   : {}
@@ -748,8 +748,8 @@
             },
             _beget : function(Name,config){
                 
-                        if(_octane.Models[Name]){
-                            return _octane.Models[Name].constructor;
+                        if(_octane.Collections[Name]){
+                            return _octane.Collections[Name].constructor;
                         }
 
                         config = config || {};
@@ -759,9 +759,11 @@
                         extend = config.extend || {},
                         initialize = config.initialize || false;
 
-                        _octane.Models[Name] = {
+                        _octane.Collections[Name] = {
                             constructor : function Model(name,instanceDefaults){
-
+                                if(!name){
+									name = Name+_octane.Collections[Name].instances.length;
+								}
                                 this.define({ name: name });
 
                                 // protected
@@ -773,11 +775,11 @@
                                 this._set(defaults);
 
                                 try{
-                                    _octane.Models[Name].instances.push(this);
+                                    _octane.Collections[Name].instances.push(this);
                                 } catch (ex){
-                                    _octane.models[Name] = {}; 
-                                    _octane.Models[Name].instances = [];
-                                    _octane.Models[Name].push(this);
+                                    _octane.Collections[Name] = {}; 
+                                    _octane.Collections[Name].instances = [];
+                                    _octane.Collections[Name].push(this);
                                 }
 
                                 this.define({
@@ -788,15 +790,15 @@
 
                                 this._register();
 
-                                 _.isFunction(initialize) && initialize.bind(this).call(defaults);
+                                 _.isFunction(initialize) && initialize.apply(this,[defaults]);
                             },
                             instances : []
                         };
                         
-                        _octane.Models[Name].constructor.prototype = new OctaneModel();
-                        _octane.Models[Name].constructor.prototype.extend(extend);
+                        _octane.Collections[Name].constructor.prototype = new OctaneModel();
+                        _octane.Collections[Name].constructor.prototype.extend(extend);
 
-                        return _octane.Models[Name].constructor;
+                        return _octane.Collections[Name].constructor;
                 },
 			_set	: function(){
                         
@@ -900,6 +902,17 @@
                             this.set(toUnset);
                         
                         },
+            _destroy:   function(){
+                            
+                            var 
+                            keys = Object.keys(this.state),
+                            n = keys.length;
+                
+                            while(n--){
+                                delete this.state[keys[n]];
+                            }
+                            $O.fire('statechange:'+this.name);
+            },               
 			_get	: 	function(keystring){
                 
                             var
@@ -937,6 +950,7 @@
                             return this;
                         }      
 		}).extend({
+            // writeable aliases
             get : function(keystring){
                     return this._get(keystring);
             },
@@ -952,6 +966,9 @@
             },
             clear : function(){
                 return this._clear();
+            },
+            destroy : function(){
+                this._destroy();
             }
         });
 		
