@@ -40,7 +40,7 @@ octane.module('OctaneViews',['ViewPrototype'],function(cfg){
             constructor : OctaneView
         });
         
-        OctaneView.prototype.extend($proto);
+        OctaneView.prototype.augment($proto);
         
         this.initialize = function(){
             

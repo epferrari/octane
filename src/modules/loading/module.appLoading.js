@@ -14,7 +14,7 @@
 				screenReader : 'Loading'
 			});
             
-            octane.controller('loadingController').extend({
+            octane.controller('loadingController').augment({
                 removeLoadingScreen : function(){
                     // unhide the rest of content hidden behind the loader    
                     var

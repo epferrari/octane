@@ -2,13 +2,13 @@
     octane.module('Debug',function(cfg){
         var _octane = cfg.protected;
         
-        octane.extend({
+        octane.augment({
 
            getModules : function(){ 
                return _octane.modules;
            },
            getModels : function(){
-               return _octane.models;
+               return _octane.Models;
            },
            getControllers : function(){
                return _octane.controllers;
@@ -19,6 +19,9 @@
            getLog : function(full){ 
                 return full ? _octane.bootlog.concat(_octane.logfile) : _octane.logfile;
            },
+            getCollections : function(){
+                return _octane.Collections;
+            },
             bootlog : function(){
                 return _octane.bootlog;
             }

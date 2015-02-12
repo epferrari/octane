@@ -23,21 +23,21 @@
                     // .controller(model)
                     // .hasModule(module)
 
-                    // .route(id[,ghost])                       : extended from Router Module
-                    // .routeIf(id,condition,onFail)            : extended from Router Module
-                    // .routeThen(id,callback)                  : extended from Router Module
-                    // .parseView()                             : extended from Router Module
-                    // .pushState(params)                       : extended from Router Module
-                    // .currentView()                           : extended from Router Module
+                    // .route(id[,ghost])                       : augmented from Router Module
+                    // .routeIf(id,condition,onFail)            : augmented from Router Module
+                    // .routeThen(id,callback)                  : augmented from Router Module
+                    // .parseView()                             : augmented from Router Module
+                    // .pushState(params)                       : augmented from Router Module
+                    // .currentView()                           : augmented from Router Module
 
-                    // .log()                                   : extended from debug module (if active)
-                    // .getLog()                                : extended from debug module (if active)
-                    // .getEvents()                             : extended from debug module (if active)
-                    // .getModels()                             : extended from debug module (if active)
-                    // .getControllers()                        : extended from debug module (if active)
-                    // .getViews()                              : extended from debug module (if active)
+                    // .log()                                   : augmented from debug module (if active)
+                    // .getLog()                                : augmented from debug module (if active)
+                    // .getEvents()                             : augmented from debug module (if active)
+                    // .getModels()                             : augmented from debug module (if active)
+                    // .getControllers()                        : augmented from debug module (if active)
+                    // .getViews()                              : augmented from debug module (if active)
 
-                    // _proto_ .extend({})
+                    // _proto_ .augment({})
                     // _proto_ .define({property:value,...})
 
                 /* Module methods */
@@ -70,13 +70,16 @@
 		
 		function Base(){}
         
+        Base.prototype.extend = function(extension){
+            return _.create(this,extension);
+        }
 		
-		// extend an object with the properties and method of another object
-		// overwrites properties by default, set to false to only extend undefind properties
-		Object.defineProperty(Base.prototype,'extend',{
+		// augment an object with the properties and method of another object
+		// overwrites properties by default, set to false to only augment undefind properties
+		Object.defineProperty(Base.prototype,'augment',{
 			value: function  (obj,overwrite){
 			
-						overwrite = _.isBoolean(overwrite) ? overwrite : true;
+						overwrite = _.isBoolean(overwrite) ? overwrite : false;
 				        var
                         keys,
                         key;
@@ -175,6 +178,7 @@
 		_octane.define({
 				modules		    : {},
 				models		    : {},
+                Models          : {},
                 Collections     : {},
 				views		    : {},
 				controllers     : {},
@@ -185,7 +189,7 @@
         // simple promise implementation
         function Pact(){}    
         Pact.prototype = new Base();
-        Pact.prototype.extend({
+        Pact.prototype.augment({
             state : 'pending',
             result : null,
             error : null
@@ -293,7 +297,7 @@
 	/*                   ERRORS & LOGGING                      */
 	/* ------------------------------------------------------- */		
 		
-		_octane.extend({
+		_octane.augment({
 			logfile    : [],
 			log 	   : function(message){
                  _octane.logfile.push(message);
@@ -355,7 +359,7 @@
                 header,
                 value;
                 
-                $O.extend.apply($headers,[headers]);
+                $O.augment.apply($headers,[headers]);
                 headerKeys = Object.keys($headers);
                 
                 try{
@@ -728,45 +732,54 @@
 	/*                     COLLECTIONS                         */
 	/* ------------------------------------------------------- */
         
-        function OctaneCollection(Name,collection){
-            var n = Object.keys(_octane.Collections).length;
-            if(!Name){
-                Name = 'Collection'+n;
-            }
-            if(!_octane.Collections[Name]){
-               _octane.Collections[Name] = this;
-            } else {
-                return _octane.Collections[Name];
-            }
-            
-            this.define({
-                name : name,
-                _models_ : []
-            });
-            
-            collection && this.expand(collection);
+        // root factory
+        function OctaneCollection(){
+            this.Model = 'Unclassified'
         }
         
         OctaneCollection.prototype = new Base();
+        OctaneCollection.prototype.constructor = OctaneCollection;
         OctaneCollection.prototype.define({
-            get : function(index){
-                return index ? this._models_[index] : this._models_;
-            },
-            set : function(model){
-                if( model instanceof OctaneModel ){
-                    this._models_.push(model);
-                } else {
-                    $O.log('could not add model to Collection '+this.name+'. Model must be instance of Octane Model');
+            extend : function(Name,config){
+                
+                if(_octane.Collections[Name]){
+                    return _octane.Collections[Name];
                 }
-            },
-            pop : function(){
-                return this._models_.pop();
-            },
-            pull : function (model){
-                return _.pull(this._models_,model);
+                
+                config = config || {};
+                
+                var
+                classModel = config.Model || this.Model || 'Unclassified',
+                // augment the Collection class with methods
+                augment = config.augment || {},
+                // function to perform when subclass is created
+                // the collection passed as second argument to factory
+                // is passed to initialize
+                initialize = config.initialize || false,
+                // factory for subclassed Collections
+                // returned from extend and called with 'new' operator
+                Factory = function(name,collection){
+                    Model = name || classModel;
+                    this.define({
+                        Model : Model,
+                        modelFactory : function(){
+                            return _octane.Models[Model] ? _octane.Models[Model].factory : false;
+                        },
+                        models : []
+                    });
+                    this.reset(collection);
+                    _.isFunction(initialize) && initialize.apply(this,[collection]);
+                };
+                // link to prototype chain
+                Factory.prototype = new OctaneCollection();
+                Factory.prototype.augment(this);
+                Factory.prototype.augment(augment);
+                _octane.Collections[Name] = Factory;
+                
+                return Factory;    
             },
             length : function(){
-                return this._models_.length;
+                return this.models.length;
             },
             each : function(fn){
                 
@@ -776,12 +789,12 @@
                 }
                 var 
                 i = 0,
-                n=this._models_.length,
+                n=this.models.length,
                 model,
                 data;
                 
                 for(;i<n;i++){
-                    model = this._models_[i];
+                    model = this.models[i];
                     data = model.get();
                     fn.apply(model,[data]);
                 }
@@ -793,31 +806,150 @@
                     return false; 
                 }
                 var
-                n=this._models_.length,
+                n=this.models.length,
                 model,
                 data;
                 
                 while(n--){
-                    model = this._models_[n];
+                    model = this.models[n];
                     data = model.get();
                     fn.apply(model,[data]);
                 }
             },
-            expand : function (collection){
-                if(_.isArray(collection)){
-                    var
-                    currentLength = this._models_.length,
-                    union = _.union(this._models_,collection);
-                    
-                    this._models_.splice(0,currentLength).concat(union);
-                    return this._models_;
+            // add new model(s) of Collection's Model type with an array of data objects
+            // each model will be named as <Collection.name><Collection.length>
+            _add : function(collection){
+                
+                var
+                i=0,
+                n = collection.length,
+                l = this.models.length,
+                models = this.models,
+                Factory = this.modelFactory(),
+                model;
+                
+                if(Factory){
+                    for(;i<n;i++){
+                        model = new Factory(this.name+l+i,collection[i]);
+                        models.push( model );
+                    }
+                }
+            },
+            // add a single named model of the Collection's Model type
+            _create : function(name,defaults){
+                var Factory = this.modelFactory();
+                
+                if(Factory){
+                    var model = new Factory(name,defaults);
+                    this.models.push(model);
+                    return model;
+                }
+            },
+            //insert a collection of models,
+            // checking that they are saem type as Collection's Model Property
+            _insert : function(collection){
+               
+                var
+                Factory = this.modelFactory(),
+                push = this.push;
+                collection.__forEach(function(model){
+                    model instanceof Factory && push(model);
+                });
+            },
+            // get a model from the collection by id
+            _get : function(name){
+                
+                return _.find(this.models,function(model){
+                    return model.name == name;
+                });
+            },    
+            // get a model by its index
+            _at : function(index){
+                return index ? this.models[index] : false;
+            },
+            // push a model to the collection
+            _push : function(model){
+                if( model instanceof this.modelFactory ){
+                    this.models.push(model);
                 } else {
-                    return false;
+                    $O.log('could not add model to Collection '+this.name+'. Model must be instance of OctaneModel');
+                }
+            },   
+            _pop : function(){
+                return this.models.pop();
+            },
+            _pull : function (model){
+                return _.pull(this.models,model);
+            },
+            _remove : function (model){
+                _.pull(this.models,model);
+            },
+            _removeAt : function(index){
+                var model = this.models[index];
+                _.pull(this.models,index);
+            },
+            _reset : function(collection){
+                var
+                currentLength = this.models.length;
+                
+                this.models.splice(0,currentLength);
+                _.isArray(collection) && this.add(collection);
+            }
+        });
+        
+        // overwritable aliases
+        OctaneCollection.prototype.augment({
+            add : function(data){
+                return this._add.apply(this,[data]);
+            },
+            create : function(name,defaults){
+                return this._create.apply(this,[name,defaults]);
+            },
+            insert : function(collection){
+                return this._insert.apply(this,[collection]);
+            },
+            reset : function(collection){
+                return this._reset.apply(this,[collection]);
+            },
+            at  : function(index){
+                return this._at.apply(this,[index]);
+            },
+            get : function(name){
+                return this._get.apply(this,[name]);
+            },
+            push : function(model){
+                return this._push.apply(this,[model]);
+            },
+            pull : function(model){
+                return this._pull.apply(this,[model]);
+            },
+            pop : function(){
+                return this._pop.apply(this);
+            },
+            remove : function(model){
+                return this._remove.apply(this,[model]);
+            },
+            removeAt : function(index){
+                return this.removeAt.apply(this,[index]);
+            }       
+        });
+            
+            
+            
+        $O.define({
+            Collection : new OctaneCollection(),
+            
+            collection : function (name,collection){
+                           
+                if(_octane.Collections[name]){
+                    return new _octane.Collections(name,collection);
+                } else {
+                    var Unclassed = new $O.Collection.extend('Unclassified');
+                    Unclassed.add(collection);
+                    return Unclassed;
                 }
             }
         });
-            
-                
             
         
 	/* ------------------------------------------------------- */
@@ -829,7 +961,7 @@
             this.define({
                 state : {}
             });
-            this._register();
+            this.register();
         }
 		
 	/* prototype Model */	
@@ -837,62 +969,70 @@
 		OctaneModel.prototype = new Base();
         OctaneModel.prototype.constructor = OctaneModel;
 		OctaneModel.prototype.define({
-            _register : function(){
+            register : function(){
                     _octane.models[this.name] = this;
             },
-            _beget : function(Name,config){
-                
-                        if(_octane.Collections[Name]){
-                            return _octane.Collections[Name].constructor;
+            // @param Name: subclass Name
+            // @param config : {
+            //      initialize:function(instanceDefaults+classDefauls),
+            //      defaults:   { class state defaults }
+            //      augment : { class methods }
+            //     }
+            extend : function(Name,config){
+                        
+                        if(_octane.Models[Name]){
+                            // return an already defined factory
+                            return _octane.Models[Name].factory;
                         }
-
+                        
                         config = config || {};
-
-                        var 
+                        
+                        var
+                        inheritedDefaults = this.defaults || {},
                         classDefaults = config.defaults || {},
-                        extend = config.extend || {},
-                        initialize = config.initialize || false;
-
-                        _octane.Collections[Name] = {
-                            constructor : function Model(name,instanceDefaults){
+                        classMethods = config.augment || {},
+                        initialize = config.initialize || false,
+                        Factory = function(name,instanceDefaults){
                                 if(!name){
-									name = Name+_octane.Collections[Name].instances.length;
+									name = Name+_octane.Models[Name].instances.length;
 								}
-                                this.define({ name: name });
-
+                                
+                                this.define({
+                                    name : name,
+                                    factory : _octane.Models[Name].factory
+                                });
                                 // protected
-                                var defaults = {};
+                                instanceDefaults = _.isObject(instanceDefaults) ? instanceDefaults : {};
 
-                                $O.extend.apply(defaults,[classDefaults]);
-                                _.isObject(instanceDefaults) && $O.extend.apply(defaults,[instanceDefaults,true]);
+                                var defaults = this.defaults = _.extend({},inheritedDefaults,classDefaults,instanceDefaults); 
 
                                 this._set(defaults);
 
-                                try{
-                                    _octane.Collections[Name].instances.push(this);
-                                } catch (ex){
-                                    _octane.Collections[Name] = {}; 
-                                    _octane.Collections[Name].instances = [];
-                                    _octane.Collections[Name].push(this);
-                                }
-
                                 this.define({
                                     reset : function(){
-                                        this._clear()._set(defaults);
+                                        this.clear().set(defaults);
                                     }
                                 });
 
-                                this._register();
-
-                                 _.isFunction(initialize) && initialize.apply(this,[defaults]);
-                            },
-                            instances : []
+                                this.register();
+                                _octane.Models[Name].instances.push(this);
+                                _.isFunction(initialize) && initialize.apply(this,[defaults]);
                         };
                         
-                        _octane.Collections[Name].constructor.prototype = new OctaneModel();
-                        _octane.Collections[Name].constructor.prototype.extend(extend);
-
-                        return _octane.Collections[Name].constructor;
+                        
+                        Factory.prototype = new OctaneModel();
+                        Factory.prototype.constructor = Factory;
+                        // give the subclass all parent's methods
+                        Factory.prototype.augment(this);
+                        // give the subclass all augment methods
+                        Factory.prototype.augment(classMethods);
+                        
+                        _octane.Models[Name] = {
+                            factory : Factory,
+                            instances : []
+                        };
+                
+                        return Factory;
                 },
 			_set	: function(){
                         
@@ -971,7 +1111,7 @@
                             hooks = _octane.hooks[name+'.'+keystring];
                             if(_.isArray(hooks)){
                                 hooks.__forEach(function(hook){
-                                    $O.extend.apply( setObject,[hook(setObject),true]);
+                                    $O.augment.apply( setObject,[hook(setObject),true]);
                                 });
                             }
                     },
@@ -1046,7 +1186,7 @@
             become : function(name){
                             $O.model(name).set( this._get() );
                         }
-		}).extend({
+		}).augment({
             // writeable aliases
             get : function(keystring){
                     return this._get(keystring);
@@ -1057,9 +1197,6 @@
             },
             unset :  function(keystring){
                     return this._unset(keystring);
-            },
-            beget :  function(Name,config){
-                return this._beget(Name,config);
             },
             clear : function(){
                 return this._clear();
@@ -1082,9 +1219,9 @@
                                 return _octane.models[name];
                             }
                             // singleton constructor
-                            var Singleton = $O.Model._beget(name);
+                            var Unclassed = $O.Model.extend('Unclassed');
                             // singleton instance
-                            return new Singleton(name,defaults);
+                            return new Unclassed(name,defaults);
                         },
             
             get         : function(modelStateKey){
@@ -1609,11 +1746,11 @@
         _octane.moduleExports = {};
         
 		function Module (cfg) { 
-			this.extend(cfg);
+			this.augment(cfg);
 		}
         
 		Module.prototype = new Base();
-        Module.prototype.extend({
+        Module.prototype.augment({
             constructor         : Module
         });
         Module.prototype.define({
@@ -1625,9 +1762,9 @@
                                         _octane.moduleExports[this.name] = {};
                                     }
                                     try{
-                                        $O.extend.apply(_octane.moduleExports[this.name],[exports]);
+                                        $O.augment.apply(_octane.moduleExports[this.name],[exports]);
                                     }catch (ex){
-                                        $O.error('Could not create extend exports, '+this.name+' module. '+ex.message);
+                                        $O.error('Could not create augment exports, '+this.name+' module. '+ex.message);
                                     }
                                 },
             _checkDependencies : function(){
@@ -1809,7 +1946,7 @@
                             // assign config properties, those
                             initConfig = _.isPlainObject(options[moduleName]) ? options[moduleName] : {};
                             moduleConfig = _.isPlainObject(_octane.moduleConfigs[moduleName]) ? _octane.moduleConfigs[moduleName] : {};
-                            module.cfg = $O.extend.apply(moduleConfig,[initConfig,true]);
+                            module.cfg = $O.augment.apply(moduleConfig,[initConfig,true]);
                             modulesLoaded.push( module._load() );
                         }
                     };

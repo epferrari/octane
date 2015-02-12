@@ -47,7 +47,7 @@
         /*                            CONTROLLERS                              */
         /* ------------------------------------------------------------------- */
         
-        ModalContainer = octane.controller('ModalContainerController').extend({
+        ModalContainer = octane.controller('ModalContainerController').augment({
             // darken the modal background and disable click-thrus
             activate : {
                 // css animation
@@ -91,7 +91,7 @@
             }
         });
         
-        AppContainer = octane.controller('AppContainerController').extend({      
+        AppContainer = octane.controller('AppContainerController').augment({      
             hide : {
                 css : function (){
                     return new Promise(function(resolve){
@@ -130,7 +130,7 @@
         
    
         
-        Background = octane.controller('BackgroundController').extend({
+        Background = octane.controller('BackgroundController').augment({
             // swap out the app container with a static image of itself
             activate : {
                 css : function(){
@@ -185,7 +185,7 @@
         });
             
        
-        Overlay = octane.controller('OverlayController').extend({
+        Overlay = octane.controller('OverlayController').augment({
         
             on : function(){
                 if(hasCssFilterSupport){    

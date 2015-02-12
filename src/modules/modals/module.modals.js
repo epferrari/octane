@@ -73,7 +73,7 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                 
         });
     
-        ModalAnimation = octane.controller('ModalAnimationController').extend({
+        ModalAnimation = octane.controller('ModalAnimationController').augment({
             dismiss : {
                js : function(){
                         var modal = this;
@@ -239,7 +239,7 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
             });
         }
 
-        this.extend({
+        this.augment({
             call    : callModal,
             dismiss : dismissModal,
             current : function(){

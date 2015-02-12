@@ -9,7 +9,7 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             // update the language in the url
             var parsed = __.location().searchObject;	
 
-            octane.extend.call(parsed,params);
+            octane.augment.call(parsed,params);
 
             var 
             fragment = [],
