@@ -7,12 +7,12 @@
 			
             cfg = _.isObject(cfg) ? cfg : {};
 		
-			octane.model('appLoading',{
+			octane.Model.create({
 				message : 'Loading...',
 				progress : '0',
 				percent : '0%',
 				screenReader : 'Loading'
-			});
+			}).become('appLoading');
             
             octane.controller('loadingController').augment({
                 removeLoadingScreen : function(){

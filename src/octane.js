@@ -933,30 +933,51 @@
 	/* ------------------------------------------------------- */
 	   
         // base factory
-		function OctaneModel(name,defaults){
+		function OctaneModel(defaults){
             
-            if(_octane.models[name]){
-                return _octane.models[name];
-            }
+            var
+            isRegistered = false,
+            registeredTo= null;
             
-            var 
-            classname = this.className || 'OctaneModel',
-            octaneModels = _octane.models,
-            length = Object.keys(octaneModels).length;
-            
+            this.className = this.className || 'OctaneModel';
             this.define({
-                name : name || classname+'_'+length,
                 guid : 'model_'+$O.GUID(),
-                state : {}
+                state : {},
+                become : function(name){
+                    _octane.models[name] && _octane.models[name].detach();
+                    _octane.models[name] = this;
+                    isRegistered = true;
+                    registeredTo = name;
+                    $O.fire('statechange:'+name);
+                    return this;
+                },
+                detach : function(){
+                    if( isRegistered ){
+                        var name = registeredTo;
+                        _octane.models[name] = null;
+                        isRegistered = false;
+                        registeredTo = null;
+                        $O.fire('statechange:'+name);   
+                    }
+                    return this;
+                },
+                isRegistered : function(){
+                    return isRegistered;
+                },
+                registeredTo : function(){
+                    return registeredTo;
+                }
             });
-            
             this.set(this.defaults);
-            this.register();
+            this.set(defaults);
             this.initialize && this.initialize.apply(this,arguments);
         }
         
-        
-        
+        // functional factory
+        OctaneModel.create = function(data){
+            return new OctaneModel(data);
+        };
+       
         // dummies
         OctaneModel.prototype.initialize = function(){};
         OctaneModel.prototype.defaults = {};
@@ -965,9 +986,7 @@
 		OctaneModel.prototype = new Base;
         OctaneModel.prototype.constructor = OctaneModel;
 		OctaneModel.prototype.define({
-            register : function(){
-                    _octane.models[this.name] = this;
-            },
+            
 			_set	: function(){
                         
                         var 
@@ -981,7 +1000,7 @@
                         } else if(_.isObject(arguments[0])){
                             setObject = arguments[0];
                         } else {
-                            return;
+                            return {};
                         }
 
                         // array for state properties changed
@@ -990,8 +1009,10 @@
                         i=0;
                         
                         // apply the hooks
-                        while(n--){
-                            _octane.hooks[this.name+'.'+keystrings[n]] && this._applyHooks(keystrings[n],setObject);
+                        if( this.isRegistered() ){
+                            while(n--){
+                                _octane.hooks[this.registeredTo()+'.'+keystrings[n]] && this._applyHooks(keystrings[n],setObject);
+                            }
                         }
                         
                         // re-measure in case there have been additional properties
@@ -1004,7 +1025,10 @@
                             this._setKey(keystrings[j],setObject);
                         }
                         // alert any subscribers
-                        $O.fire(this.name+':statechange');
+                        if( this.isRegistered() ){
+                            $O.fire(this.registeredTo()+':statechange');
+                            $O.fire('statechange:'+this.registeredTo()); // can't remember which is linked to tasks and ViewModel...
+                        }
 
                         return setObject;
                     },
@@ -1029,24 +1053,21 @@
                                 modelUpdated = false;
                                 $O.log('Unable to set model data "'+keystring+'". Error: '+e);
                             }
-                            /*if(modelUpdated){
-                                keyArray.reduce(function(o,x,i){
-                                    $O.fire('statechange:'+o+'.'+x);
-                                    return o+'.'+x;
-                                },this.name);
-                            }*/
-                            modelUpdated &&  $O.fire('statechange:'+this.name+'.'+keystring);
+                            
+                            this.isRegistered() &&  $O.fire('statechange:'+this.registeredTo()+'.'+keystring);
                         
                     }, 
             _applyHooks : function(keystring,setObject){
                             
-                            var 
-                            name = this.name,
-                            hooks = _octane.hooks[name+'.'+keystring];
-                            if(_.isArray(hooks)){
-                                hooks.__forEach(function(hook){
-                                    _.extend( setObject,hook(setObject));
-                                });
+                            if( this.isRegistered() ){
+                                var 
+                                name = this.registeredTo(),
+                                hooks = _octane.hooks[name+'.'+keystring];
+                                if(_.isArray(hooks)){
+                                    hooks.__forEach(function(hook){
+                                        _.extend( setObject,hook(setObject));
+                                    });
+                                }
                             }
                     },
             _unset : function(){
@@ -1079,8 +1100,9 @@
                             while(n--){
                                 delete this.state[keys[n]];
                             }
-                            $O.fire('statechange:'+this.name);
-                            delete _octane.models[this.name];
+                            if( this.isRegistered()){
+                                this.detach();
+                            }
                         },               
 			_get	: 	function(keystring){
                 
@@ -1109,17 +1131,20 @@
             _clear : function(){
                             var 
                             stateProps = Object.keys(this.state),
-                            i=0,n=stateProps.length;
+                            n=stateProps.length,
+                            prop;
                             
-                            for(;i<n;i++){
-                                delete this.state[stateProps[i]];
-                                $O.fire('statechange:'+this.name+'.'+stateProps[i]);
+                            while(n--){
+                                prop = stateProps[n];
+                                delete this.state[prop];
+                                this.isRegistered() && $O.fire('statechange:'+this.registeredTo()+'.'+prop);
                             }
-                            $O.fire(this.name+':statechange');
+                            // alert any subscribers
+                            if( this.isRegistered() ){
+                                $O.fire(this.registeredTo()+':statechange');
+                                $O.fire( 'statechange:'+this.registeredTo() ); // can't remember which is linked to tasks and ViewModel...
+                            }
                             return this;
-                        },
-            become : function(name){
-                            $O.model(name).set( this._get() );
                         },
             reset   : function(defaults){
                             this.clear().set(defaults || this.defaults);
@@ -1132,8 +1157,7 @@
                     return this._get(keystring);
             },
             set :  function(){
-                    var args = arguments;
-                    return this._set.apply(this,[args[0],args[1]]);
+                    return this._set.apply(this,arguments);
             },
             unset :  function(keystring){
                     return this._unset(keystring);
@@ -1185,17 +1209,20 @@
 		$O.define({
             Model       : OctaneModel,
             
-            App         : new OctaneModel('App'),
+            App         : new OctaneModel().become('App'),
             
-            uiMessages  : new OctaneModel('uiMessages'),
+            uiMessages  : new OctaneModel().become('uiMessages'),
+            uiStyles    : new OctaneModel().become('uiStyles'),
             // functional alias for calling new octane.Model()
             // returns a named model if it already exists
-			model 		: function (name,defaults){
+			model 		: function (name){
+                            var model;
                             if(_octane.models[name]){
-                                return _octane.models[name];
+                                model = _octane.models[name];
                             } else {
-                                return new OctaneModel(name,defaults);
+                                model = new OctaneModel().become(name);
                             }
+                            return model;       
                         },
             get         : function(modelStateKey){
                             
