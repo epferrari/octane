@@ -71,29 +71,33 @@
 		function Base(){}
         
         Base.prototype.extend = function(extension){
-            return _.create(this,extension);
+            return _.extend(this,extension);
         }
 		
 		// augment an object with the properties and method of another object
-		// overwrites properties by default, set to false to only augment undefind properties
+		// overwrites properties by default, set to false to only augment undefined properties
 		Object.defineProperty(Base.prototype,'augment',{
 			value: function  (obj,overwrite){
 			
-						overwrite = _.isBoolean(overwrite) ? overwrite : false;
+						overwrite = _.isBoolean(overwrite) ? overwrite : true;
 				        var
+                        $this = this,
                         keys,
-                        key;
+                        key,
+                        n;
                 
 						if(_.isObject(obj)){
-                            keys = Object.keys(obj);
-							for(var i=0,n=keys.length; i<n; i++){
-                                key = keys[i];
-                                if(overwrite){ // do overwrite
-                                    this[key] = obj[key];	
+                            keys = Object.keys(obj),
+                            n = keys.length;
+                            
+							while(n--){
+                                key = keys[n];
+                                if(overwrite){ // do overwrite, bind methods to current object
+                                    this[key] = obj[key];
                                 }else { // only write undefined properties
                                     if(!(this[key])) {
-                                        var $this = this;
-                                        this[key] = _.isFunction(obj[key]) ? obj[key].bind($this) : obj[key];
+                                        this[key] = obj[key];
+                                        //this[key] = _.isFunction(obj[key]) ? obj[key].bind($this) : obj[key];
                                     }	
                                 }
 							}
@@ -289,7 +293,7 @@
 				var random4 = function() {
 					return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
 				};
-				return 'octane'+ random4() +'-'+ random4() +'-'+ random4() + random4();
+				return random4() +'-'+ random4() +'-'+ random4() + random4();
 			}
 		});
 	
@@ -306,7 +310,7 @@
         
         $O.define({
             log : function(message){
-                $O.hasModule('debug') && _octane.log(message);
+                $O.hasModule('Debug') && _octane.log(message);
             }
         });
 		
@@ -359,7 +363,7 @@
                 header,
                 value;
                 
-                $O.augment.apply($headers,[headers]);
+                _.extend($headers,headers);
                 headerKeys = Object.keys($headers);
                 
                 try{
@@ -659,7 +663,7 @@
     /* ------------------------------------------------------- */
 	/*                        DataStores                       */
 	/* ------------------------------------------------------- */ 
-    
+    /*
     _octane.datastores = {};
         
     function DataStore(id,db){
@@ -693,7 +697,7 @@
         
     }
         
-    DataStore.prototype = new Base();
+    DataStore.prototype = new Base;
         
     $O.define({
         storage : function(storeId,db){
@@ -727,59 +731,31 @@
             
                     _octane.dataStores[storeID] && _octane.dataStores[storeID].rebase(data);
         }
-    });
+    });*/
     /* ------------------------------------------------------- */
 	/*                     COLLECTIONS                         */
 	/* ------------------------------------------------------- */
         
         // root factory
         function OctaneCollection(){
-            this.Model = 'Unclassified'
+            this.define({
+            	models : [] 
+            });
+            this.initialize && this.initialize.apply(this,arguments);
         }
         
-        OctaneCollection.prototype = new Base();
+        OctaneCollection.prototype = new Base;
+        
+        // dummy
+        OctaneCollection.prototype.initialize = function(){};
+        OctaneCollection.prototype.model = OctaneModel;
         OctaneCollection.prototype.constructor = OctaneCollection;
         OctaneCollection.prototype.define({
-            extend : function(Name,config){
-                
-                if(_octane.Collections[Name]){
-                    return _octane.Collections[Name];
-                }
-                
-                config = config || {};
-                
-                var
-                classModel = config.Model || this.Model || 'Unclassified',
-                // augment the Collection class with methods
-                augment = config.augment || {},
-                // function to perform when subclass is created
-                // the collection passed as second argument to factory
-                // is passed to initialize
-                initialize = config.initialize || false,
-                // factory for subclassed Collections
-                // returned from extend and called with 'new' operator
-                Factory = function(name,collection){
-                    Model = name || classModel;
-                    this.define({
-                        Model : Model,
-                        modelFactory : function(){
-                            return _octane.Models[Model] ? _octane.Models[Model].factory : false;
-                        },
-                        models : []
-                    });
-                    this.reset(collection);
-                    _.isFunction(initialize) && initialize.apply(this,[collection]);
-                };
-                // link to prototype chain
-                Factory.prototype = new OctaneCollection();
-                Factory.prototype.augment(this);
-                Factory.prototype.augment(augment);
-                _octane.Collections[Name] = Factory;
-                
-                return Factory;    
-            },
             length : function(){
                 return this.models.length;
+            },
+            fetch : function(){
+               // get models from _octane.models where model.classname = this.model 
             },
             each : function(fn){
                 
@@ -798,6 +774,10 @@
                     data = model.get();
                     fn.apply(model,[data]);
                 }
+                _.forEach(this.models,function(model){
+                    var data = model.get();
+                    fn.apply(model,[data]);
+                });
             },
             reverse : function(fn){
                 
@@ -805,16 +785,17 @@
                     $O.log('Argument passed to OctaneCollection.reverse must be function');
                     return false; 
                 }
-                var
-                n=this.models.length,
-                model,
-                data;
+                //var
+                //n=this.models.length,
+                //model,
+                //data;
                 
-                while(n--){
-                    model = this.models[n];
-                    data = model.get();
+                //while(n--){
+                _.forEachRight(this.models,function(model){
+                    var data = model.get();
                     fn.apply(model,[data]);
-                }
+                });
+                //}
             },
             // add new model(s) of Collection's Model type with an array of data objects
             // each model will be named as <Collection.name><Collection.length>
@@ -825,22 +806,24 @@
                 n = collection.length,
                 l = this.models.length,
                 models = this.models,
-                Factory = this.modelFactory(),
+                Factory = this.model || OctaneModel,
+                name = this.name,
                 model;
                 
                 if(Factory){
-                    for(;i<n;i++){
-                        model = new Factory(this.name+l+i,collection[i]);
+                    _.forEach(collection,function(record){
+                        var model = new Factory(name+l+i);
+                        model.set(record);
                         models.push( model );
-                    }
+                    });
                 }
             },
             // add a single named model of the Collection's Model type
-            _create : function(name,defaults){
-                var Factory = this.modelFactory();
+            _create : function(){
+                var Factory = this.model || OctaneModel;
                 
                 if(Factory){
-                    var model = new Factory(name,defaults);
+                    var model = new Factory(arguments);
                     this.models.push(model);
                     return model;
                 }
@@ -850,7 +833,7 @@
             _insert : function(collection){
                
                 var
-                Factory = this.modelFactory(),
+                Factory = this.model || OctaneModel,
                 push = this.push;
                 collection.__forEach(function(model){
                     model instanceof Factory && push(model);
@@ -869,7 +852,7 @@
             },
             // push a model to the collection
             _push : function(model){
-                if( model instanceof this.modelFactory ){
+                if( model instanceof this.model ){
                     this.models.push(model);
                 } else {
                     $O.log('could not add model to Collection '+this.name+'. Model must be instance of OctaneModel');
@@ -899,8 +882,8 @@
         
         // overwritable aliases
         OctaneCollection.prototype.augment({
-            add : function(data){
-                return this._add.apply(this,[data]);
+            add : function(){
+                return this._add.apply(this,arguments);
             },
             create : function(name,defaults){
                 return this._create.apply(this,[name,defaults]);
@@ -937,17 +920,10 @@
             
             
         $O.define({
-            Collection : new OctaneCollection(),
-            
-            collection : function (name,collection){
-                           
-                if(_octane.Collections[name]){
-                    return new _octane.Collections(name,collection);
-                } else {
-                    var Unclassed = new $O.Collection.extend('Unclassified');
-                    Unclassed.add(collection);
-                    return Unclassed;
-                }
+            Collection : OctaneCollection,
+            // functional alias of new octane.Collection()
+            collection : function (){
+                return new OctaneCollection(arguments);
             }
         });
             
@@ -955,85 +931,43 @@
 	/* ------------------------------------------------------- */
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
-	
-		function OctaneModel(name){
-            this.name = name;
+	   
+        // base factory
+		function OctaneModel(name,defaults){
+            
+            if(_octane.models[name]){
+                return _octane.models[name];
+            }
+            
+            var 
+            classname = this.className || 'OctaneModel',
+            octaneModels = _octane.models,
+            length = Object.keys(octaneModels).length;
+            
             this.define({
+                name : name || classname+'_'+length,
+                guid : 'model_'+$O.GUID(),
                 state : {}
             });
+            
+            this.set(this.defaults);
             this.register();
+            this.initialize && this.initialize.apply(this,arguments);
         }
-		
-	/* prototype Model */	
-		
-		OctaneModel.prototype = new Base();
+        
+        
+        
+        // dummies
+        OctaneModel.prototype.initialize = function(){};
+        OctaneModel.prototype.defaults = {};
+        
+        // OctaneModel prototype methods
+		OctaneModel.prototype = new Base;
         OctaneModel.prototype.constructor = OctaneModel;
 		OctaneModel.prototype.define({
             register : function(){
                     _octane.models[this.name] = this;
             },
-            // @param Name: subclass Name
-            // @param config : {
-            //      initialize:function(instanceDefaults+classDefauls),
-            //      defaults:   { class state defaults }
-            //      augment : { class methods }
-            //     }
-            extend : function(Name,config){
-                        
-                        if(_octane.Models[Name]){
-                            // return an already defined factory
-                            return _octane.Models[Name].factory;
-                        }
-                        
-                        config = config || {};
-                        
-                        var
-                        inheritedDefaults = this.defaults || {},
-                        classDefaults = config.defaults || {},
-                        classMethods = config.augment || {},
-                        initialize = config.initialize || false,
-                        Factory = function(name,instanceDefaults){
-                                if(!name){
-									name = Name+_octane.Models[Name].instances.length;
-								}
-                                
-                                this.define({
-                                    name : name,
-                                    factory : _octane.Models[Name].factory
-                                });
-                                // protected
-                                instanceDefaults = _.isObject(instanceDefaults) ? instanceDefaults : {};
-
-                                var defaults = this.defaults = _.extend({},inheritedDefaults,classDefaults,instanceDefaults); 
-
-                                this._set(defaults);
-
-                                this.define({
-                                    reset : function(){
-                                        this.clear().set(defaults);
-                                    }
-                                });
-
-                                this.register();
-                                _octane.Models[Name].instances.push(this);
-                                _.isFunction(initialize) && initialize.apply(this,[defaults]);
-                        };
-                        
-                        
-                        Factory.prototype = new OctaneModel();
-                        Factory.prototype.constructor = Factory;
-                        // give the subclass all parent's methods
-                        Factory.prototype.augment(this);
-                        // give the subclass all augment methods
-                        Factory.prototype.augment(classMethods);
-                        
-                        _octane.Models[Name] = {
-                            factory : Factory,
-                            instances : []
-                        };
-                
-                        return Factory;
-                },
 			_set	: function(){
                         
                         var 
@@ -1044,7 +978,7 @@
                         if(_.isString(arguments[0])){
                             setObject = {};
                             setObject[arguments[0]] = arguments[1];
-                        } else if(_.isPlainObject(arguments[0])){
+                        } else if(_.isObject(arguments[0])){
                             setObject = arguments[0];
                         } else {
                             return;
@@ -1111,7 +1045,7 @@
                             hooks = _octane.hooks[name+'.'+keystring];
                             if(_.isArray(hooks)){
                                 hooks.__forEach(function(hook){
-                                    $O.augment.apply( setObject,[hook(setObject),true]);
+                                    _.extend( setObject,hook(setObject));
                                 });
                             }
                     },
@@ -1146,6 +1080,7 @@
                                 delete this.state[keys[n]];
                             }
                             $O.fire('statechange:'+this.name);
+                            delete _octane.models[this.name];
                         },               
 			_get	: 	function(keystring){
                 
@@ -1185,8 +1120,13 @@
                         },
             become : function(name){
                             $O.model(name).set( this._get() );
-                        }
-		}).augment({
+                        },
+            reset   : function(defaults){
+                            this.clear().set(defaults || this.defaults);
+                    }
+		});
+        
+        OctaneModel.prototype.augment({
             // writeable aliases
             get : function(keystring){
                     return this._get(keystring);
@@ -1205,25 +1145,58 @@
                 this._destroy();
             }
         });
+        
+        // prototype chaining 
+        var extend = function(){
+            
+            var className,config,staticMethods,parentFactory,parentDefaults,childFactory,Factory;
+            
+            if(__.typeOf(arguments[0]) == 'string'){
+                className = arguments[0];
+                config = _.isPlainObject(arguments[1]) ? arguments[1] : {};
+                staticMethods = _.isPlainObject(arguments[2]) ? arguments[2] : {};
+            }else{
+                config = _.isPlainObject(arguments[0]) ? arguments[0] : {};
+                staticMethods = _.isPlainObject(arguments[1]) ? arguments[1] : {};
+            }
+             
+            parentFactory = this;
+            parentDefaults = parentFactory.prototype.defaults || {};
+           
+            childFactory = function(){ return parentFactory.apply(this,arguments);};
+            
+            _.extend(childFactory,parentFactory,staticMethods);
+            
+            Factory = function(){ this.constructor = childFactory; };
+            Factory.prototype = parentFactory.prototype;
+            childFactory.prototype = new Factory;
+            
+            
+            childFactory.prototype.defaults = {};
+            childFactory.prototype.className = className || 'OctaneModel';
+            _.extend(childFactory.prototype, config);
+            _.extend(childFactory.prototype.defaults, parentDefaults, config.defaults);
+            
+            return childFactory;
+        }
+        
+        OctaneModel.extend = OctaneCollection.extend = extend;
 		
 		$O.define({
-            Model       : new OctaneModel('App'),
-                         
+            Model       : OctaneModel,
+            
+            App         : new OctaneModel('App'),
+            
+            uiMessages  : new OctaneModel('uiMessages'),
+            // functional alias for calling new octane.Model()
+            // returns a named model if it already exists
 			model 		: function (name,defaults){
-                           
-                            if(!name){
-                                $O.error('model must have name');
-                                return false;
-                            }
                             if(_octane.models[name]){
                                 return _octane.models[name];
+                            } else {
+                                return new OctaneModel(name,defaults);
                             }
-                            // singleton constructor
-                            var Unclassed = $O.Model.extend('Unclassed');
-                            // singleton instance
-                            return new Unclassed(name,defaults);
                         },
-            
             get         : function(modelStateKey){
                             
                             var 
@@ -1683,7 +1656,6 @@
                 try{
                     _octane.hooks[oBind].push(func);
                 } catch(ex){
-                    $O.log(ex);
                     _octane.hooks[oBind] = [];
                     _octane.hooks[oBind].push(func);
                 }
@@ -1750,9 +1722,7 @@
 		}
         
 		Module.prototype = new Base();
-        Module.prototype.augment({
-            constructor         : Module
-        });
+        Module.prototype.constructor=Module;
         Module.prototype.define({
              import           :   function(module){
                                     return _octane.moduleExports[module];
@@ -1762,7 +1732,7 @@
                                         _octane.moduleExports[this.name] = {};
                                     }
                                     try{
-                                        $O.augment.apply(_octane.moduleExports[this.name],[exports]);
+                                        _.extend(_octane.moduleExports[this.name],exports);
                                     }catch (ex){
                                         $O.error('Could not create augment exports, '+this.name+' module. '+ex.message);
                                     }
@@ -1891,7 +1861,7 @@
                                         }
                                         
                                         bootLog(message[1]);
-                                        $O.Model.set({
+                                        $O.App.set({
                                             "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
                                         });
                                         // hook-in for updating a loading screen
@@ -1946,7 +1916,7 @@
                             // assign config properties, those
                             initConfig = _.isPlainObject(options[moduleName]) ? options[moduleName] : {};
                             moduleConfig = _.isPlainObject(_octane.moduleConfigs[moduleName]) ? _octane.moduleConfigs[moduleName] : {};
-                            module.cfg = $O.augment.apply(moduleConfig,[initConfig,true]);
+                            module.cfg = _.extend(moduleConfig,initConfig);
                             modulesLoaded.push( module._load() );
                         }
                     };
@@ -2220,7 +2190,7 @@
                 // parse the DOM initially to create virtual DOM model
                 _octane.ViewModel.init();
                 
-                $O.Model.set({
+                $O.App.set({
                     loadingProgess : 0,
                     name : config.appName
                 });
@@ -2230,7 +2200,7 @@
                     $state.loadingProgress = currentProgress + $state.loadingProgress;
                     return $state;
                 });
-
+                
                 // add debugging support if module included, 
                 // pass internal _octane app object as module config
                 if(_octane.modules['Debug']){
