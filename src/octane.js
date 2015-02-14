@@ -1178,7 +1178,9 @@
             }
         });
         
-        // prototype chaining 
+        
+        
+        // prototype chaining Backbone.js style
         var extend = function(){
             
             var className,config,staticMethods,parentFactory,parentDefaults,childFactory,Factory;
@@ -1217,7 +1219,20 @@
         
         OctaneModel.extend = OctaneCollection.extend = extend;
 		
+        // a factory for creating constructor functions
+        // with static methods define and extend that cannot be overwritten
+        var Factory = function(){
+            this.initialize.apply(this,arguments);
+        };
+        Factory.prototype = new OctaneBase;
+        Factory.prototype.intitialize = function(){};
+        $O.define.apply(Factory,[{
+            define : $O.define
+        }]);
+        Factory.define('extend',extend);
+        
 		$O.define({
+            Factory     : Factory,
             Model       : OctaneModel,
             
             App         : new OctaneModel().become('App'),
@@ -2103,7 +2118,7 @@
             this.content = _octane.templates[this.id] || '';
             
         }
-        Template.prototype = new OctaneBase();
+        Template.prototype = new OctaneBase;
         Template.prototype.define({
             create : function(content){
                 if(_.isString(content)){
