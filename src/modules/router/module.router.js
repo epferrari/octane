@@ -335,7 +335,7 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         
 
         // Router Public API				
-        octane.constructor.prototype.define({
+        octane.Base.prototype.define({
             parseView       : parseView,
             route			: function(viewID,ghost){
                                 return route(viewID,ghost).catch(function(ex){

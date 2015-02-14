@@ -29,7 +29,7 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
             this.adjustSize();
         }
 
-        OctaneModal.prototype = octane.base();
+        OctaneModal.prototype = new octane.Base;
         OctaneModal.prototype.define({
             constructor :  OctaneModal,
             configureLoading : ViewProto.configureLoading,    

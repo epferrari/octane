@@ -59,24 +59,46 @@
 	(function($,_,__){
 		
        'use strict';
-		// check that doubleUnder utility library is included
-		if(!window.__) { return false; }
-		// octane is already instanced
-		if(window.octane) { return false; }
+        
+        if(!_) { 
+            throw new Error('Cannot run Octane. A Lodash (_) compatible utility library is not present. ');
+            return false; 
+        }
+		if(!__) { 
+            throw new Error('Cannot run Octane. The doubleUnder (__) utility library not present. ');
+            return false; 
+        }
+		if(window.octane) { 
+            throw new Error('Variable "octane" was already defined in global scope. Will be overwritten.');
+        }
         
 	/* ------------------------------------------------------- */
 	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
-		function Base(){}
-        
-        Base.prototype.extend = function(extension){
-            return _.extend(this,extension);
-        }
 		
+        
+        /* ------------------------------------------------------- */
+	   // define public octane constructor
+	   /* ------------------------------------------------------- */
+        
+        function OctaneBase(){}
+        
+        OctaneBase.prototype = {
+            extend : function(extension){
+               return _.extend(this,extension);
+            }
+        };
+        
+        Object.defineProperty(OctaneBase.prototype,'Base',{
+            value : OctaneBase,
+            writable : false,
+            configurable : false
+        });
+        
 		// augment an object with the properties and method of another object
 		// overwrites properties by default, set to false to only augment undefined properties
-		Object.defineProperty(Base.prototype,'augment',{
+		Object.defineProperty(OctaneBase.prototype,'augment',{
 			value: function  (obj,overwrite){
 			
 						overwrite = _.isBoolean(overwrite) ? overwrite : true;
@@ -109,7 +131,7 @@
 		});
 		
 		// quick method to define immutable properties
-		Object.defineProperty(Base.prototype,'define',{
+		Object.defineProperty(OctaneBase.prototype,'define',{
 			value : function (isWritable,prop,val){
 							
 							if(_.isBoolean(arguments[0])){
@@ -155,30 +177,24 @@
 			configuarable : false
 		});
 		
-    /* ------------------------------------------------------- */
-	// define public octane constructor
-	/* ------------------------------------------------------- */
         
-        function Octane(){
-            this.name = 'Octane Application';
+        function Octane(name){
+            this.name = 'Octane - '+name;
+            this.initialized = true;
         }
         
-        var $O = Octane.prototype = new Base();
+        var $O = Octane.prototype = new OctaneBase;
         $O.constructor = Octane;
         $O.initialized = false;
-        $O.define({
-            base : function(){
-                return new Base();
-            }
-        });
         
-        window.octane = window.$o = new Octane();
+       
+        
 		
 	/* ------------------------------------------------------- */
 	// internal application object and properties
 	/* ------------------------------------------------------- */
 		
-		var _octane = new Base();
+		var _octane = new Octane('Protected');
 		_octane.define({
 				modules		    : {},
 				models		    : {},
@@ -192,7 +208,7 @@
         
         // simple promise implementation
         function Pact(){}    
-        Pact.prototype = new Base();
+        Pact.prototype = new OctaneBase;
         Pact.prototype.augment({
             state : 'pending',
             result : null,
@@ -326,7 +342,7 @@
         
         $O.define({
              error : function(message){
-                 throw new OctaneError(message);
+                 throw new OctaneBaseError(message);
              }
         });
     
@@ -413,7 +429,7 @@
             this.headers = _.isObject(headers) ? headers : {};
         }
         
-        Http.prototype = new Base();
+        Http.prototype = new OctaneBase();
         Http.prototype.define({
             
             get : function(){
@@ -697,7 +713,7 @@
         
     }
         
-    DataStore.prototype = new Base;
+    DataStore.prototype = new OctaneBase;
         
     $O.define({
         storage : function(storeId,db){
@@ -742,7 +758,7 @@
             this.initialize && this.initialize.apply(this,arguments);
         }
         
-        OctaneCollection.prototype = new Base;
+        OctaneCollection.prototype = new OctaneBase;
         
         // dummy
         OctaneCollection.prototype.initialize = function(){};
@@ -963,11 +979,14 @@
         OctaneModel.create = function(data){
             return new OctaneModel(data);
         };
+        
+        OctaneModel.integrate = function(model){
+        }
        
         
         
         // OctaneModel prototype methods
-		OctaneModel.prototype = new Base;
+		OctaneModel.prototype = new OctaneBase;
         
         // dummies
         OctaneModel.prototype.initialize = function(){};
@@ -1351,7 +1370,7 @@
 		
 	/*  prototype ViewModel */
 	
-		ViewModel.prototype = new Base();
+		ViewModel.prototype = new OctaneBase();
 		ViewModel.prototype.define({
             
             init : function(){
@@ -1706,7 +1725,7 @@
 		
 	/* prototype Controller */
 		
-		Controller.prototype = new Base();
+		Controller.prototype = new OctaneBase();
         Controller.prototype.constructor = Controller;
 
 	
@@ -1740,7 +1759,7 @@
 			this.augment(cfg);
 		}
         
-		Module.prototype = new Base();
+		Module.prototype = new OctaneBase;
         Module.prototype.constructor=Module;
         Module.prototype.define({
              import           :   function(module){
@@ -2084,7 +2103,7 @@
             this.content = _octane.templates[this.id] || '';
             
         }
-        Template.prototype = new Base();
+        Template.prototype = new OctaneBase();
         Template.prototype.define({
             create : function(content){
                 if(_.isString(content)){
@@ -2235,7 +2254,7 @@
             }
         });
         
-        
+        window.octane = window.$o = new Octane('Application');
         
 	})($,_,__);
 

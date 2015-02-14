@@ -35,11 +35,8 @@ octane.module('OctaneViews',['ViewPrototype'],function(cfg){
             this.configureLoading();
         }
 
-        OctaneView.prototype = octane.base();
-        OctaneView.prototype.define({
-            constructor : OctaneView
-        });
-        
+        OctaneView.prototype = new octane.Base;
+        OctaneView.prototype.constructor = OctaneView;
         OctaneView.prototype.augment($proto);
         
         this.initialize = function(){
