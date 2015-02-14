@@ -634,7 +634,7 @@
                 this.resolve(lib);
             }
         }
-        Library.prototype = new Pact();
+        Library.prototype = new Pact;
        
 		$O.define({
 			library : function(name,lib){
@@ -738,9 +738,7 @@
         
         // root factory
         function OctaneCollection(){
-            this.define({
-            	models : [] 
-            });
+            this.models = [];
             this.initialize && this.initialize.apply(this,arguments);
         }
         
@@ -754,16 +752,18 @@
             length : function(){
                 return this.models.length;
             },
-            fetch : function(){
-               // get models from _octane.models where model.classname = this.model 
-            },
-            each : function(fn){
+            execute : function(fn){
                 
                 if(!_.isFunction(fn)) { 
                     $O.log('Argument passed to OctaneCollection.each must be function');
                     return false; 
                 }
-                var 
+                _.forEach(this.models,function(model){
+                    var data = model.get();
+                    fn.apply(model,[data]);
+                });
+                
+                /*var 
                 i = 0,
                 n=this.models.length,
                 model,
@@ -773,13 +773,9 @@
                     model = this.models[i];
                     data = model.get();
                     fn.apply(model,[data]);
-                }
-                _.forEach(this.models,function(model){
-                    var data = model.get();
-                    fn.apply(model,[data]);
-                });
+               }*/   
             },
-            reverse : function(fn){
+            executeR : function(fn){
                 
                 if(!_.isFunction(fn) ) { 
                     $O.log('Argument passed to OctaneCollection.reverse must be function');
@@ -797,28 +793,32 @@
                 });
                 //}
             },
+            _template : function(template,target,append){
+                
+                _.forEach(this.models,function(model){
+                    var data = model.get();
+                    octane.template(templateID).inject(data).into(target,append);
+                });   
+            },
+            _atIndex : function(index){
+                return this.models[index];
+            },
             // add new model(s) of Collection's Model type with an array of data objects
             // each model will be named as <Collection.name><Collection.length>
             _add : function(collection){
                 
                 var
-                i=0,
-                n = collection.length,
-                l = this.models.length,
                 models = this.models,
-                Factory = this.model || OctaneModel,
-                name = this.name,
-                model;
+                Factory = this.model || OctaneModel;
                 
                 if(Factory){
                     _.forEach(collection,function(record){
-                        var model = new Factory(name+l+i);
-                        model.set(record);
+                        var model = new Factory(record);
                         models.push( model );
                     });
                 }
             },
-            // add a single named model of the Collection's Model type
+            /* add a single named model of the Collection's Model type
             _create : function(){
                 var Factory = this.model || OctaneModel;
                 
@@ -827,8 +827,8 @@
                     this.models.push(model);
                     return model;
                 }
-            },
-            //insert a collection of models,
+            },*/
+            // insert a collection of models,
             // checking that they are saem type as Collection's Model Property
             _insert : function(collection){
                
@@ -846,10 +846,6 @@
                     return model.name == name;
                 });
             },    
-            // get a model by its index
-            _at : function(index){
-                return index ? this.models[index] : false;
-            },
             // push a model to the collection
             _push : function(model){
                 if( model instanceof this.model ){
@@ -861,11 +857,15 @@
             _pop : function(){
                 return this.models.pop();
             },
-            _pull : function (model){
-                return _.pull(this.models,model);
+            _shift : function(model){
+                if(model instanceof this.model){
+                    this.models.shift(model);
+                }
             },
-            _remove : function (model){
-                _.pull(this.models,model);
+            _unshift : function(model){
+                if(model instanceof this.model){
+                    this.models.unshift(model);
+                }
             },
             _removeAt : function(index){
                 var model = this.models[index];
@@ -880,44 +880,30 @@
             }
         });
         
-        // overwritable aliases
-        OctaneCollection.prototype.augment({
-            add : function(){
-                return this._add.apply(this,arguments);
-            },
-            create : function(name,defaults){
-                return this._create.apply(this,[name,defaults]);
-            },
-            insert : function(collection){
-                return this._insert.apply(this,[collection]);
-            },
-            reset : function(collection){
-                return this._reset.apply(this,[collection]);
-            },
-            at  : function(index){
-                return this._at.apply(this,[index]);
-            },
-            get : function(name){
-                return this._get.apply(this,[name]);
-            },
-            push : function(model){
-                return this._push.apply(this,[model]);
-            },
-            pull : function(model){
-                return this._pull.apply(this,[model]);
-            },
-            pop : function(){
-                return this._pop.apply(this);
-            },
-            remove : function(model){
-                return this._remove.apply(this,[model]);
-            },
-            removeAt : function(index){
-                return this.removeAt.apply(this,[index]);
-            }       
+        // add read only _* methods to prototype as writable
+        _.forOwn(OctaneCollection.prototype,function(method,methodName){
+            if(methodName.indexOf('_') == 0){
+                var writable = methodName.split('').slice(1).join('');
+                OctaneCollection.prototype[writable] = function(){
+                    method.apply(this,arguments);
+                }
+            }
         });
-            
-            
+        
+        // lodash Collection methods
+        var _collections = ['all','any','at','collect','contains','countBy','detect','each','eachRight','every','filter','find','findLast','findWhere','foldl','foldr','forEach','forEachRight','groupBy','include','includes','indexBy','inject','invoke','map','max','min','partition','pluck','reduce','reduceRight','reject','sample','select','filter','shuffle','size','some','sortBy','sortByAll','where'];
+        var _arrays = ['last','pull','unique','take','pullAt','remove'];
+        
+        // add lodash Collection methods to OctaneCollection
+        // from Backbone.js 
+        _.forEach(_collections.concat(_arrays),function(method){
+            if(!_[method]){ return; }
+            OctaneCollection.prototype[method] = function(){
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(this.models);
+                return _[method].apply(_,args);
+            }
+        });
             
         $O.define({
             Collection : OctaneCollection,
@@ -933,7 +919,7 @@
 	/* ------------------------------------------------------- */
 	   
         // base factory
-		function OctaneModel(defaults){
+		function OctaneModel(data){
             
             var
             isRegistered = false,
@@ -969,7 +955,7 @@
                 }
             });
             this.set(this.defaults);
-            this.set(defaults);
+            this.set(data);
             this.initialize && this.initialize.apply(this,arguments);
         }
         
@@ -978,12 +964,15 @@
             return new OctaneModel(data);
         };
        
+        
+        
+        // OctaneModel prototype methods
+		OctaneModel.prototype = new Base;
+        
         // dummies
         OctaneModel.prototype.initialize = function(){};
         OctaneModel.prototype.defaults = {};
         
-        // OctaneModel prototype methods
-		OctaneModel.prototype = new Base;
         OctaneModel.prototype.constructor = OctaneModel;
 		OctaneModel.prototype.define({
             
@@ -1187,7 +1176,10 @@
             parentFactory = this;
             parentDefaults = parentFactory.prototype.defaults || {};
            
-            childFactory = function(){ return parentFactory.apply(this,arguments);};
+            childFactory = function(){ 
+                //parentFactory.prototype.initialize.apply(this,arguments);
+                return parentFactory.apply(this,arguments);
+            };
             
             _.extend(childFactory,parentFactory,staticMethods);
             
