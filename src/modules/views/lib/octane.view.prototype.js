@@ -1,24 +1,25 @@
-octane.module('ViewPrototype',function(cfg){
+octane.module('ViewPrototype').extend({
+    
+    initialize : function(cfg){
         
         this.export({
             configureLoading : function(){
                 
-                            var 
-                            isClassed = false,
-                            viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'],
-                            n;
+                var isClassed = false;
+                var viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'];
+                var n;
 
-                            _.isArray(cfg.extraViewClasses) && viewClasses.concat(cfg.extraViewClasses);
-                            n = viewClasses.length;
+                _.isArray(cfg.extraViewClasses) && viewClasses.concat(cfg.extraViewClasses);
+                n = viewClasses.length;
 
-                            while(n--){
-                                if(this.elem.classList.contains(viewClasses[n]) ){
-                                    isClassed = true;
-                                    break;
-                                }
-                            }
-                            !isClassed && this.elem.classList.add('view-left');
-                        },
+                while(n--){
+                    if(this.elem.classList.contains(viewClasses[n]) ){
+                        isClassed = true;
+                        break;
+                    }
+                }
+                !isClassed && this.elem.classList.add('view-left');
+            },
             handleEvent : function(e){
                 switch(e.type){
                     case 'translated':
@@ -134,10 +135,9 @@ octane.module('ViewPrototype',function(cfg){
             
             callBeforeLoadPromises : function(){
                 
-                var 
-                $view = this,
-                todos = this.todoBeforeLoad,
-                completed = [];
+                var $view = this;
+                var todos = this.todoBeforeLoad;
+                var completed = [];
                 
                 for(var i=0,n=todos.length; i<n; i++){
                     try{
@@ -151,9 +151,8 @@ octane.module('ViewPrototype',function(cfg){
                 // helper
                 function execute(promise){
                     
-                    var
-                    func = promise[0],
-                    args = _.isArray(promise[1]) ? promise[1] : [promise[1]];
+                    var func = promise[0];
+                    var args = _.isArray(promise[1]) ? promise[1] : [promise[1]];
                     
                     completed.push(func.apply($view,args));
                 }
@@ -163,9 +162,8 @@ octane.module('ViewPrototype',function(cfg){
             
             callAfterLoadCallbacks : function (){
                 
-                var 
-                $view = this,
-                todos = this.todoAfterLoad;
+                var $view = this;
+                var todos = this.todoAfterLoad;
 
                 for (var i=0,n = todos.length; i < n; i++){
                     try{
@@ -179,13 +177,12 @@ octane.module('ViewPrototype',function(cfg){
                 // helper
                 function execute(callback){
                     
-                    var
-                    func = callback[0],
-                    args = _.isArray(callback[1]) ? callback[1] : [callback[1]];
+                    var func = callback[0];
+                    var args = _.isArray(callback[1]) ? callback[1] : [callback[1]];
                     
                     func.apply($view,args);
                 }
             }
-
-        }); // end .define
-    }); // end module
+        });
+    } // end initialize
+}); // end module

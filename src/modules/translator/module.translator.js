@@ -24,16 +24,17 @@
         //  @config defaultLang [string]: a default language or (default:English)
         //  @config langSupport [array]: supported languages for the translator (default:['English'])
 
-    octane.module('Translator', function (config){
+    octane.module('Translator').extend({
+        
+        initialize : function (config){
 
             // dummy
             var $M = {};
-
             config = config || {};
 
-        /* ------------------------------- */
-        // private protected properties
-        /* ------------------------------- */
+            /* ------------------------------- */
+            // private protected properties
+            /* ------------------------------- */
 
                 // set by param
                 $M.rosettaStone = ( _.isObject(config.langData) ) 	? config.langData 	  : {};
@@ -97,9 +98,9 @@
                 // also set by config   
                 $M.defaultLang	= supportsLang(config.defaultLang) || $M.languages[0];
 
-        /* ------------------------------- */
-        // private protected methods
-        /* ------------------------------- */
+            /* ------------------------------- */
+            // private protected methods
+            /* ------------------------------- */
 
 
             // set elements with o-lang attribute with language text
@@ -244,9 +245,9 @@
                 }
 
 
-        /* ------------------------------- */
-        // private helpers
-        /* ------------------------------- */
+            /* ------------------------------- */
+            // private helpers
+            /* ------------------------------- */
 
 
             // helper
@@ -297,11 +298,11 @@
                 }
 
 
-        /* ------------------------------- */
-        // create public methods
-        /* ------------------------------- */
+            /* ------------------------------- */
+            // create public methods
+            /* ------------------------------- */
 
-                this.define({
+                octane.Translator = {
 
                     renderTranslator		: 	function(langs,container){
                                                     return renderControls(langs,container);
@@ -318,19 +319,16 @@
                     setLang 				: 	function(lang){
                                                     return setLang(lang);
                                                 }
-                });
+                };
 
 
-
-        /* ------------------------------- */
-        // init
-        /* ------------------------------- */
-        this.initialize = function(){
-            octane.handle('view:routed',translate);
-            findLang();
-            renderControls($M.langSupport);
-            translate();
-        }
+            (function(){
+                octane.handle('view:routed',octane.Translator.translate);
+                findLang();
+                renderControls($M.langSupport);
+                translate();
+            })();
+        }// end initialize
     });
 
 	

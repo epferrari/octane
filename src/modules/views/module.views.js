@@ -1,10 +1,11 @@
 // set-up for Views constructor
 
-octane.module('OctaneViews',['ViewPrototype'],function(cfg){
+octane.module('OctaneViews',['ViewPrototype']).extend({
+    
+    initialize : function(cfg){
            
-        var 
-        $Views = {},
-        $proto = this.import('ViewPrototype');
+        var $Views = {};
+        var $proto = this.import('ViewPrototype');
     
     /* ------------------------------------------------------- */
     //  Application View Constructor
@@ -39,23 +40,24 @@ octane.module('OctaneViews',['ViewPrototype'],function(cfg){
         OctaneView.prototype.constructor = OctaneView;
         OctaneView.prototype.augment($proto);
         
-        this.initialize = function(){
+        (function(){
             
-            var 
-            $views = octane.dom.views(),
-            id;
+            var $views = octane.dom.views();
+            var n = $views.length;
+            var config;
+            var id;
             
             // bind html views to View objects 
-            for(var i=0,n=$views.length; i<n; i++){
-                id = $views[i].id;
-                config = JSON.parse($views[i].getAttribute('o-config'));
-                !$Views[id] && ($Views[id] = new OctaneView($views[i],config));
+            while(n--){
+                id = $views[n].id;
+                config = JSON.parse($views[n].getAttribute('o-config'));
+                !$Views[id] && ($Views[id] = new OctaneView($views[n],config));
             }
             octane.define({
-                view : function(id){
+                View : function(id){
                     return $Views[id] || false;
                 }
             });
-        };
-         
-    });
+        })();
+    }
+});
