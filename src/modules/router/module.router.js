@@ -1,22 +1,24 @@
 // JavaScript Document
 
-octane.module('Router',['OctaneViews'],function (cfg) {
+octane.module('Router',['OctaneViews']).extend({
+    
+    initialize : function (cfg) {
 	
         // octane's own pushstate method
         function pushState(params){
 
-            params = _.isObject(params) ? params : {};
+            !_.isObject(params) && (params = {});
             // update the language in the url
             var parsed = __.location().searchObject;	
 
-            octane.augment.call(parsed,params);
+            _.extend(parsed,params);
 
-            var 
-            fragment = [],
-            parsedKeys = Object.keys(parsed),
-            key;
+            var fragment = [];
+            var parsedKeys = Object.keys(parsed);
+            var k=parsedKeys.length;
+            var key;
             
-            for(var k=0,K=parsedKeys.length; k<K; k++){
+            while(k--){
                 key = parsedKeys[k];
                 fragment.push(key+'='+parsed[key]);
             }
@@ -24,9 +26,8 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             fragment = fragment.join('&');
             fragment = '?'+fragment;
 
-            var 
-            language = octane.translator && octane.translator.getLang(),
-            title = __.titleize(params.view) || currentView.title;
+            var language = octane.Translator && octane.Translator.getLang();
+            var title = __.titleize(params.view) || currentView.title;
 
             History.pushState( 
                 { lang: language },
@@ -37,14 +38,13 @@ octane.module('Router',['OctaneViews'],function (cfg) {
             document.querySelector('head>title').innerHTML = octane.get('App.name')+' | '+title;
         }
 
-        var 
-        enRoute = null,
-        routingBlocked = false,
-        currentView,
+        var enRoute = null;
+        var routingBlocked = false;
+        var currentView;
         // store routes called while another route is executing its loading animation
-        queuedRoute = null,
+        var queuedRoute = null;
         // conditions under which a route should be called, added with .routeIf()
-        routeConditions = {};
+        var routeConditions = {};
         
         // block routing, incoming routes go to queue
         //octane.handle('block:routing',function(){
@@ -84,20 +84,18 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         // just keeps view from routing until something is done
         function beforeRoute(viewID,deferred,argsArray){
             
-            octane.view(viewID) && octane.view(viewID).addBeforeLoadPromise(deferred,argsArray);
+            octane.View(viewID) && octane.View(viewID).addBeforeLoadPromise(deferred,argsArray);
             return octane;
         }
             
         // add a callback to be executed when the specified view finishes its loading animation 
         function routeThen(viewID,callback,argsArray){
 
-            octane.view(viewID) && octane.view(viewID).addAfterLoadCallback(callback,argsArray);
+            octane.View(viewID) && octane.View(viewID).addAfterLoadCallback(callback,argsArray);
             return octane;
         }
         
         // @param id [str]: id of the o-view to be called
-        // @param callback [fn]: a function to be executed when the loading animation finishes
-        // function's thisArg is bound to the view called
         // @param ghost [bool]: do not update the history with the view (default false)
         function route(viewID,ghost){
             
@@ -105,9 +103,9 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                 
                 ghost = _.isBoolean(ghost) ? ghost : false;
                 var 
-                $view = octane.view(viewID),
+                $view = octane.View(viewID),
                 viewOnScreen = ($view == currentView),
-                modalOnScreen = (octane.Modal.current());
+                modalOnScreen = (octane.Modal.getCurrent());
             
             // ensure the onscreen view isn't reanimated
             //////////////////////////////////////////////////////////////////////////////////////
@@ -304,7 +302,7 @@ octane.module('Router',['OctaneViews'],function (cfg) {
         }
 
         // parse URL for a view  
-        function parseView(){
+        function getRequestedView(){
 
             // for HTML5 vs. HTML4 browsers
             // detect with modernizr   
@@ -331,44 +329,44 @@ octane.module('Router',['OctaneViews'],function (cfg) {
                return parsed.view || false;
             }
          }
-
+       
+        octane.define({ 
+            Router      : {},
+            route       : function(viewID,ghost){
+                            return route(viewID,ghost).catch(function(ex){
+                                octane.log(ex);
+                            });
+                        },
+            routeIf     : routeIf,
+            beforeRoute : beforeRoute,
+            routeThen	: routeThen,
+        });
         
-
         // Router Public API				
-        octane.Base.prototype.define({
-            parseView       : parseView,
-            route			: function(viewID,ghost){
-                                return route(viewID,ghost).catch(function(ex){
-                                    octane.log(ex);
-                                });
-                            },
-            routeIf         : routeIf,
-            beforeRoute     : beforeRoute,
-            routeThen		: routeThen,
+        octane.define.apply(octane.Router,[{
+            requestedView   : getRequestedView,
             pushState		: pushState,
             currentView     : function(){
                                 return currentView
                             },
-            getRouteQueue   : function(){
+            getQueue        : function(){
                 return queuedRoute;
             },
-            blockRouting    : blockRouting,
-            unblockRouting  : unblockRouting
-        });
+            lock            : blockRouting,
+            unlock          : unblockRouting
+        }]);
         
-        this.initialize= function(){
-
-            octane.compiler( setRoutingButtons ); 
-            octane.compiler( setBackButtons );
-            octane.compiler( handleStateChange );
+        octane.compiler( setRoutingButtons ); 
+        octane.compiler( setBackButtons );
+        octane.compiler( handleStateChange );
             
            
-            // resize canvas to proper dimensions
-            octane.handle('translated resize orientationchange',function(){
-                currentView && currentView.setCanvasHeight();
-            });
-        }
-    });
+        // resize canvas to proper dimensions
+        octane.handle('translated resize orientationchange',function(){
+            currentView && currentView.setCanvasHeight();
+        });
+    } // end initialize
+}); // end module 
     
 		
 	
