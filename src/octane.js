@@ -5,56 +5,9 @@
                     // @author Ethan Ferrari
                     // ethanferrari.com/octane
                     // onefiremedia.com
-                    // version 0.0.4
+                    // version 0.0.5
                     // January 2015
             
-                /* API Methods */
-
-                    // .trip(element)
-                    // .handle(event,handler)
-                    // .fire(event,data)
-                    // .goose(model,$dirty)
-
-                    // .library(name)
-                    // .addLibrary(name,data)
-
-                    // .module(name[,dependencies],Constructor)
-                    // .model(name,options)
-                    // .controller(model)
-                    // .hasModule(module)
-
-                    // .route(id[,ghost])                       : augmented from Router Module
-                    // .routeIf(id,condition,onFail)            : augmented from Router Module
-                    // .routeThen(id,callback)                  : augmented from Router Module
-                    // .parseView()                             : augmented from Router Module
-                    // .pushState(params)                       : augmented from Router Module
-                    // .currentView()                           : augmented from Router Module
-
-                    // .log()                                   : augmented from debug module (if active)
-                    // .getLog()                                : augmented from debug module (if active)
-                    // .getEvents()                             : augmented from debug module (if active)
-                    // .getModels()                             : augmented from debug module (if active)
-                    // .getControllers()                        : augmented from debug module (if active)
-                    // .getViews()                              : augmented from debug module (if active)
-
-                    // _proto_ .augment({})
-                    // _proto_ .define({property:value,...})
-
-                /* Module methods */
-
-                   
-
-                /* Model methods */
-
-                  
-
-
-                /* ViewModel methods */
-
-                    // .parse()
-                    // .refresh()
-                    // .uptake()
-	
     
 	(function($,_,__){
 		
@@ -76,12 +29,6 @@
 	// base extension utility constructor
 	/* ------------------------------------------------------- */
 		
-		
-        
-        /* ------------------------------------------------------- */
-	   // define public octane constructor
-	   /* ------------------------------------------------------- */
-        
         function OctaneBase(){}
         
         OctaneBase.prototype = {
@@ -102,11 +49,8 @@
 			value: function  (obj,overwrite){
 			
 						overwrite = _.isBoolean(overwrite) ? overwrite : true;
-				        var
-                        $this = this,
-                        keys,
-                        key,
-                        n;
+				        var $this = this;
+                        var keys,key,n;
                 
 						if(_.isObject(obj)){
                             keys = Object.keys(obj),
@@ -148,9 +92,8 @@
 							
 							switch(true){
 								case _.isObject(prop):
-									var
-                                    keys = Object.keys(prop),
-                                    key;
+									var keys = Object.keys(prop);
+                                    var key;
                                     
 									for (var i=0,n = keys.length; i<n; i++){
 										key = keys[i];
@@ -177,6 +120,9 @@
 			configuarable : false
 		});
 		
+        /* ------------------------------------------------------- */
+	   //          PUBLIC APPLICATION OBJECT
+	   /* ------------------------------------------------------- */
         
         function Octane(name){
             this.name = 'Octane - '+name;
@@ -205,67 +151,99 @@
                 eventRegister   : {}
 		});
         
+    /* ------------------------------------------------------- */
+	// simple promise implementation
+	/* ------------------------------------------------------- */
         
-        // simple promise implementation
-        function Pact(){}    
-        Pact.prototype = new OctaneBase;
-        Pact.prototype.augment({
-            state : 'pending',
-            result : null,
-            error : null
-        });
-        Pact.prototype.define({
-            constructor : Pact,
-            _isResolved : function(){
-                return this.state == 'resolved';
-            },
-            _isRejected : function(){
-                return this.state == 'rejected';
-            },
-            _isPending : function() {
-                return this.state == 'pending';
-            },
-            resolveCallbacks : [],
-            rejectCallbacks : [],
-            then : function(resolve,reject){
+        
+        function OctanePromise(fn){
             
-                resolve = _.isFunction(resolve) ? resolve : function(){};
-                reject = _.isFunction(reject) ? reject : function(){};
+            if( !_.isFunction(fn)){
+                throw 'OctanePromise expects function as first argument';
+            }
+            state = 'pending';
+            this.result = null;
+            this.error = null;
+            this.define({
+                isResolved : function(){
+                    return state == 'resolved';
+                },
+                isRejected : function(){
+                    return state == 'rejected';
+                },
+                isPending : function(){
+                    return state == 'pending';
+                },
+                resolveCallbacks : [],
+                rejectCallbacks : []
+            });
+            
+            var resolve = function(data){
                 
-                this.resolveCallbacks.push(resolve);
-                this.rejectCallbacks.push(reject);
-                
-                if(this.state == 'resolved'){
-                    return resolve(this.result);
-                }
-                if(this.state == 'rejected'){
-                    return reject(this.error);
-                }
-            },
-            resolve : function(data){
+                state = 'resolved';
                 
                 var callbacks = this.resolveCallbacks;
-                this.state = 'resolved';
-                this.result = data;
-                for(var i=0,n=callbacks.length; i<n; i++){
+                var n = callbacks.length;
+                var i=0;
                 
+                this.define({ 
+                    result : data
+                });
+                for(;i<n;i++){
                     setTimeout(function(){
                         callbacks[i].call && callbacks[i].call(null,data);
                     },0);
                 }
-             },
-            reject : function(error){
+             };
+            var reject = function(error){
+                
+                state = 'rejected';
+                this.define({ error : error });
                 
                 var callbacks = this.rejectCallbacks;
-                this.state = 'rejected';
-                this.error = error;
-                for(var i=0,n=callbacks.length; i<n; i++){
-
+                var n = callbacks.length;
+                var i=0;
+               
+                for(;i<n;i++){
                     setTimeout(function(){
                         callbacks[i].call && callbacks[i].call(null,error);
                     },0);
                 }
             }
+            
+            fn.apply(fn,[resolve.bind(this),reject.bind(this)]);
+        }
+        OctanePromise.resolve = function(data){
+            return new OctanePromise(function(resolve){
+                resolve(data);
+            });
+        }
+        OctanePromise.reject = function(err){
+            return new OctanePromise(function(resolve,reject){
+                reject(err);
+            });
+        }
+        
+        OctanePromise.prototype = new OctaneBase;
+        OctanePromise.prototype.constructor = OctanePromise;
+        OctanePromise.prototype.define({
+            then : function(resolve,reject){
+            
+                _.isFunction(resolve) ||( resolve = function(){} );
+                _.isFunction(reject) || ( reject = false );
+                
+                this.resolveCallbacks.push(resolve);
+                reject && this.rejectCallbacks.push(reject);
+                
+                if(this.isResolved()){
+                    return resolve(this.result);
+                }
+                if(this.isRejected()){
+                    reject && reject(this.error);
+                    return this;
+                }
+            }
+            
         });
 
     /* ------------------------------------------------------- */
@@ -277,24 +255,21 @@
         $O.define({
             compiler : function(task){
                 _octane.compilationTasks.push(task);
+                return this;
             },
             compile : function(){
                 
-                var 
-                tasksCompleted = [],
-                i=0,n=_octane.compilationTasks.length,
-                callTask = function(task){
+                var tasksCompleted = [];
+                var i=0;
+                var n=_octane.compilationTasks.length;
+                var callTask = function(task){
                     return new Promise(function(resolve){
                         _.isFunction(task) && task.call();
                         resolve();
                     });    
                 };
                 
-                for(; i<n; i++){
-                    tasksCompleted.push(callTask(_octane.compilationTasks[i]));
-                }
-                
-                
+                tasksCompleted = _octane.compilationTasks.map(callTask);
                 return Promise.all(tasksCompleted);
             }
         });
@@ -342,7 +317,7 @@
         
         $O.define({
              error : function(message){
-                 throw new OctaneBaseError(message);
+                 throw new OctaneError(message);
              }
         });
     
@@ -353,31 +328,31 @@
         function uriEncodeObject(source){
             
             source = _.isObject(source) ? source : {};
-            var 
-            keys = Object.keys(source),
-            n = keys.length,
-            array = [];
 
-          while(n--) {
+            var keys = Object.keys(source);
+            var n = keys.length;
+            var array = [];
+
+            while(n--) {
              array.push(encodeURIComponent(keys[n]) + "=" + encodeURIComponent(source[keys[n]]));
-          }
+            }
 
-          return array.join("&");
+            return array.join("&");
         }
             
             
         function http(url,method,data,headers){
             return new Promise(function(resolve,reject){
-                var
-                encoded = uriEncodeObject(data),
-                $headers = {
+                
+                var encoded = uriEncodeObject(data);
+                var $headers = {
                     'Content-Type':'application/x-www-form-urlencoded'
                     //'Content-Length':encoded.length
-                },
-                request,
-                headerKeys,
-                header,
-                value;
+                };
+                var request;
+                var headerKeys;
+                var header;
+                var value;
                 
                 _.extend($headers,headers);
                 headerKeys = Object.keys($headers);
@@ -458,12 +433,10 @@
             
             getLibrary : function(url){
                 return new Promise(function(resolve,reject){
-                     
-                    var
-                    script,
-                    content,
-                    cleanURL = url.replace(/[.\/:]/g,'_'),
-                    loaded = document.querySelectorAll('script#'+cleanURL);
+                    
+                    var cleanURL = url.replace(/[.\/:]/g,'_');
+                    var loaded = document.querySelectorAll('script#'+cleanURL); 
+                    var script,content; 
                     
                     if(loaded.length !== 0){
                         // script is loaded
@@ -515,11 +488,10 @@
         _octane.eventHandlerMap = {};
         _octane.eventHandler = function(e){
             
-            var 
-            elem = e.target || e.srcElement,
-            id = elem._guid,
-            handlers = _octane.eventHandlerMap[id] ? _octane.eventHandlerMap[id][e.type] : [],
-            swatch = new __.Switch({
+            var elem = e.target || e.srcElement;
+            var id = elem._guid;
+            var handlers = _octane.eventHandlerMap[id] ? _octane.eventHandlerMap[id][e.type] : [];
+            var swatch = new __.Switch({
                 'function' : function(elem,handler,e){
                    try{
                        handler(e,elem);
@@ -531,22 +503,20 @@
                     }catch(ex){/* ignore */}
                 }
             });
+            
             try{
                 handlers.__forEach(function(handler){
                     swatch.run(__.typeOf(handler),[elem,handler,e]);
                 });
             }catch(ex){/* ignore */}
         };
-       
-            
+           
         $O.define({
 			handle		: 	function(type,$elem,$handler){
                                 
-                                var 
-                                types = type ? type.split(' ') : [],
-                                n=types.length,
-                                handler,
-                                elem;
+                                var types = type ? type.split(' ') : [];
+                                var n=types.length;
+                                var handler, elem;
                                 
                                 if(arguments.length == 3){
                                     handler = arguments[2];
@@ -554,14 +524,13 @@
                                 } else if (arguments.length == 2){
                                     handler = arguments[1];
                                     elem = window;
-                                }
+                                } else {
+									return;
+								}
                                
                                 function addHandler(type,elem,handler){
                                     
-                                    var id;
-                                    
-                                    elem._guid = elem._guid || $O.GUID();
-                                    id = elem._guid;
+                                    var id = elem._guid || (elem._guid = $O.GUID());
                                    
                                     try{
                                        _octane.eventHandlerMap[id][type].push(handler);
@@ -583,13 +552,10 @@
                                 }
                                 return this; // chainable
 							},
-            drop      : function(){
+            drop        :     function(){
                 
-                                var 
-                                type,
-                                elem,
-                                handler,
-                                swatch = new __.Switch({
+                                var type,elem,handler;
+                                var swatch = new __.Switch({
                                     '3' :function(args){
                                         handler = args[2];
                                         elem = args[1];
@@ -620,7 +586,16 @@
 									var e = detail ? __.customEvent(type,detail) : __.createEvent(type);
 									window.dispatchEvent(e);
 								}
-							}                           
+							},
+            
+            // programatically alert that user data has changed on a data-bound element
+            trip : function(elem){
+
+                        var rand = Math.random(),
+                            e = __.customEvent('input',{bubbles:true,detail:rand});
+
+                        elem.dispatchEvent && elem.dispatchEvent(e);
+                    },
 		});
 	
         
@@ -633,25 +608,26 @@
 		_octane.libraries = {};
 		
         function Library(name,data){
-            
-            if(!_.isObject(data)){
-                this.reject('invalid library data, not an object');
-            } else {
-                var lib = _.isObject(data) ? data : {};
-                this.name = name;
-                this.checkout = function(){
-                    return lib;
-                };
-                this.contrib = function(prop,data){
-                    if(!lib[prop]){
-                        lib[prop] = data;
-                    }
-                };
-                this.resolve(lib);
-            }
+            var $this = this;
+            return new Promise(function(resolve,reject){
+                if(!_.isObject(data)){
+                    reject('invalid library data, not an object');
+                } else {
+                    var lib = _.isObject(data) ? data : {};
+                    $this.name = name;
+                    $this.checkout = function(){
+                        return lib;
+                    };
+                    $this.contrib = function(prop,data){
+                        if(!lib[prop]){
+                            lib[prop] = data;
+                        }
+                    };
+                    resolve(lib);
+                }
+            });
         }
-        Library.prototype = new Pact;
-       
+        
 		$O.define({
 			library : function(name,lib){
                 if(_.isObject(lib)){
@@ -676,78 +652,6 @@
 			}
 		});
 	
-    /* ------------------------------------------------------- */
-	/*                        DataStores                       */
-	/* ------------------------------------------------------- */ 
-    /*
-    _octane.datastores = {};
-        
-    function DataStore(id,db){
-        
-        this.id = id;
-        var $db = db;
-        
-        this.define({
-            query : function(keystring){ 
-                                                
-                        var dbData,keyArray;
-
-                        if(keystring){
-                            keyArray = keystring.split('.');
-
-                            try{
-                                dbData = keyArray.reduce(function(o,x,i){
-                                    return o[x];
-                                },$db);
-                            }catch(ex){
-                                dbData = null;
-                                $O.log('Unable to get DataStore data "'+keystring+'". Error: '+ex.message);
-                            }
-                            return dbData;
-                        }
-                    },
-            rebase  : function(db) {
-                        $db = _.isObject(db) && db;
-                    }
-        });
-        
-    }
-        
-    DataStore.prototype = new OctaneBase;
-        
-    $O.define({
-        storage : function(storeId,db){
-        
-                    if(!_octane.datastores[storeId]){
-                        _octane.datastores[storeId]= new DataStore(storeId,db);
-                    }else{
-                        $O.error('cannot recreate storage object '+storeId+'. Use .rebase() instead');
-                    }
-                },
-        hasStore : function(storeId){
-                    return new Promise(function(resolve){
-                        if(_octane.datastores[storeId]){
-                            resolve();
-                        }
-                    });
-                },
-        lookup : function(storeKey){
-                    var 
-                    storeID = storeKey.split('.')[0],
-                    dbKey = storeKey.split('.').slice(1).join('.'),
-                    $store =  _octane.dataStores[storeID];
-                    if(!$store){
-                        return false;
-                    }
-                    if($store && dbKey){
-                        return $store.query(dbKey);
-                    }
-        },
-        rebase : function(storeID,data){
-            
-                    _octane.dataStores[storeID] && _octane.dataStores[storeID].rebase(data);
-        }
-    });*/
     /* ------------------------------------------------------- */
 	/*                     COLLECTIONS                         */
 	/* ------------------------------------------------------- */
@@ -823,9 +727,8 @@
             // each model will be named as <Collection.name><Collection.length>
             _add : function(collection){
                 
-                var
-                models = this.models,
-                Factory = this.model || OctaneModel;
+                var models = this.models;
+                var Factory = this.model || OctaneModel;
                 
                 if(Factory){
                     _.forEach(collection,function(record){
@@ -848,9 +751,10 @@
             // checking that they are saem type as Collection's Model Property
             _insert : function(collection){
                
-                var
-                Factory = this.model || OctaneModel,
-                push = this.push;
+                var Factory = this.model || OctaneModel;
+                var push = this.push;
+                
+                _.isArray(collection) || (collection = []);
                 collection.__forEach(function(model){
                     model instanceof Factory && push(model);
                 });
@@ -937,9 +841,8 @@
         // base factory
 		function OctaneModel(data){
             
-            var
-            isRegistered = false,
-            registeredTo= null;
+            var isRegistered = false;
+            var registeredTo= null;
             
             this.className = this.className || 'OctaneModel';
             this.define({
@@ -982,8 +885,6 @@
         
         OctaneModel.integrate = function(model){
         }
-       
-        
         
         // OctaneModel prototype methods
 		OctaneModel.prototype = new OctaneBase;
@@ -1197,10 +1098,14 @@
             parentFactory = this;
             parentDefaults = parentFactory.prototype.defaults || {};
            
-            childFactory = function(){ 
-                //parentFactory.prototype.initialize.apply(this,arguments);
-                return parentFactory.apply(this,arguments);
-            };
+            if(config.constructor != Object && _.isFunction(config.constructor)){
+               childFactory = config.constructor;
+            } else {
+                childFactory = function(){ 
+                    //parentFactory.prototype.initialize.apply(this,arguments);
+                    return parentFactory.apply(this,arguments);
+                };
+            }
             
             _.extend(childFactory,parentFactory,staticMethods);
             
@@ -1225,7 +1130,7 @@
             this.initialize.apply(this,arguments);
         };
         Factory.prototype = new OctaneBase;
-        Factory.prototype.intitialize = function(){};
+        Factory.prototype.initialize = function(){};
         $O.define.apply(Factory,[{
             define : $O.define
         }]);
@@ -1252,10 +1157,9 @@
                         },
             get         : function(modelStateKey){
                             
-                            var 
-                            modelName = $O._parseModelName(modelStateKey),
-                            stateKey = $O._parseModelKey(modelStateKey),
-                            model = _octane.models[modelName];
+                            var modelName = $O._parseModelName(modelStateKey);
+                            var stateKey = $O._parseModelKey(modelStateKey);
+                            var model = _octane.models[modelName];
                             
                             if(model && stateKey){
                                 return model.get(stateKey);
@@ -1265,12 +1169,9 @@
                         },
             set         : function(){
                             
-                            var
-                            arg0 = arguments[0],
-                            arg1 = arguments[1],
-                            fresh,
-                            keys,
-                            swatch;
+                            var arg0 = arguments[0];
+                            var arg1 = arguments[1];
+                            var swatch,fresh,keys,i,n;
                             
                             swatch = new __.Switch({
                                 'string' : function(arg0,arg1){
@@ -1287,7 +1188,8 @@
                             
                            
                             keys = Object.keys(fresh);
-                            var i=0,n=keys.length;
+                            n=keys.length;
+                            i=0;
                             for(;i<n;i++){
                                doSet( keys[i] );
                             }
@@ -1295,23 +1197,20 @@
                             // helper
                             function doSet(keystring){
                                 
-                                var
-                                modelName = $O._parseModelName(keystring),
-                                key = $O._parseModelKey(keystring),
-                                value = fresh[keystring],
-                                model = _octane.models[modelName];
+                                var modelName = $O._parseModelName(keystring);
+                                var key = $O._parseModelKey(keystring);
+                                var value = fresh[keystring];
+                                var model = _octane.models[modelName];
                                 
-                               model && model.set(key,value);
+                                model && model.set(key,value);
                             }
                 
                         },
             unset       : function(){
                             
                             
-                            var
-                            subject = arguments[0],
-                            toUnset,
-                            swatch;
+                            var subject = arguments[0];
+                            var toUnset, swatch;
                 
                             swatch = new __.Switch({
                                 'string' : function(sub){
@@ -1330,10 +1229,9 @@
 
                             toUnset.forEach(function(keystring){
                                 
-                                var
-                                modelName = $O._parseModelName(keystring),
-                                key = $O._parseModelKey(keystring),
-                                model = _octane.models[modelName];
+                                var  modelName = $O._parseModelName(keystring);
+                                var key = $O._parseModelKey(keystring);
+                                var model = _octane.models[modelName];
                                
                                 model && model.unset(key);
                             });
@@ -1366,7 +1264,6 @@
 
         $O.define({
             filter : function (name,func){
-
                 _octane.filters[name] = func;	
             }
         });
@@ -1376,16 +1273,10 @@
 	/* ------------------------------------------------------- */		
 		
 		function ViewModel(){
-            
-			this.define({
-				scope : {},
-			});
+			this.define({ scope : {} });
 		}
 		
-		
-	/*  prototype ViewModel */
-	
-		ViewModel.prototype = new OctaneBase();
+		ViewModel.prototype = new OctaneBase;
 		ViewModel.prototype.define({
             
             init : function(){
@@ -1393,11 +1284,11 @@
                         this.refreshAll();
                     },            
 			watch : function(elem){
-                        var
-                        $this = this,
-                        $sender = this.uptake,
-                        filter = elem.getAttribute('o-filter'),
-                        $scope = this.scope;
+                        
+                        var $this = this;
+                        var $sender = this.uptake;
+                        var filter = elem.getAttribute('o-filter');
+                        var $scope = this.scope;
                         // element hasn't been parsed yet
                         if(!elem._watched){
                             
@@ -1412,12 +1303,9 @@
                                 }
                             }
                             
-                            var 
-                            oBind = elem.getAttribute('o-bind'),
-                            _oUpdate = elem.getAttribute('o-update'),
-                            oUpdate, 
-                            deep,
-                            l;
+                            var oBind = elem.getAttribute('o-bind');
+                            var _oUpdate = elem.getAttribute('o-update');
+                            var oUpdate,deep,l;
 
                             if(oBind){
                                 elem._bind = oBind;
@@ -1480,9 +1368,8 @@
                                 // push element+attr to scope[key] for one-way updates 
                                 _.forOwn(oUpdate,function(attr,key){
                                    
-                                    var 
-                                    deep = key.split('.'),
-                                    l = deep.length;
+                                    var deep = key.split('.');
+                                    var l = deep.length;
                                     
                                     // set event handlers for all levels of model change
                                     deep.reduce(function(o,x,i){
@@ -1523,10 +1410,9 @@
             // find bound elements on the DOM
 			parse	: function(){
 						
-						var
-                        $this = this,
-                        $bindScope = document.querySelectorAll('[o-bind],[o-update]'),
-                        n=$bindScope.length;
+						var $this = this;
+                        var $bindScope = document.querySelectorAll('[o-bind],[o-update]');
+                        var n=$bindScope.length;
                 
                         while(n--){
                            this.watch($bindScope[n]);
@@ -1536,15 +1422,14 @@
 			refresh 	: 	function (e){
 								
                                 // loop bound model datapoint in scope
-                                var
-                                $update = this.update,
-                                $scope = this.scope,
-                                toUpdate,
-                                updated = e.type ? e.type.replace('statechange:','').split('.') : [],
-                                l= updated.length,
-                                toRecurse = updated.reduce(function(o,x,i){
+                                var $update = this.update;
+                                var $scope = this.scope;
+                                var updated = e.type ? e.type.replace('statechange:','').split('.') : [];
+                                var l = updated.length;
+                                var toRecurse = updated.reduce(function(o,x,i){
                                     return _.isObject(o[x]) ? o[x] : {};   
                                 },$scope);
+								var toUpdate;
                                 
                                 toUpdate = ViewModel.prototype.updateRecursively(toRecurse);
                                 toUpdate = _.compact(toUpdate);
@@ -1556,9 +1441,8 @@
 							},
             refreshAll  : function(){
                             
-                                var 
-                                models = Object.keys(_octane.models),
-                                n = models.length;
+                                var models = Object.keys(_octane.models);
+                                var n = models.length;
 
                                 while(n--){
                                     $O.fire('statechange:'+models[n]);
@@ -1566,8 +1450,7 @@
                             },
             updateRecursively : function(object){
                                 
-                                var
-                                keys = Object.keys(object);
+                                var keys = Object.keys(object);
                                     
                                 return keys.__map(function(key){
                                     var 
@@ -1586,7 +1469,8 @@
 			update       : function(key,elem,attr){
                                         
                                 var fresh = $O.get(key);
-                                if(__.isNull(fresh) || __.isUndefined(fresh)){
+                                
+								if(__.isNull(fresh) || __.isUndefined(fresh)){
                                     fresh = '';
                                 }
                                 if(attr.indexOf('.') !== -1){
@@ -1631,11 +1515,11 @@
                             },
 			// respond to user changes to DOM data bound to this model
 			uptake		: 	function(event,element){
-                                var 
-                                oBind = element._bind,
+                                
+								var oBind = element._bind;
                                 // remove model name from string
-                                modelName = oBind ? $O._parseModelName(oBind) : null,
-                                pointer = oBind ? $O._parseModelKey(oBind) : null;
+                               	var modelName = oBind ? $O._parseModelName(oBind) : null;
+                               	var pointer = oBind ? $O._parseModelKey(oBind) : null;
                                 
                                 if(element.value != $O.get(oBind) ){
                                    $O.set(oBind,element.value);
@@ -1663,9 +1547,8 @@
         // add param 2 as function(data held in model[key])
         function task(key,$task){
 				               
-            var
-            cache ={},
-            keyArray = key.split('.');
+            var cache ={};
+            var keyArray = key.split('.');
             
             keyArray.reduce(function(o,x,i,a){
                 var watch;
@@ -1723,37 +1606,31 @@
 	/* ------------------------------------------------------- */
 		
 		function Controller(name,viewID){
-			
-			
-			var $this = this;
-			// private properties
-					
-			// semi-public	API	
 			this.define({
 				name		: name,
                 view        : document.querySelector('o-view#'+viewID)
 			});
 			
 			// add this Controller instance to the _octane's controllers object
-            _octane.controllers[name] = $this;
+            _octane.controllers[name] = this;
 		}
 		
 	/* prototype Controller */
 		
-		Controller.prototype = new OctaneBase();
+		Controller.prototype = new OctaneBase;
         Controller.prototype.constructor = Controller;
 
 	
 		$O.define({
 			controller 	: function (name,viewID){
-                                if(!name){
-                                    return new Controller($O.GUID(),viewID);
-                                } else if(!_octane.controllers[name]){
-                                    return new Controller(name,viewID);
-                                } else {
-                                    return _octane.controllers[name];
-                                }
-                            }                    
+							if(!name){
+								return new Controller($O.GUID(),viewID);
+							} else if(!_octane.controllers[name]){
+								return new Controller(name,viewID);
+							} else {
+								return _octane.controllers[name];
+							}
+						}                    
 		});
 	
 	
@@ -1761,263 +1638,202 @@
 	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 		
-        _octane.bootlog = [];
+        
         _octane.moduleConfigs = {};
-        
-        function bootLog(message){
-            _octane.bootlog.push(message);
-        }
-        
         _octane.moduleExports = {};
         
-		function Module (cfg) { 
-			this.augment(cfg);
-		}
-        
-		Module.prototype = new OctaneBase;
-        Module.prototype.constructor=Module;
-        Module.prototype.define({
-             import           :   function(module){
-                                    return _octane.moduleExports[module];
+		function OctaneModule (name,dependencies){
+            this.initialized = false;
+            this.name = name;
+            this.dependencies = dependencies;
+        }
+       
+        OctaneModule.prototype = new OctaneBase;
+        OctaneModule.prototype.initialize = function(){};
+        OctaneModule.prototype.constructor = OctaneModule;
+        OctaneModule.prototype.define({
+            
+            import          	:   function(module){
+                                    	return _octane.moduleExports[module];
                                 },
-             export          :   function(exports){
-                                    if(!_.isObject(_octane.moduleExports[this.name])){
-                                        _octane.moduleExports[this.name] = {};
-                                    }
+            export          	:   function(exports){
+                                    
+                                    _.isObject(_octane.moduleExports[this.name]) || (_octane.moduleExports[this.name] = {});
+                                    
                                     try{
                                         _.extend(_octane.moduleExports[this.name],exports);
                                     }catch (ex){
-                                        $O.error('Could not create augment exports, '+this.name+' module. '+ex.message);
+                                        $O.log('Could not create exports, '+this.name+' module. '+ex.message);
                                     }
-                                },
-            _checkDependencies : function(){
-                                    
-                                    var 
-                                    deps = this.dependencies || [],
-                                    $this = this,
-                                    results = [],
-                                    message = [
-                                        this.name+': checking dependencies...',
-                                        this.name+': no dependencies, preparing to initialize...'
-                                    ];
-                
-                                   bootLog(message[0]);
-                                    
-                                    if(deps.length === 0){
-                                        bootLog(message[1]);
-                                        return Promise.resolve();
-                                        
-                                    } else {
-                                        for(var i=0,n = deps.length; i<n; i++){
-                                            results.push( checkModuleDependency(deps[i]) );               
-                                        }
-                                    }
-                                    
-                
-                                    //helper
-                                    function checkModuleDependency(depName){
-                                        
-                                        depName = depName ? depName.trim() : '';
-                                        var
-                                        dep = _octane.modules[depName],
-                                        message = [
-                                            $this.name+': no dependencies, preparing to initialize...',
-                                            $this.name+': Could not load module, missing module dependency "'+depName+'"',
-                                            $this.name+': dependency "'+depName+'" loaded and initialized, continuing...',
-                                            $this.name+': dependency "'+depName+'" not yet loaded, loading now...'
-                                        ];
-                                       
-                                        if(!depName || depName.length === 0) {
-                                            bootLog(message[0]);
-                                            return Promise.resolve();
-                                        }
-
-                                        if( !(dep && dep instanceof Module) ) {
-                                            // module is not present, fail
-                                            bootLog(message[1]);
-                                            return Promise.reject(message[1]);
-                                        } else if( dep && dep.loaded){
-                                            // module is already loaded, continue
-                                            bootLog(message[2]);
-                                            // remove dependency from list
-                                            //_.pull(deps,depName);
-                                            return Promise.resolve();
-                                        } else {
-                                            // module is not loaded, try to load it
-                                            if(!dep.loaded){
-                                                bootLog(message[3]);
-                                                return dep._load().then(function(){
-                                                    
-                                                     // recheck dependencies
-                                                     return $this._checkDependencies();
-                                                })
-                                                .catch(function(err){
-                                                    bootLog(err);
-                                                    Promise.reject(err);
-                                                });
-                                            }
-                                        } 
-                                    }
-                
-                                    return Promise.all(results);
-                                },
-            
-            _load               : function(){
-                                    var $this = this;
-                                    if(!this.loaded){
-                                        return this._checkDependencies().then(function(){
-                                            return $this._initialize();
-                                        }).catch(function(err){
-                                            bootLog(err);
-                                            return $this._abort();
-                                        });   
-                                    } else {
-                                        Promise.resolve($this);
-                                    }
-                                },
-            _abort              : function(){
-                                    this.loaded = false;
-                                    delete window.octane[this.name];
-                                    return Promise.reject(this.name+': failed to initialize!');
                                 },
             _initialize         : function(){
                                     
-                                    var
-                                    $this = this,
-                                    message = [
-                                            this.name+': initializing...',
-                                            this.name+': successfully initialized!',
-                                            this.name+': already initialized, continuing...'
-                                        ];
+                                    this.dependenciesLoaded = [];
                                     
-                                    if(!this.loaded){
-                                        bootLog(message[0]);
-                                        this.constructor.prototype = new Module({name:this.name});
+                                    var $this = this;
+                                    var config = _octane.moduleConfigs[this.name] || {};
+                                    var message = [
+                                        this.name+': initializing...',
+                                        this.name+': successfully initialized!',
+                                        this.name+': already initialized, continuing...',
+                                        this.name+': failed to initialize!'
+                                    ]; 
+                                    
+                                    if(!this.initialized){
+                                        return OctaneModule.checkDependencies(this)
+                                            .then(function(){
                                             
-                                        this
-                                        .define({
-                                            loaded : true,
-                                            name    : this.name
-                                        })
-                                        .define(this.constructor.__construct([this.cfg]));
-
-                                        Object.defineProperty(window.octane,$this.name, {
-                                            value :$this,
-                                            writatble : false,
-                                            configurable : false
-                                        });
-                                        
-                                        try{
-                                            this.initialize && this.initialize();
-                                        }catch(ex){
-                                            $O.log(ex);
-                                        }
-                                        
-                                        bootLog(message[1]);
-                                        $O.App.set({
-                                            "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
-                                        });
-                                        // hook-in for updating a loading screen
-                                        $O.fire('loaded:module',{
-                                            detail:{moduleID: this.name }
-                                        });
+                                                OctaneModule.log(message[1]);
+                                                $this.initialize(config);
+                                                $O.App.set({
+                                                    "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
+                                                });
+                                                // hook-in for updating a loading screen
+                                                $O.fire('loaded:module',{
+                                                    detail:{moduleID: $this.name }
+                                                });
+                                                $this.initialized = true;
+                                                return Promise.resolve($this);
+                                            })
+                                            .catch(function(err){
+                                                OctaneModule.log(err);
+                                                $this.initialized = false;
+                                                return Promise.reject(message[3]);
+                                            });   
+                                    } else {
+                                        return Promise.resolve(this);
                                     }
-                                    return Promise.resolve(this);
+                                },
+            checkDependency     :   function (dependency){
+                                        
+                                        dependency = dependency ? dependency.trim() : '';
+                                        
+                                        var $this = this;
+                                        var dep = _octane.modules[dependency];
+                                        var message = [
+                                            this.name+': no dependencies, preparing to initialize...',
+                                            this.name+': Could not load module, missing module dependency "'+ dependency +'"',
+                                            this.name+': dependency "'+ dependency +'" loaded and initialized, continuing...',
+                                            this.name+': dependency "'+ dependency +'" not yet loaded, loading now...'
+                                        ];
+                                       
+                                        switch(true){
+                                            case (!dependency || dependency.length === 0) : // no dependency
+                                                OctaneModule.log(message[0]);
+                                                return Promise.resolve();
+                                            case ( !(dep && dep instanceof OctaneModule) ) : // module is not present, fail
+                                                OctaneModule.log(message[1]);
+                                                return Promise.reject(message[1]);
+                                            case ( dep && dep.initialized) : // module is already loaded, continue
+                                                OctaneModule.log(message[2]);
+                                                // remove dependency from list
+                                                this.dependenciesLoaded.push(dependency);
+                                                _.pull(this.dependencies,name);
+                                                return Promise.resolve();
+                                            case (!dep.initialized): // module is not loaded, try to load it
+                                                OctaneModule.log(message[3]);
+                                                return dep._initialize().then(function(){
+                                                    $this.dependenciesLoaded.push(dependency);
+                                                    _.pull($this.dependencies,name);
+                                                })
+                                                .catch(function(err){
+                                                    OctaneModule.log(err);
+                                                    Promise.reject(err);
+                                                });
+                                        } 
                                 }
         });
         
-		// add a module to octane before init
-		function addModule (name,dependencies,constructor){
-            constructor = (__.typeOf(arguments[2]) == 'function') ? arguments[2] : arguments[1];
-            
-			_octane.modules[name] = new Module({
-                name            : name,
-                constructor     : constructor,
-                dependencies    : (__.typeOf(arguments[1]) == 'array') ? arguments[1] : [],
-                loaded          : false,
-                cfg             : [{}]
-            });
-		}
+        // Static methods
+        _.extend(OctaneModule,{
+            checkDependencies   : function(module){
+
+                                        var deps = module.dependencies || [];
+                                        var n = deps.length;
+                                        var results = [];
+                                        var message = [
+                                            module.name+': checking dependencies...',
+                                            module.name+': no dependencies, preparing to initialize...'
+                                        ];
+
+                                        OctaneModule.log(message[0]);
+
+                                        if(n === 0){
+                                            OctaneModule.log(message[1]);
+                                            return Promise.resolve();   
+                                        } else {
+                                            while(n--){
+                                                results.push(module.checkDependency(deps[n]));               
+                                            }
+                                            return Promise.all(results);
+                                        }       
+                                },
+            bootlog             : [],
+            log                 : function(message){
+                                        this.bootlog.push(message);
+                                }
+        });
+        
+        _octane.bootlog = OctaneModule.bootlog;
+		
 		
 		// called at $O.initialize()
-		function initModules(options){
+		var initModules = function(initConfig){
 			
-			options = options || {};
-
+			_.isPlainObject(initConfig) || (initConfig = {});
+            
+            _.extend(_octane.moduleConfigs,initConfig);
+            
             // load router module first
-            return _octane.modules['StartupUtilities']._load()
+            return _octane.modules['StartupUtilities']._initialize()
                 .then(function(){
-                    return _octane.modules['Router']._load();
+                    return _octane.modules['Router']._initialize();
                 })
                 .then(function(){
                 
-                    var 
-                    moduleName,
-                    moduleKeys = Object.keys(_octane.modules),
-                    m=moduleKeys.length,
-                    modulesLoaded = [],    
-                    tryLoading = function(moduleName){
+                    var modules = _octane.modules;
+                    var moduleNames = Object.keys(modules);
+                    var m = moduleNames.length;
+                    var modulesLoaded = [];    
+                    var tryLoading = function(moduleName){
                         
-                        var 
-                        initConfig,
-                        moduleConfig,
-                        module = _octane.modules[moduleName];
+                        var initConfig;
+                        var moduleConfig;
+                        var module = modules[moduleName];
                         
-                        if(!module.loaded){
-                            bootLog(moduleName+': not loaded, loading...');
-                            
-                            // assign config properties, those
-                            initConfig = _.isPlainObject(options[moduleName]) ? options[moduleName] : {};
-                            moduleConfig = _.isPlainObject(_octane.moduleConfigs[moduleName]) ? _octane.moduleConfigs[moduleName] : {};
-                            module.cfg = _.extend(moduleConfig,initConfig);
-                            modulesLoaded.push( module._load() );
+                        if(!module.initialized){
+                            OctaneModule.log(moduleName+': not loaded, loading...');
+                            modulesLoaded.push( module._initialize());
                         }
                     };
                     
                     // load each module
                     while(m--){
-                        moduleName = moduleKeys[m];
-                        tryLoading(moduleName);
+                        tryLoading( moduleNames[m] );
                     }
                 
                     return Promise.all(modulesLoaded);
                 })
                 .catch(function(err){
-                    bootLog(err);
+                    OctaneModule.log(err);
                 });
 		}
 		
         
 		$O.define({
-            
-            module     : function(name,dependencies,$module){ 
-                            return addModule(name,dependencies,$module);
+            Module      : OctaneModule,
+            module     : function(name,dependencies){ 
+                            return (_octane.modules[name] = new OctaneModule(name,dependencies) );
                         },
             hasModule : function (name){ 
-                            return _octane.modules[name] ? _octane.modules[name].loaded : false; 
+                            return (_octane.modules[name] && _octane.modules[name].initialized);
                         },
             moduleConfig : function(module,cfg){
-                            if(_.isPlainObject(cfg)){
-                                _octane.moduleConfigs[module] = cfg;
-                            }
+                            _.isPlainObject(cfg) && (_octane.moduleConfigs[module] = cfg);
                         }
         });
         
-    /* ------------------------------------------------------- */
-	/*                         CIRCUIT                         */
-	/* ------------------------------------------------------- */
-      
-        $O.define({
-            
-            // a custom event for the app to fire when user data changes 
-            trip       :   function(elem){
-
-                        var rand = Math.random(),
-                            e = __.customEvent('input',{bubbles:true,detail:rand});
-
-                        elem.dispatchEvent && elem.dispatchEvent(e);
-                    },
-         });
+   
         
     /* ------------------------------------------------------- */
 	/*                          DOM                            */
@@ -2061,24 +1877,20 @@
         
         function parseTemplate(template,data){
             
-            template = _.isString(template) ? template : '',
-            data = _.isObject(data) ? data : {};
+            _.isString(template) || (template = ''),
+            _.isObject(data) || (data = {});
             
-            var
-            pattern = /\{\{([^{^}]+)\}\}/g,
-            matches = template.match(pattern);
+            var pattern = /\{\{([^{^}]+)\}\}/g;
+            var matches = template.match(pattern);
             
             if(_.isArray(matches)){
                 matches.forEach(function(match){
                    
-                    var
-                    key = match.replace(/[{}]+/g,''),
-                    regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g"),
-                    keySplit = key.split('.'),
-                    l = keySplit.length,
-                    value;
-                    
-                    value = keySplit.reduce(function (prev,curr,index,arr){
+                 	var key = match.replace(/[{}]+/g,'');
+                	var regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                   	var keySplit = key.split('.');
+               		var l = keySplit.length;
+                 	var value = keySplit.reduce(function (prev,curr,index,arr){
                         var val = prev[curr];
                         if(index == (l-1)){ 
                             return val; // last iteration, return value
@@ -2096,10 +1908,10 @@
         }
         
          (function parseTemplatesFromDOM(){
-            var 
-            tmpls = document.querySelectorAll('script[type="text/octane-template"]'),
-            t = tmpls.length,
-            setTemplate = function setTemplate(template){
+            
+			var tmpls = document.querySelectorAll('script[type="text/octane-template"]');
+            var t = tmpls.length;
+            var setTemplate = function setTemplate(template){
                 if(!_octane.templates[template.id]){
                     _octane.templates[template.id] = template.innerHTML;
                 }else{
@@ -2120,7 +1932,8 @@
         }
         Template.prototype = new OctaneBase;
         Template.prototype.define({
-            create : function(content){
+            
+			create : function(content){
                 if(_.isString(content)){
                     if(!_octane.templates[this.id]){
                         _octane.templates[this.id] = content;
@@ -2139,11 +1952,9 @@
             },
             into : function(elem,prepend){
                 
-                var 
-                div = document.createElement('div'),
-                nodes,
-                node,
-                firstChild = elem.firstChild;
+                var div = document.createElement('div');
+				var firstChild = elem.firstChild;
+                var nodes, node;
                 
                 div.innerHTML = this.content;
                 div.normalize();
@@ -2181,18 +1992,12 @@
         
         $O.compiler( function applyActionHandlers(){
             
-            var 
-            triggers = document.querySelectorAll('[o-action]'),
-            t = triggers.length,
-            setHandler = function(elem){
+            var triggers = document.querySelectorAll('[o-action]');
+            var t = triggers.length;
+            var setHandler = function(elem){
                 
-                var 
-                o_action = elem.getAttribute('o-action'),
-                actionObj,
-                action,
-                event,
-                controller,
-                method;
+                var o_action = elem.getAttribute('o-action');
+                var actionObj, action, event, controller, method;
                 
                 try{
                     actionObj = JSON.parse(o_action);
@@ -2244,7 +2049,7 @@
                 _octane.ViewModel.init();
                 
                 $O.App.set({
-                    loadingProgess : 0,
+                    loadingProgress : 0,
                     name : config.appName
                 });
                 
@@ -2272,13 +2077,3 @@
         window.octane = window.$o = new Octane('Application');
         
 	})($,_,__);
-
-
-    
-	/* TODO - octane extension methods */
-	// add built in filters
-    // add filters/lenses in refresh
-	// build modal view and routing
-	
-	
-	
