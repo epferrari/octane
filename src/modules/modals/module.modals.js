@@ -1,4 +1,6 @@
-octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
+octane.module('Modal',['OctaneViews','UiOverlay']).extend({
+    
+    initialize : function(cfg){
     
         var
         ViewProto = this.import('ViewPrototype'),
@@ -8,7 +10,6 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
         $Modals = {},
         Velocity = Velocity || $.Velocity,
         bg = octane.dom.modalContainer(),
-        
         animBy = octane.viewAnimationMethod || 'css';
             
         function OctaneModal(elem){
@@ -73,7 +74,8 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                 
         });
     
-        ModalAnimation = octane.controller('ModalAnimationController').augment({
+        // TODO 
+        var ModalAnimation = octane.controller('ModalAnimationController').augment({
             dismiss : {
                js : function(){
                         var modal = this;
@@ -105,81 +107,79 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
                 }
             }
         });
-                    
-        // end oModal prototype
         
-        var
-        modalQueue = [],
-        currentModal = false,
-        block = false;
-        
-       function callModal(modalID){
+        var modalQueue = [];
+        var currentModal = false;
+        var block = false;
 
-            var $modal = $Modals[modalID];
+        _.extend(OctaneModal,{
+            call : function(modalID){
 
-            if(!($modal && ($modal instanceof OctaneModal))){  return };
+                var $modal = $Modals[modalID];
 
-            if(!block){
-                octane.blockRouting();
-                if(!currentModal){
-                    $modal.load().then(function(){
-                        currentModal = $modal;
-                        octane.unblockRouting(); 
-                    });
-                } else if (currentModal.id !== modalID){
-                    // another modal is onscreen, remove it
-                   currentModal.exit()
-                        .then($modal.load)
-                        .then(function(){
+                if(!($modal && ($modal instanceof OctaneModal))){ return };
+
+                if(!block){
+                    octane.Router.lock();
+                    if(!currentModal){
+                        $modal.load().then(function(){
                             currentModal = $modal;
-                            octane.unblockRouting(); 
+                            octane.Router.unlock(); 
                         });
+                    } else if (currentModal.id !== modalID){
+                        // another modal is onscreen, remove it
+                       currentModal.exit()
+                            .then($modal.load)
+                            .then(function(){
+                                currentModal = $modal;
+                                octane.Router.unlock(); 
+                            });
+                    } else {
+                       octane.Router.unlock(); 
+                    }
                 } else {
-                   octane.unblockRouting(); 
+                    modalQueue.push(modalID);
                 }
-            } else {
-                modalQueue.push(modalID);
-            }
-        }
+            },
+            dismiss : function (modalID){
 
-        function dismissModal(modalID){
-            
-            var $modal = $Modals[modalID];
+                var $modal = $Modals[modalID];
+                if($modal && $modal instanceof OctaneModal){
+                    octane.Router.lock();
+                    $modal.exit()//.then(function(){
+                        octane.Router.unlock();
+                        currentModal = false;
+                   // });
+                }
+            },
+            create : function (elem){
 
-            if($modal && $modal instanceof OctaneModal){
-                
-                octane.blockRouting();
-                
-               $modal.exit()//.then(function(){
-                    octane.unblockRouting();
-                    currentModal = false;
-               // });
-            }
-        }
+                var id = elem.id;
+                !$Modals[id] && ($Modals[id] = new this(elem));
+            },
+            getCurrent : function(){
+                return currentModal;
+            },
+            isLocked : function(){
+                return block;
+            },
+            callThen : function(modalID,callback,args){
+                $Modals[modalID] && $Modals[modalID].addAfterLoadCallback(callback,args);
+            }   
+        });
         
-        // helper
-        function initModal(elem){
-            var 
-            id = elem.id;
-           
-            if(!$Modals[id]){
-               $Modals[id] = new OctaneModal(elem);
-            }
-        }
-        // end helper
 
         function setTriggerHandlers(){
             
-            var 
-            triggers = document.querySelectorAll('[o-modal]'),
-            n = triggers.length,
-            addHandler = function(elem){
+            var triggers = document.querySelectorAll('[o-modal]');
+            var n = triggers.length;
+            var addHandler = function(elem){
                
                 elem.removeEventListener('click');
                 elem.addEventListener('click',function(e){
 
                     var modalID = elem.getAttribute('o-modal');
-                    callModal(modalID);
+                    OctaneModal.call(modalID);
                 });
             };
 
@@ -190,68 +190,52 @@ octane.module('Modal',['OctaneViews','UiOverlay'],function(cfg){
         
         function setDismissHandlers(){
             
-            var 
-            elems = document.querySelectorAll('.o-modal-dismiss'),
-            n = elems.length,
-            setHandler = function(elem){
+            var elems = document.querySelectorAll('.o-modal-dismiss');
+            var n = elems.length;
+            var handler = function(e){
+                e.stopPropagation;
+                e.stopImmediatePropagation;
+                OctaneModal.dismiss(currentModal.id);
+                return false;
+            };
+            var setHandler = function(elem){
                 //elem.removeEventListener('click',handler);
                 elem.addEventListener('click',handler);
             };
-            
-            function handler(e){
-                e.stopPropagation;
-                e.stopImmediatePropagation;
-                dismissModal(currentModal.id);
-                return false;
-            }
             
             while(n--){   
                 setHandler(elems[n]);
             }
         }
 
-        this.initialize = function(){
+        (function(){
             
-            $modals = document.getElementsByTagName('o-modal')
-
-            for(var m=0,M=$modals.length; m<M; m++){
-                initModal($modals[m]);  
+            var modals = document.getElementsByTagName('o-modal')
+            var n = modals.length;
+            while(n--){
+                OctaneModal.create(modals[n]);  
             }
-
-            octane.compiler( setTriggerHandlers );
-            octane.compiler( setDismissHandlers );
-
-            // dismiss modal automatically on route
-            octane.handle('routing:begin',function(){
-                block = true;
-                dismissModal(currentModal.id);  
-            });
-
-            // re-enable modal calling after routing completes
-            octane.handle('routing:complete',function(){
-                block = false;
-                callModal(modalQueue.pop());
-            });
-
-            // resize canvas to proper dimensions
-            octane.handle('load resize orientationchange',function(){
-                currentModal && currentModal.adjustSize();
-            });
-        }
-
-        this.augment({
-            call    : callModal,
-            dismiss : dismissModal,
-            current : function(){
-                return currentModal;
-            },
-            isBlocked : function(){
-                return block;
-            },
-            callThen : function(modalID,callback,args){
-                $Modals[modalID] && $Modals[modalID].addAfterLoadCallback(callback,args);
-            }
-        });
-});
+            
+            octane
+                .compiler( setTriggerHandlers )
+                .compiler( setDismissHandlers )
+                // dismiss modal automatically on route
+                .handle('routing:begin',function(){
+                    block = true;
+                    octane.Modal.dismiss(currentModal.id);  
+                })
+                // re-enable modal calling after routing completes
+                .handle('routing:complete',function(){
+                    block = false;
+                    octane.Modal.call(modalQueue.pop());
+                })
+                // resize canvas to proper dimensions
+                .handle('load resize orientationchange',function(){
+                    currentModal && currentModal.adjustSize();
+                })
+                .define({ Modal : OctaneModal });
+        })();
+    } // end initialize
+}); // end module
 
     
