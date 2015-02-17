@@ -238,6 +238,15 @@
             }
             
         });
+        
+        Octane.define({
+            promisify : function(deferred){
+                var args = Array.prototype.slice.call(arguments,1); 
+                return new Promise(function(resolve,reject){
+                    deferred.apply(deferred,args).then(resolve,reject);
+                });
+	       }
+        });
 
     /* ------------------------------------------------------- */
 	/*                     COMPILER AND HOOK                   */
@@ -941,9 +950,11 @@
                                     oUpdate[_oUpdate] = 'html';
                                 } else {
                                     try{
-                                        oUpdate = _.invert( JSON.parse(_oUpdate) ) || {};
+                                        console.log(oUpdate);
+                                        oUpdate = _.invert( JSON.parse(_oUpdate) );
+                                        console.log(oUpdate);
                                     }catch(ex){
-                                       Octane.log(ex.message + ' in ViewModel.parse(), element: '+elem );
+                                       Octane.log(ex.message + ' in ViewModel.parse(), element: '+elem +' Error: '+ex );
                                     }
                                 }
                                 
@@ -1078,6 +1089,9 @@
                                         'value' : function(fresh){
                                             elem.value = fresh;
                                         },
+                                        'src' : function(fresh){
+                                            elem.src = fresh;
+                                        },
                                         'default' : function(fresh,attr){
                                             elem.setAttribute(attr,fresh);
                                         }
@@ -1191,6 +1205,9 @@
                     
                     return model;
                 }
+            },
+            get : function(bind){
+                return _octane.models[bind];
             }
 		});
         
