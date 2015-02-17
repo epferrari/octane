@@ -7,7 +7,7 @@ octane.module('Router',['OctaneViews']).extend({
         // octane's own pushstate method
         function pushState(params){
 
-            !_.isObject(params) && (params = {});
+            _.isObject(params) || (params = {});
             // update the language in the url
             var parsed = __.location().searchObject;	
 
@@ -31,7 +31,7 @@ octane.module('Router',['OctaneViews']).extend({
 
             History.pushState( 
                 { lang: language },
-                octane.get('APP.name') +' | '+ title,
+                octane.get('App.name') +' | '+ title,
                 fragment
             );
             
@@ -296,7 +296,7 @@ octane.module('Router',['OctaneViews']).extend({
             
             // change the view with browser's forward/back buttons
             octane.handle(stateChangeEvent,function(){       
-                var view = parseView();
+                var view = getRequestedView();
                 view && octane.route(view);
             });
         }

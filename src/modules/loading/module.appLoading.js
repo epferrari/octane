@@ -16,7 +16,7 @@
                     screenReader : 'Loading'
                 }).become('appLoading');
 
-                octane.controller('loadingController').augment({
+                octane.controller('LoadingController').augment({
                     removeLoadingScreen : function(){
                         // unhide the rest of content hidden behind the loader    
                         var
@@ -57,6 +57,6 @@
                             'appLoading.message' : 'Initializting startup utility '+titleize(e.detail)
                         })
                     })
-                    .handle('octane:ready',octane.controller('loadingController').removeLoadingScreen);
+                    .handle('octane:ready',octane.controller('LoadingController').removeLoadingScreen);
             }
 		});

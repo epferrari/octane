@@ -18,13 +18,13 @@
                    return _octane.eventHandlerMap;
                 },
                 getLog : function(full){ 
-                    return full ? octane.Module.bootlog.concat(_octane.logfile) : _octane.logfile;
+                    return full ? _octane.bootlog.concat(_octane.logfile) : _octane.logfile;
                 },
                 getCollections : function(){
                     return _octane.Collections;
                 },
                 bootlog : function(){
-                    return octane.Module.bootlog;
+                    return _octane.bootlog;
                 }
             });
         }
