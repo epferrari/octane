@@ -1083,10 +1083,10 @@
                                     fresh = '';
                                 }
                                 
-                                console.log('ViewModel._update called');
-                                console.log('key: '+key);
-                                console.log('updating element attribute: '+attr);
-                                console.log('with value: '+fresh);
+                                //console.log('ViewModel._update called');
+                                //console.log('key: '+key);
+                                //console.log('updating element attribute: '+attr);
+                                //console.log('with value: '+fresh);
                 
                                 if(attr.indexOf('.') !== -1){
                                     // update style on element
