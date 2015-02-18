@@ -903,7 +903,7 @@
                                 
                                 // store reference to element in the ViewModel
                                 // with its attr to update and the key to update with 
-                                deep.reduce(function(o,x,i){
+                                /*deep.reduce(function(o,x,i){
                                     if(i == (l-1)){
                                         var bindTarget = {
                                             key:oBind,
@@ -918,7 +918,7 @@
                                     } else {   
                                         return o[x] = _.isObject(o[x]) ? o[x] : {__binds__ :[]};
                                     }
-                                },$scope);
+                                },$scope);*/
                                
                                 // set event handlers for all levels of model change
                                 deep.reduce(function(o,x,i){
@@ -929,9 +929,21 @@
                                         watch = o+'.'+x;
                                     }
                                     
+                                    //edit
+									_.isArray($scope[watch]) || ($scope[watch] = []);
+									$scope[watch].push({
+										key:oBind,
+										elem:elem,
+										attr:'value'
+									});
+                                    // end edit
+
+
                                     Octane.handle('statechange:'+watch,$this.refresh.bind($this));
                                      return watch;
                                 },'');
+
+
                             } // end if o-bind
                         },
             _watchUpdates : function(elem){
@@ -973,13 +985,22 @@
                                             watch = o+'.'+x;
                                         }
                                         
+                                        //edit
+										_.isArray($scope[watch]) || ($scope[watch] = []);
+										$scope[watch].push({
+											key:key,
+											elem:elem,
+											attr:attr
+										});
+										// end edit
+
                                         Octane.handle('statechange:'+watch,$this.refresh.bind($this));
                                          return watch;
                                     },'');
                                    
                                     // store reference to element in the ViewModel
                                     // with its attr to update and the model key to update with 
-                                    deep.reduce(function(o,x,i,arr){
+                                    /*deep.reduce(function(o,x,i,arr){
 
                                         if(i == (l-1)){ // last iteration
                                             var updateTarget = {
@@ -995,7 +1016,7 @@
                                         } else {
                                             return o[x] = _.isObject(o[x]) ? o[x] : {__binds__:[]};
                                         }
-                                    },$scope);
+                                    },$scope);*/
                                 });
                             }  // end if o-update
             },
@@ -1011,12 +1032,12 @@
                                 var $scope = this.scope;
                                 // create array of nested keys, 
                                 // ex. "statechange:App.loading.message" becomes ["App","loading","message"]
-                                var updated = e.type ? e.type.replace('statechange:','').split('.') : [];
+                                /*var updated = e.type ? e.type.replace('statechange:','').split('.') : [];
                                 var toUpdate = updated.reduce(function(o,x,i){
                                     return _.isObject(o[x]) ? o[x] : {};   
                                 },$scope);
 								var targets;
-                                
+                                console.log('toUpdate',toUpdate);
                                 // recursively get targets
                                 targets = this._getUpdateTargets(toUpdate);
                                 // remove undefined
@@ -1025,7 +1046,9 @@
                                 targets = targets.__concatAll();
                                 _.each(targets,function(target){
                                    $update(target.key,target.elem,target.attr);
-                                });    
+                                });*/ 
+                                var scopeKey = e.type.replace('statechange:','');
+                                _.isArray($scope[scopeKey]) && _.each($scope[scopeKey],$update); 
                                        
 							},
             // recursively look through the ViewModel for targets to update
@@ -1048,14 +1071,23 @@
                                 });
                             },
             // perform an update on a single
-			_update       : function(key,elem,attr){
-                                        
+			_update       : function(updateTarget){
+                                
+                                var key = updateTarget.key;
+                                var elem = updateTarget.elem;
+                                var attr = updateTarget.attr;
                                 var fresh = Octane.get(key);
                                 var prop,updater;
                                 
 								if(__.isNull(fresh) || __.isUndefined(fresh)){
                                     fresh = '';
                                 }
+                                
+                                console.log('ViewModel._update called');
+                                console.log('key: '+key);
+                                console.log('updating element attribute: '+attr);
+                                console.log('with value: '+fresh);
+                
                                 if(attr.indexOf('.') !== -1){
                                     // update style on element
                                     prop = attr.split('.')[1];
