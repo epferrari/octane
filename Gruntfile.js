@@ -78,7 +78,7 @@ module.exports = function(grunt) {
 		css	:{
 			dir		: "build/assets/css/",
 			bower	: "build/assets/css/_bower.css",
-			main	: "build/assets/css/<%= pkg.name %>.js"
+			main	: "build/assets/css/<%= pkg.name %>.css"
 		},
 		img	:{
 			dir:"build/assets/img/"
@@ -186,6 +186,10 @@ module.exports = function(grunt) {
                         dist:{
                             src : dist.css.main,
                             dest: dist.css.main
+                        },
+                        build:{
+                            src:build.css.main,
+                            dest:build.css.main
                         }
                     },
 		
@@ -360,7 +364,7 @@ module.exports = function(grunt) {
 			
 		// compile css
 			'sass',
-			
+	
 		// concat dependencies
 			'bower_concat',
 			
@@ -368,7 +372,10 @@ module.exports = function(grunt) {
 			'uglify:build',
 			
 		// copy files to build dir
-			'copy:build'
+			'copy:build',
+        
+        // post process css with auto prefixer
+            'autoprefixer:build'
 	]);
 	
 	
