@@ -183,6 +183,11 @@
                             }
                         });
                     });
+                    /*
+                    testing w/o
+                    var canvas = document.createElement('canvas');
+                    return Promise.resolve(canvas);
+                    */
                 }    
             });
 
