@@ -84,14 +84,14 @@ octane.module('Router',['OctaneViews']).extend({
         // just keeps view from routing until something is done
         function beforeRoute(viewID,deferred,argsArray){
             
-            octane.View(viewID) && octane.View(viewID).addBeforeLoadPromise(deferred,argsArray);
+            octane.getView(viewID) && octane.getView(viewID).addBeforeLoadPromise(deferred,argsArray);
             return octane;
         }
             
         // add a callback to be executed when the specified view finishes its loading animation 
         function routeThen(viewID,callback,argsArray){
 
-            octane.View(viewID) && octane.View(viewID).addAfterLoadCallback(callback,argsArray);
+            octane.getView(viewID) && octane.getView(viewID).addAfterLoadCallback(callback,argsArray);
             return octane;
         }
         
@@ -103,7 +103,7 @@ octane.module('Router',['OctaneViews']).extend({
                 
                 ghost = _.isBoolean(ghost) ? ghost : false;
                 var 
-                $view = octane.View(viewID),
+                $view = octane.getView(viewID),
                 viewOnScreen = ($view == currentView),
                 modalOnScreen = (octane.Modal.getCurrent());
             

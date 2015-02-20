@@ -33,6 +33,7 @@ octane.module('OctaneViews',['ViewPrototype']).extend({
                 todoAfterLoad : [],					
             });
             
+            // prototype method
             this.configureLoading();
         }
 
@@ -52,12 +53,13 @@ octane.module('OctaneViews',['ViewPrototype']).extend({
                 id = $views[n].id;
                 config = JSON.parse($views[n].getAttribute('o-config'));
                 !$Views[id] && ($Views[id] = new OctaneView($views[n],config));
-            }
-            octane.define({
-                View : function(id){
-                    return $Views[id] || false;
-                }
-            });
+            } 
         })();
+        
+        octane.define({
+            getView : function(id){
+                return $Views[id] || false;
+            }
+        });
     }
 });
