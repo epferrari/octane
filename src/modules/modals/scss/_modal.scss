@@ -2,17 +2,15 @@ o-modal-container{
     position:fixed;
     height:100%;
     width:100%;
-    top:0;
+    //top:0; safari
     left:0;
-    z-index:-1;
+    //z-index:-1; safari
     pointer-events:none;
     overflow-y:hidden;
    
     opacity:0;
     will-change: opacity;
     transition: opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
-    
-    //background-image:url(../img/octane-modal-bg.png);
     background-repeat:repeat;
     
     &:before{
