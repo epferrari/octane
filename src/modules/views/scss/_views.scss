@@ -4,6 +4,8 @@ o-view-container{
 	display:block;
 	width:100%;
     z-index:10;
+    overflow-x:hidden;
+    overflow-y:hidden;
 }
 
 o-view {
@@ -15,6 +17,7 @@ o-view {
     top:0;
     left:0;
     overflow-x:hidden;
+    overflow-y:hidden;
     z-index:1;
     background-color:white;
 }

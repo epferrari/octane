@@ -89,7 +89,9 @@ octane.module('ViewPrototype').extend({
                 viewContainerHeight = viewContainer.offsetHeight,
                 freeSpace;
                 
+                this.elem.style.height = viewContainer.style.height = windowHeight;
                 
+                /*
                 // convert appContainer's NodeList to real array
                 for(var i=0,n=appContainerNodeList.length; i<n; i++){
                     appContainerNodes.push(appContainerNodeList[i]);
@@ -114,6 +116,7 @@ octane.module('ViewPrototype').extend({
                 viewContainerHeight = (viewTotalHeight > freeSpace) ? viewTotalHeight : freeSpace;
                 // animate
                 $.Velocity.animate(viewContainer,{height: viewContainerHeight+'px'});
+                */
                
             },
             
