@@ -141,9 +141,9 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
                     modalQueue.push(modalID);
                 }
             },
-            dismiss : function (modalID){
+            dismiss : function (){
 
-                var $modal = $Modals[modalID];
+                var $modal = currentModal;
                 if($modal && $modal instanceof OctaneModal){
                     octane.Router.lock();
                     $modal.exit()//.then(function(){
@@ -168,61 +168,38 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
             }   
         });
         
-
-        function setTriggerHandlers(){
-            
-            var triggers = document.querySelectorAll('[o-modal]');
-            var n = triggers.length;
-            var addHandler = function(elem){
-               
-                elem.removeEventListener('click');
-                elem.addEventListener('click',function(e){
-
-                    var modalID = elem.getAttribute('o-modal');
-                    OctaneModal.call(modalID);
-                });
-            };
-
-            while(n--){ 
-                addHandler(triggers[n]);  
-            } 
-        }
-        
-        function setDismissHandlers(){
-            
-            var elems = document.querySelectorAll('.o-modal-dismiss');
-            var n = elems.length;
-            var handler = function(e){
-                e.stopPropagation;
-                e.stopImmediatePropagation;
-                OctaneModal.dismiss(currentModal.id);
-                return false;
-            };
-            var setHandler = function(elem){
-                //elem.removeEventListener('click',handler);
-                elem.addEventListener('click',handler);
-            };
-            
-            while(n--){   
-                setHandler(elems[n]);
-            }
-        }
-
         (function(){
             
-            var modals = document.getElementsByTagName('o-modal')
-            var n = modals.length;
-            while(n--){
-                OctaneModal.create(modals[n]);  
-            }
+            //var modals = document.getElementsByTagName('o-modal')
+            //var n = modals.length;
+           // while(n--){
+            //    OctaneModal.create(modals[n]);  
+            //}
             
             octane
-                .compiler( setTriggerHandlers )
-                .compiler( setDismissHandlers )
+                .compiler('o-modal',function(elem){
+                    OctaneModal.create(elem);
+                })
+                .compiler('[o-modal]',function(elem){
+
+                    elem.addEventListener('click',function(e){
+                        var modalID = elem.getAttribute('o-modal');
+                        OctaneModal.call(modalID);
+                    });
+                })
+                .compiler('.o-modal-dismiss',function(elem){
+
+                    elem.addEventListener('click',function(e){
+                        e.stopPropagation;
+                        e.stopImmediatePropagation;
+                        OctaneModal.dismiss();
+                        return false;
+                    });
+                })
                 // dismiss modal automatically on route
                 .handle('routing:begin',function(){
                     block = true;
-                    octane.Modal.dismiss(currentModal.id);  
+                    octane.Modal.dismiss();  
                 })
                 // re-enable modal calling after routing completes
                 .handle('routing:complete',function(){

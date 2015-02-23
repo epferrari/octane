@@ -252,28 +252,49 @@
 	/*                     COMPILER AND HOOK                   */
 	/* ------------------------------------------------------- */
         
-        _octane.compilationTasks = [];
-        
-        Octane.define({
-            compiler : function(task){
-                _octane.compilationTasks.push(task);
-                return this;
+        var Compiler = {
+            tasks : [],
+            add : function(subjects,task){
+                task._compilerID = Octane.GUID();
+                this.tasks.push([subjects,task]);    
             },
-            compile : function(){
-                
-                var tasksCompleted = [];
-                var i=0;
-                var n=_octane.compilationTasks.length;
-                var callTask = function(task){
+            run : function(context){
+              
+                context || (context = document);
+                var tasksCompleted;
+                var taskRunner = function(set){
                     return new Promise(function(resolve){
-                        _.isFunction(task) && task.call();
+                        var subjects = set[0];
+                        var task = set[1];
+                        var taskID = task._compilerID;
+                        
+                        _.each(context.querySelectorAll(subjects),function(elem){
+                            // set hash so we don't re-apply a task
+                            elem._compiled || (elem._compiled = {});
+                            if(!elem._compiled[taskID]){
+                                elem._compiled[taskID] = true;
+                                try{
+                                    task.apply(null,[elem]);
+                                } catch (ex){
+                                    Octane.log(ex);
+                                }
+                            }
+                        });
                         resolve();
-                    });    
+                    });
                 };
-                
-                tasksCompleted = _octane.compilationTasks.map(callTask);
+              
+                tasksCompleted = this.tasks.map(taskRunner);
                 return Promise.all(tasksCompleted);
             }
+        };
+        
+        Octane.define({
+            compiler : function(subjects,task){
+                Compiler.add.apply(Compiler,[subjects,task]);
+                return Octane;
+            },
+            recompile : Compiler.run.bind(Compiler)
         });
 	
 	/* ------------------------------------------------------- */
@@ -512,7 +533,24 @@
                 });
             }catch(ex){/* ignore */}
         };
-           
+        _octane.addHandler = function (type,elem,handler){
+                                    
+            var id = elem._guid || (elem._guid = Octane.GUID());
+            var map = this.eventHandlerMap;
+            try{
+                map[id][type].push(handler);
+            } catch(ex){
+               try{
+                    map[id][type] = [];
+                    map[id][type].push(handler);
+               } catch (ex){
+                    map[id] = {};
+                    map[id][type] = [];
+                    map[id][type].push(handler);
+               }
+            } 
+        };
+        
         Octane.define({
 			handle		: 	function(type,$elem,$handler){
                                 
@@ -530,26 +568,8 @@
 									return;
 								}
                                
-                                function addHandler(type,elem,handler){
-                                    
-                                    var id = elem._guid || (elem._guid = Octane.GUID());
-                                   
-                                    try{
-                                        _octane.eventHandlerMap[id][type].push(handler);
-                                    } catch(ex){
-                                       try{
-                                            _octane.eventHandlerMap[id][type] = [];
-                                            _octane.eventHandlerMap[id][type].push(handler);
-                                       } catch (ex){
-                                            _octane.eventHandlerMap[id] = {};
-                                            _octane.eventHandlerMap[id][type] = [];
-                                            _octane.eventHandlerMap[id][type].push(handler);
-                                       }
-                                    } 
-                                }
-                                
                                 while(n--){
-                                    addHandler(types[n],elem,handler); 
+                                    _octane.addHandler(types[n],elem,handler); 
                                     window.addEventListener(types[n],_octane.eventHandler,false);
                                 }
                                 return this; // chainable
@@ -667,14 +687,15 @@
 		ViewModel.prototype = new OctaneBase;
 		ViewModel.prototype.define({
             // find bound elements on the DOM
-			parse	: function(){
+			parse	: function(scope){
 						
+                        scope || (scope = document);
 						var $this = this;
-                        var $bindScope = document.querySelectorAll('[o-bind],[o-update]');
-                        var n=$bindScope.length;
+                        this.bindScope = scope.querySelectorAll('[o-bind],[o-update],[o-sync]');
+                        var n = this.bindScope.length;
                 
                         while(n--){
-                           this.watch($bindScope[n]);
+                           this.watch(this.bindScope[n]);
                         }
 					},
             // set up a watch on bound elements
@@ -689,7 +710,21 @@
                                 this._setFilters(elem);
                                 this._watchBinds(elem);
                                 this._watchUpdates(elem);
-                            }
+                                this._watchSyncs(elem);
+                            }   
+                        },
+            _watchSyncs : function(elem){
+                            
+                            var nested = elem.querySelectorAll('[o-sync]');
+                            var model = elem.getAttribute('o-sync');
+                            var template = new Octane.Template(elem);
+                            template.save();
+
+                            Octane.handle('statechange:'+model,function(e){
+                                var model = elem.getAttribute('o-sync');
+                                var data = Octane.ViewModel.get(model).get();
+                                Octane.Template.get(elem._guid).set(data).renderTo(elem);
+                            });
                         },
             _setFilters : function(elem){
                             var filter = elem.getAttribute('o-filter');
@@ -1772,8 +1807,6 @@
         });
         
         
-		
-		
 		// called at Octane.initialize()
 		var initModules = function(initConfig){
 			
@@ -1866,161 +1899,196 @@
             }
         });
         
+        
     /* ------------------------------------------------------- */
 	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
         
         _octane.templates = {};
         
-        function parseTemplate(template,data){
+        function Template(elem){
             
-            _.isString(template) || (template = ''),
-            _.isObject(data) || (data = {});
-            
-            var pattern = /\{\{([^{^}]+)\}\}/g;
-            var matches = template.match(pattern);
-            
-            if(_.isArray(matches)){
-                matches.forEach(function(match){
-                   
-                 	var key = match.replace(/[{}]+/g,'');
-                	var regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
-                   	var keySplit = key.split('.');
-               		var l = keySplit.length;
-                 	var value = keySplit.reduce(function (prev,curr,index,arr){
-                        if(index == (l-1) && _.isObject(prev)){ // last iteration
-                           return prev[curr];
-                        }
-                        if(_.isObject(prev)){ 
-                            return prev[curr]; // go one level deeper
-                        } else { 
-                            return null; // no further nesting, value defined in key does not exist
-                        }
-                    },data); // start with data object passed to template
-                    
-                    template = template.replace(regexp,value);
-                });
-            }
-            return template;
+            var name = elem.getAttribute('name');
+            this.id = name || elem._guid || (elem._guid = Octane.GUID());
+            this.markup = elem.innerHTML;
+            this.content = ''; 
         }
         
-         (function parseTemplatesFromDOM(){
+        // static methods
+        _.extend(Template,{
             
-			var tmpls = document.querySelectorAll('script[type="text/octane-template"]');
-            var t = tmpls.length;
-            var setTemplate = function setTemplate(template){
-                if(!_octane.templates[template.id]){
-                    _octane.templates[template.id] = template.innerHTML;
-                }else{
-                    Octane.error('Could not create template '+template.id+'. Already exists');
-                }
-            };
-            
-            while(t--){
-                setTemplate(tmpls[t]);
-            }        
-        })();
-        
-        
-        function Template(id){
-            this.id = id;
-            this.content = _octane.templates[this.id] || '';
-            
-        }
-        Template.prototype = new OctaneBase;
-        Template.prototype.define({
-            
-			create : function(content){
-                if(_.isString(content)){
-                    if(!_octane.templates[this.id]){
-                        _octane.templates[this.id] = content;
-                    }else{
-                        Octane.error('Could not create template '+this.id+'. Already exists');
-                    }
-                }
+            get : function(id){
+                return _octane.templates[id];
             },
-            get : function(){
-                return this.content;
+            create : function(elem){
+                return new Template(elem);
             },
-            inject : function(data){
+            parse : function (template,data){
+
+                _.isString(template) || (template = ''),
+                _.isObject(data) || (data = {});
+
+                var pattern = /\{\{([^{^}]+)\}\}/g;
+                var matches = template.match(pattern);
+
+                if(_.isArray(matches)){
+                    matches.forEach(function(match){
+
+                        var key = match.replace(/[{}]+/g,'');
+                        var regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                        var keySplit = key.split('.');
+                        var l = keySplit.length;
+                        var value = keySplit.reduce(function (prev,curr,index,arr){
+                            if(index == (l-1) && _.isObject(prev)){ // last iteration
+                               return prev[curr];
+                            }
+                            if(_.isObject(prev)){ 
+                                return prev[curr]; // go one level deeper
+                            } else { 
+                                return null; // no further nesting, value defined in key does not exist
+                            }
+                        },data) || ''; // start with data object passed to template
+
+                        template = template.replace(regexp,value);
+                    });
+                }
+                return template;
+            },
+            compile : function(scope){
                 
-                this.content = parseTemplate(_octane.templates[this.id],data);
-                return this; // chainable
+                scope || (scope = document);
+                
+                var $this = this;
+                var tmpls = scope.querySelectorAll('script[type="text/octane-template"],o-template');
+                var t = tmpls.length;
+
+                while(t--){
+                    this._cache(tmpls[t]);
+                }        
             },
-            into : function(elem,prepend){
+            _cache : function(elem){
+                if(elem){
+                    // compile nested templates
+                    this.compile(elem);
+                    var tmp = this.create(elem);
+                    tmp.save();
+                    elem.parentElement.removeChild(elem);
+                }   
+            },
+            render : function (template,elem,method){
                 
                 var div = document.createElement('div');
 				var firstChild = elem.firstChild;
-                var nodes, node;
+                var content = template.content;
+                var nodes,swatch;
                 
-                div.innerHTML = this.content;
+                div.innerHTML = content;
                 div.normalize();
                 nodes = div.childNodes;
                 
-                var i=0,n=nodes.length;
-                if(prepend){
-                     for(;i<n;i++){
-                        node = nodes[i];
-                        if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
-                            elem.insertBefore(node,firstChild);
+                swatch = new __.Switch({
+                    prepend : function(elem,nodes){
+                        var i=0,n=nodes.length,node;
+                        for(;i<n;i++){
+                            node = nodes[i];
+                            if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+                                elem.insertBefore(node,firstChild);
+                            }
                         }
-                    }
-                } else {
-                    for(;i<n;i++){
-                        node = nodes[i];
-                        if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
-                            elem.appendChild(nodes[i]);
+                    },
+                    append : function(elem,nodes){
+                        var i=0,n=nodes.length,node;
+                        for(;i<n;i++){
+                            node = nodes[i];
+                            if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+                                elem.appendChild(nodes[i]);
+                            }
                         }
+                    },
+                    replace : function(elem,nodes,content){
+                        elem.innerHTML = content;
+                    },
+                    default : function(elem,nodes,content){
+                        elem.innerHTML = content;
                     }
-                }
+                });
+                swatch.run(method,[elem,nodes,content]); 
+                Octane.recompile(elem);
+            },
+            prototype : new OctaneBase
+        });
+        
+        // instance methods
+        Template.prototype.define({
+            
+            set : function(data){
+                this.content = Template.parse(this.markup,data);
+                return this; // chainable
+            },
+            replace : function(elem){
+                Template.render(this,elem,'replace');
+            },
+            renderTo : function(elem){
+               Template.render(this,elem,'elem');
+            },
+            prependTo : function(elem){
+                Template.render(this,elem,'prepend');
+            },
+            appendTo : function(elem){
+                Template.render(this,elem,'append');
+            },
+            save : function(){
+                if(!_octane.templates[this.id]){
+                    _octane.templates[this.id] = this;
+                }else{
+                    Octane.log('Could not create template '+this.id+'. Already exists');
+                } 
             }
         });
         
-        Octane.define({
-            template : function(id){
-                return new Template(id);
-            }
-        });
+        Octane.define({ Template : Template });
             
         
     /* ------------------------------------------------------- */
-	/*             O-ACTION HANDLER ASSIGNMENT                 */
+	/*            O-CONTROLLER HANDLER ASSIGNMENT              */
 	/* ------------------------------------------------------- */
         
-        Octane.compiler( function applyActionHandlers(){
+        Octane.compiler('[o-controller]',function(elem){
             
-            var triggers = document.querySelectorAll('[o-action]');
-            var t = triggers.length;
-            var setHandler = function(elem){
-                
-                var o_action = elem.getAttribute('o-action');
-                var actionObj, action, event, controller, method;
-                
-                try{
-                    actionObj = JSON.parse(o_action);
-                    event = Object.keys(actionObj)[0];
-                    action = actionObj[event];
-                }catch(ex){
-                    event = 'click';
-                    action = o_action;
-                }
-                
-                controller = _octane.controllers[ action.split('.')[0] ];
-                method = action.split('.')[1];
-                
-               Octane.handle(event,elem,function(e){
-                    try{
-                        controller[method].apply(controller);
-                    } catch (ex){
-                        Octane.log(ex);
-                    }
-                });
-            };
-            
-            while(t--){
-                setHandler(triggers[t]);
+            var value = elem.getAttribute('o-controller');
+            var obj, action, event, controller, method;
+
+            try{
+                obj = JSON.parse(value);
+                event = Object.keys(obj)[0];
+                action = obj[event];
+            }catch(ex){
+                event = 'click';
+                action = value;
             }
+
+            controller = _octane.controllers[ action.split('.')[0] ];
+            method = action.split('.')[1];
+
+            elem.addEventListener(event,function(e){
+                try{
+                    controller[method].apply(controller,[elem]);
+                } catch (ex){
+                    Octane.log(ex);
+                }
+            });
+            /*
+            Octane.handle(event,elem,function(e,elem){
+                try{
+                    controller[method].apply(controller,[elem]);
+                } catch (ex){
+                    Octane.log(ex);
+                }
+            });
+            */
         });
+            
+                
     
     /* ------------------------------------------------------- */
 	/*                          INIT                           */
@@ -2062,13 +2130,15 @@
                 if(_octane.modules['Debug']){
                     config.Debug = {protected : _octane};
                 }
-                
+                Octane.Template.compile();
                 // load modules -> compile -> ready
-                return initModules(config).then(function(){
-                    return Octane.compile();
-                }).then(function(){
-                    Octane.fire('octane:ready');    
-                });
+                return initModules(config)
+                    .then(function(){
+                        return Compiler.run();
+                    })
+                    .then(function(){
+                        Octane.fire('octane:ready');    
+                    });
             }
         });
         

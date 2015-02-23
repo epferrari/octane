@@ -236,7 +236,7 @@ octane.module('Router',['OctaneViews']).extend({
                      
         }
 
-        function setRoutingButtons(){
+       /* function setRoutingButtons(){
 
             var 
             btns = document.querySelectorAll('[o-route]'),
@@ -264,9 +264,9 @@ octane.module('Router',['OctaneViews']).extend({
                 // closure to capture the button and route during the loop
                setBtn(btns[n]);
             }
-        }
-        
-        function setBackButtons(){
+        } */
+           
+        /*function setBackButtons(){
             var
             btns = document.querySelectorAll('.o-back'),
             n= btns.length,
@@ -285,9 +285,9 @@ octane.module('Router',['OctaneViews']).extend({
             while(n--){
                 setBtn(btns[n]);
             }
-        }
+        }*/
                 
-        function handleStateChange(){
+        (function handleStateChange(){
             
             var
             html = document.getElementsByTagName('html')[0],
@@ -299,7 +299,7 @@ octane.module('Router',['OctaneViews']).extend({
                 var view = getRequestedView();
                 view && octane.route(view);
             });
-        }
+        })();
 
         // parse URL for a view  
         function getRequestedView(){
@@ -355,16 +355,38 @@ octane.module('Router',['OctaneViews']).extend({
             lock            : blockRouting,
             unlock          : unblockRouting
         }]);
-        
-        octane.compiler( setRoutingButtons ); 
-        octane.compiler( setBackButtons );
-        octane.compiler( handleStateChange );
             
            
         // resize canvas to proper dimensions
-        octane.handle('translated resize orientationchange',function(){
-            currentView && currentView.setCanvasHeight();
-        });
+        octane
+            .handle('translated resize orientationchange',function(){
+                currentView && currentView.setCanvasHeight();
+            })
+            .compiler('[o-route]',function(el){
+
+                // catch a click event from a child node
+                // re-purpose it to be used by the octane event mediator
+                el.addEventListener('click',function(e){
+                    //e.stopPropagation();
+                    //e.stopImmediatePropagation();
+                    el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
+                },false);
+                
+                // set up the octane event mediator
+                // so event won't get a second listener
+                // if you call .compile() again after .initialize()
+                octane.handle('octane:route',el,function(e,el){
+                    var route = el.getAttribute('o-route');
+                    octane.route(route);
+                });    
+            })
+            .compiler('.o-back',function(el){
+                el.addEventListener('click',function(e){
+                    el.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
+                },false);
+
+                octane.handle('octane:routeback',el,function(){History.go(-1)});
+            });
     } // end initialize
 }); // end module 
     
