@@ -1812,8 +1812,6 @@
 			
 			_.isPlainObject(initConfig) || (initConfig = {});
             
-            _.extend(_octane.moduleConfigs,initConfig);
-            
             // load router module first
             return _octane.modules['StartupUtilities']._initialize()
                 .then(function(){
@@ -1827,11 +1825,11 @@
                     var modulesLoaded = [];    
                     var tryLoading = function(moduleName){
                         
-                        var initConfig;
-                        var moduleConfig;
                         var module = modules[moduleName];
-                        
+                        _octane.moduleConfigs[moduleName] || (_octane.moduleConfigs[moduleName] = {});
+                        _.extend(_octane.moduleConfigs[moduleName],initConfig[moduleName]);
                         if(!module.initialized){
+                            
                             bootlog.push(moduleName+': not loaded, loading...');
                             modulesLoaded.push( module._initialize());
                         }
