@@ -719,6 +719,7 @@
                             var model = elem.getAttribute('o-sync');
                             var template = new Octane.Template(elem);
                             template.save();
+                            elem.innerHTML = '';
 
                             Octane.handle('statechange:'+model,function(e){
                                 var model = elem.getAttribute('o-sync');
@@ -1130,6 +1131,13 @@
                 },
                 registeredTo : function(){
                     return registeredTo;
+                },
+                // aliases to match ViewModel static methods for Backbone models
+                bind : function(name){
+                    return this.become.apply(this,[name]);
+                },
+                unbind : function(){
+                    return this.detatch.apply(this);
                 }
             });
             this.set(this.defaults);
@@ -1812,10 +1820,16 @@
 			
 			_.isPlainObject(initConfig) || (initConfig = {});
             
-            // load router module first
+            // make sure core modules are loaded before 3rd party/app specific modules
             return _octane.modules['StartupUtilities']._initialize()
                 .then(function(){
                     return _octane.modules['Router']._initialize();
+                })
+                .then(function(){
+                    return _octane.modules['OctaneModals']._initialize();
+                })
+                .then(function(){ // precompile
+                    return Compiler.run();
                 })
                 .then(function(){
                 
@@ -2065,12 +2079,13 @@
                 action = value;
             }
 
-            controller = _octane.controllers[ action.split('.')[0] ];
+            controller = action.split('.')[0];
             method = action.split('.')[1];
 
             elem.addEventListener(event,function(e){
+                var $controller = _octane.controllers[controller];
                 try{
-                    controller[method].apply(controller,[elem]);
+                    $controller[method].apply($controller,[elem]);
                 } catch (ex){
                     Octane.log(ex);
                 }
