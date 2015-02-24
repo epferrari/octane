@@ -718,6 +718,7 @@
                             var nested = elem.querySelectorAll('[o-sync]');
                             var model = elem.getAttribute('o-sync');
                             var template = new Octane.Template(elem);
+                            elem.innerHTML = '';
                             template.save();
 
                             Octane.handle('statechange:'+model,function(e){
