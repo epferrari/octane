@@ -353,7 +353,10 @@ octane.module('Router',['OctaneViews']).extend({
                 return queuedRoute;
             },
             lock            : blockRouting,
-            unlock          : unblockRouting
+            unlock          : unblockRouting,
+            isLocked        : function(){
+                return routingBlocked;
+            }
         }]);
             
            
