@@ -253,28 +253,34 @@
 	/* ------------------------------------------------------- */
         
         var Compiler = {
-            tasks : [],
-            add : function(subjects,task){
+            assignments : [],
+            assign : function(selector,task){
                 task._compilerID = Octane.GUID();
-                this.tasks.push([subjects,task]);    
+                this.assignments.push({
+                    selectors   : selector,
+                    task        : task
+                });    
             },
             run : function(context){
               
                 context || (context = document);
                 var tasksCompleted;
-                var taskRunner = function(set){
+                var taskRunner = function(assignment){
                     return new Promise(function(resolve){
-                        var subjects = set[0];
-                        var task = set[1];
+                        var selector = assignment.selector;
+                        var task = assignment.task;
                         var taskID = task._compilerID;
+                        var assigned;
                         
-                        _.each(context.querySelectorAll(subjects),function(elem){
+                        _.each(context.querySelectorAll(selector),function(elem){
                             // set hash so we don't re-apply a task
                             elem._compiled || (elem._compiled = {});
                             if(!elem._compiled[taskID]){
+                                
                                 elem._compiled[taskID] = true;
+                                assigned = elem.getAttribute(selector);
                                 try{
-                                    task.apply(null,[elem]);
+                                    task.apply(task,[elem,assigned]);
                                 } catch (ex){
                                     Octane.log(ex);
                                 }
@@ -284,14 +290,19 @@
                     });
                 };
               
-                tasksCompleted = this.tasks.map(taskRunner);
+                tasksCompleted = this.assignments.map(taskRunner);
                 return Promise.all(tasksCompleted);
             }
         };
         
         Octane.define({
-            compiler : function(subjects,task){
-                Compiler.add.apply(Compiler,[subjects,task]);
+            compiler : function(selector,task){
+                Compiler.assign.apply(Compiler,[selector,task]);
+                return Octane;
+            },
+            // alias of .compiler
+            assign : function(selector,task){
+                Compiler.assign.apply(Compiler,[selector,task]);
                 return Octane;
             },
             recompile : Compiler.run.bind(Compiler)
@@ -689,15 +700,15 @@
             // find bound elements on the DOM
 			parse	: function(scope){
 						
-                        scope || (scope = document);
-						var $this = this;
-                        this.bindScope = scope.querySelectorAll('[o-bind],[o-update],[o-sync]');
-                        var n = this.bindScope.length;
-                
-                        while(n--){
-                           this.watch(this.bindScope[n]);
-                        }
-					},
+                            scope || (scope = document);
+                            var $this = this;
+                            this.bindScope = scope.querySelectorAll('[o-bind],[o-update]');
+                            var n = this.bindScope.length;
+
+                            while(n--){
+                               this.watch(this.bindScope[n]);
+                            }
+                        },
             // set up a watch on bound elements
 			watch : function(elem){
                         
@@ -707,13 +718,13 @@
                             if(!elem._watched){
                                 elem._watched = true;
                                 if(!elem._guid) elem._guid = Octane.GUID();
-                                this._setFilters(elem);
+                                //this._setFilters(elem);
                                 this._watchBinds(elem);
                                 this._watchUpdates(elem);
-                                this._watchSyncs(elem);
+                                //this._watchSyncs(elem);
                             }   
                         },
-            _watchSyncs : function(elem){
+            /*_watchSyncs : function(elem){
                             
                             var nested = elem.querySelectorAll('[o-sync]');
                             var model = elem.getAttribute('o-sync');
@@ -726,7 +737,7 @@
                                 var data = Octane.ViewModel.get(model).get();
                                 Octane.Template.get(elem._guid).set(data).renderTo(elem);
                             });
-                        },
+                        },*/
             _setFilters : function(elem){
                             var filter = elem.getAttribute('o-filter');
                             if(filter){
@@ -878,7 +889,7 @@
                                 if(e.type.split(':')[0] != 'statechange') return;
                 
                                 // loop bound model datapoint in scope
-                                var $update = this._update;
+                                var $update = this._update.bind(this);
                                 var $scope = this.scope;
                                 // create array of nested keys, 
                                 // ex. "statechange:App.loading.message" becomes ["App","loading","message"]
@@ -923,6 +934,7 @@
             // perform an update on a single
 			_update       : function(updateTarget){
                                 
+                                var viewmodel = this;
                                 var key = updateTarget.key;
                                 var elem = updateTarget.elem;
                                 var attr = updateTarget.attr;
@@ -933,12 +945,7 @@
                                     fresh = '';
                                 }
                                 
-                                //console.log('ViewModel._update called');
-                                //console.log('key: '+key);
-                                //console.log('updating element attribute: '+attr);
-                                //console.log('with value: '+fresh);
-                
-                                if(attr.indexOf('.') !== -1){
+                                if(attr.indexOf('.') !== -1){ // there is a '.' in the attr, ex. 'style.color'
                                     // update style on element
                                     prop = attr.split('.')[1];
 
@@ -947,26 +954,10 @@
 
                                     updater = new __.Switch({
                                         'html' : function(fresh){
-                                            var filter;
-                                            if(filter = _octane.filterMap[elem._guid]){
-                                                try {
-                                                    fresh = _octane.filters[filter[0]].apply(null,[fresh,filter[1]]);
-                                                } catch(ex){
-                                                    Octane.log(ex);
-                                                }
-                                            }
-                                            elem.innerHTML = fresh;
+                                            elem.innerHTML = OctaneFilter.process(elem,fresh);
                                         },
                                         'text' : function(fresh){
-                                            var filter;
-                                            if(filter = _octane.filterMap[elem._guid]){
-                                                try {
-                                                    fresh = _octane.filters[filter[0]].apply(null,[fresh,filter[1]]);
-                                                } catch(ex){
-                                                    Octane.log(ex);
-                                                }
-                                            }
-                                            elem.textContent = fresh;
+                                            elem.textContent = OctaneFilter.process(elem,fresh);
                                         },
                                         'value' : function(fresh){
                                             elem.value = fresh;
@@ -1578,12 +1569,32 @@
 
         _octane.filters = {};
         _octane.filterMap = {};
-
+        
+        Octane.assignment('[o-filter]',function(elem,filter){
+            
+            elem.innerHTML = Octane.applyFilter(elem,elem.textContent);
+        });                      
+       
         Octane.define({
-            filter : function (name,func){
-                _octane.filters[name] = func;	
-            }
+            filter : function(name,filterFunction){
+                _octane.filterMap[name] = filterFunction;
+            },
+            applyFilter : function(elem,content){
+                var filtered = content;
+                var filterMap = elem.getAttribute('o-filter') || [];
+                var filter = filterMap[0];
+                var param = filterMap[1];
+                
+                try {
+                    filtered = _octane.filters[filter].apply(null,[content,param]);
+                } catch(ex){
+                    Octane.log(ex);
+                }  
+            }       
         });
+        
+        
+       
        
         
        /* ------------------------------------------------------- */
@@ -1949,8 +1960,10 @@
                 if(_.isArray(matches)){
                     matches.forEach(function(match){
 
-                        var key = match.replace(/[{}]+/g,'');
+                        var $key = match.replace(/[{}]+/g,'');
                         var regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
+                        var key = $key.split(' ')[0];
+                        var filter = $key.spilt(' ')[1]; // if a filter is defined on the key
                         var keySplit = key.split('.');
                         var l = keySplit.length;
                         var value = keySplit.reduce(function (prev,curr,index,arr){
@@ -1963,7 +1976,13 @@
                                 return null; // no further nesting, value defined in key does not exist
                             }
                         },data) || ''; // start with data object passed to template
-
+                        var param;
+                        
+                        if(filter){
+                            filter = filter.split(':')[1]);
+                            param = param
+                        
+                        filter && (value = Octane.applyFilter(filter,param,value)); // apply filter if defined
                         template = template.replace(regexp,value);
                     });
                 }
@@ -1992,14 +2011,27 @@
             },
             render : function (template,elem,method){
                 
+                // a surrogate
                 var div = document.createElement('div');
 				var firstChild = elem.firstChild;
                 var content = template.content;
                 var nodes,swatch;
                 
+                // turn surrogate html into nodes  
                 div.innerHTML = content;
                 div.normalize();
                 nodes = div.childNodes;
+                
+                // apply filters to templated data
+                // before it's applied to DOM
+                Octane.ViewModel.parse(div);
+                var toFilter = div.querySelectorAll('[o-filter]');
+                var n = toFilter.length;
+                var el;
+                while(n--){
+                    el = toFilter[n];
+                    el.innerHTML = Octane.ViewModel.filter(el,el.innerHMTL);
+                }
                 
                 swatch = new __.Switch({
                     prepend : function(elem,nodes){
@@ -2028,7 +2060,6 @@
                     }
                 });
                 swatch.run(method,[elem,nodes,content]);
-                Octane.ViewModel.parse(elem);
                 Octane.recompile(elem);
             },
             prototype : new OctaneBase
@@ -2104,9 +2135,27 @@
             });
             */
         });
+     
+    /* ------------------------------------------------------- */
+	/*                 O-SYNC HANDLER ASSIGNMENT               */
+	/* ------------------------------------------------------- */
+        
+        Octane.compiler('[o-sync]',function(elem){
             
-                
-    
+            //var nested = elem.querySelectorAll('[o-sync]');
+            //Octane.recompile(elem);
+            var model = elem.getAttribute('o-sync');
+            var template = new Octane.Template(elem);
+            template.save();
+            elem.innerHTML = '';
+
+            Octane.handle('statechange:'+model,function(e){
+                var model = elem.getAttribute('o-sync');
+                var data = Octane.ViewModel.get(model).get();
+                Octane.Template.get(elem._guid).set(data).renderTo(elem);
+            });
+        });
+                        
     /* ------------------------------------------------------- */
 	/*                          INIT                           */
 	/* ------------------------------------------------------- */
