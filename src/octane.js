@@ -1001,6 +1001,9 @@
                                	var modelName = oBind ? Octane._parseModelName(oBind) : null;
                                	var pointer = oBind ? Octane._parseModelKey(oBind) : null;
                                 
+                                if(element.tagName == 'TEXT-AREA'){
+                                    element.value = element.innerHTML;
+                                }
                                 if(element.value != Octane.get(oBind) ){
                                    Octane.set(oBind,element.value);
                                 }				
@@ -2024,7 +2027,8 @@
                         elem.innerHTML = content;
                     }
                 });
-                swatch.run(method,[elem,nodes,content]); 
+                swatch.run(method,[elem,nodes,content]);
+                Octane.ViewModel.parse(elem);
                 Octane.recompile(elem);
             },
             prototype : new OctaneBase
