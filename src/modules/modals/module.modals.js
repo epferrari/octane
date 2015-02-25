@@ -1,12 +1,12 @@
-octane.module('Modal',['OctaneViews','UiOverlay']).extend({
+octane.module('OctaneModals',['ViewPrototype','UiOverlay']).extend({
     
     initialize : function(cfg){
     
         var
         ViewProto = this.import('ViewPrototype'),
         Overlay = this.import('UiOverlay'),
-        ViewLoadAnimations = this.import('ViewLoadAnimations'),
-        ViewExitAnimations = this.import('ViewExitAnimations'),
+        //ViewLoadAnimations = this.import('ViewLoadAnimations'),
+        //ViewExitAnimations = this.import('ViewExitAnimations'),
         $Modals = {},
         Velocity = Velocity || $.Velocity,
         bg = octane.dom.modalContainer(),
@@ -37,8 +37,7 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
             addAfterLoadCallback    : ViewProto.addAfterLoadCallback,
             callAfterLoadCallbacks  : ViewProto.callAfterLoadCallbacks,       
             load        : function (){
-                            var 
-                            $this = this;
+                            var $this = this;
                             
                             this.adjustSize();
                             bg.classList.add('loading');
@@ -48,7 +47,7 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
                                     bg.classList.remove('loading');
                                 })
                                 .then(function(){
-                                    Velocity(document.body,'scroll',{duration:300});
+                                    Velocity($this.elem,'scroll',{duration:300});
                                     $this.elem.classList.add('modal-active');
                                 })
                                 .then($this.callAfterLoadCallbacks.bind($this));
@@ -74,7 +73,8 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
                 
         });
     
-        // TODO 
+        // TODO
+        /*
         var ModalAnimation = octane.controller('ModalAnimationController').augment({
             dismiss : {
                js : function(){
@@ -107,6 +107,7 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
                 }
             }
         });
+        */
         
         var modalQueue = [];
         var currentModal = false;
@@ -116,15 +117,17 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
             call : function(modalID){
 
                 var $modal = $Modals[modalID];
+                var routerWasLocked = octane.Router.isLocked();
 
                 if(!($modal && ($modal instanceof OctaneModal))){ return };
 
                 if(!block){
+                    
                     octane.Router.lock();
                     if(!currentModal){
                         $modal.load().then(function(){
                             currentModal = $modal;
-                            octane.Router.unlock(); 
+                            !routerWasLocked && octane.Router.unlock(); 
                         });
                     } else if (currentModal.id !== modalID){
                         // another modal is onscreen, remove it
@@ -132,10 +135,10 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
                             .then($modal.load)
                             .then(function(){
                                 currentModal = $modal;
-                                octane.Router.unlock(); 
+                                !routerWasLocked && octane.Router.unlock(); 
                             });
                     } else {
-                       octane.Router.unlock(); 
+                       !routerWasLocked && octane.Router.unlock(); 
                     }
                 } else {
                     modalQueue.push(modalID);
@@ -145,11 +148,12 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
 
                 var $modal = currentModal;
                 if($modal && $modal instanceof OctaneModal){
+                    var routerWasLocked = octane.Router.isLocked();
                     octane.Router.lock();
-                    $modal.exit()//.then(function(){
-                        octane.Router.unlock();
+                    $modal.exit().then(function(){
+                       !routerWasLocked && octane.Router.unlock();
                         currentModal = false;
-                   // });
+                   });
                 }
             },
             create : function (elem){
@@ -165,17 +169,12 @@ octane.module('Modal',['OctaneViews','UiOverlay']).extend({
             },
             callThen : function(modalID,callback,args){
                 $Modals[modalID] && $Modals[modalID].addAfterLoadCallback(callback,args);
+                return this; // chainable
             }   
         });
         
         (function(){
-            
-            //var modals = document.getElementsByTagName('o-modal')
-            //var n = modals.length;
-           // while(n--){
-            //    OctaneModal.create(modals[n]);  
-            //}
-            
+        
             octane
                 .compiler('o-modal',function(elem){
                     OctaneModal.create(elem);

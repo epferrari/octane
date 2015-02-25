@@ -4,7 +4,7 @@
         initialize : function(cfg){
             var _octane = cfg.protected;
 
-            octane.augment({
+            octane.Debug = {
                 getModules : function(){ 
                    return _octane.modules;
                 },
@@ -17,7 +17,13 @@
                 getEvents	: function(){
                    return _octane.eventHandlerMap;
                 },
-                getLog : function(full){ 
+                getFilterMap  : function (){
+                    return _octane.filterMap;
+                },
+                getFilters : function(){
+                    return _octane.filters;
+                },
+                log : function(full){ 
                     return full ? _octane.bootlog.concat(_octane.logfile) : _octane.logfile;
                 },
                 getCollections : function(){
@@ -26,6 +32,6 @@
                 bootlog : function(){
                     return _octane.bootlog;
                 }
-            });
+            };
         }
     });
