@@ -249,15 +249,15 @@
         });
 
     /* ------------------------------------------------------- */
-	/*                     COMPILER AND HOOK                   */
+	/*       COMPILER, ORDINANCES, AND DESIGNATE HOOK          */
 	/* ------------------------------------------------------- */
         
         var Compiler = {
-            assignments : [],
-            assign : function(selector,task){
+            ordinances : [],
+            designate : function(selector,task){
                 task._compilerID = Octane.GUID();
-                this.assignments.push({
-                    selectors   : selector,
+                this.ordinances.push({
+                    selector   : selector,
                     task        : task
                 });    
             },
@@ -265,12 +265,12 @@
               
                 context || (context = document);
                 var tasksCompleted;
-                var taskRunner = function(assignment){
+                var taskRunner = function(ordinance){
                     return new Promise(function(resolve){
-                        var selector = assignment.selector;
-                        var task = assignment.task;
+                        var selector = ordinance.selector;
+                        var task = ordinance.task;
                         var taskID = task._compilerID;
-                        var assigned;
+                        var designation; // the value of the defined ordinance attribute
                         
                         _.each(context.querySelectorAll(selector),function(elem){
                             // set hash so we don't re-apply a task
@@ -278,9 +278,14 @@
                             if(!elem._compiled[taskID]){
                                 
                                 elem._compiled[taskID] = true;
-                                assigned = elem.getAttribute(selector);
+                                
+                                // pass the value of the ordinance to the task
+                                var ord = selector.match(/\[(.*)\]/);
+                                _.isArray(ord) && (ord = ord[1]);
+                                designation = elem.getAttribute(ord);
+                                
                                 try{
-                                    task.apply(task,[elem,assigned]);
+                                    task.apply(null,[elem,designation]);
                                 } catch (ex){
                                     Octane.log(ex);
                                 }
@@ -290,19 +295,19 @@
                     });
                 };
               
-                tasksCompleted = this.assignments.map(taskRunner);
+                tasksCompleted = this.ordinances.map(taskRunner);
                 return Promise.all(tasksCompleted);
             }
         };
         
         Octane.define({
             compiler : function(selector,task){
-                Compiler.assign.apply(Compiler,[selector,task]);
+                Compiler.designate.apply(Compiler,[selector,task]);
                 return Octane;
             },
             // alias of .compiler
-            assign : function(selector,task){
-                Compiler.assign.apply(Compiler,[selector,task]);
+            designate : function(selector,task){
+                Compiler.designate.apply(Compiler,[selector,task]);
                 return Octane;
             },
             recompile : Compiler.run.bind(Compiler)
@@ -739,7 +744,7 @@
                                 Octane.Template.get(elem._guid).set(data).renderTo(elem);
                             });
                         },*/
-            _setFilters : function(elem){
+            /*_setFilters : function(elem){
                             var filter = elem.getAttribute('o-filter');
                             if(filter){
                                 try{
@@ -750,7 +755,7 @@
                                     Octane.log(ex);
                                 }
                             }
-                        },
+                        },*/
             _watchBinds : function(elem){
                             
                             var $this = this;
@@ -841,21 +846,21 @@
                                     // set event handlers for all levels of model change
                                     deep.reduce(function(o,x,i){
                                         var watch;
+                                        var index;
                                         if(i === 0){
                                             watch = x;
                                         }else{
                                             watch = o+'.'+x;
                                         }
                                         
-                                        //edit
 										_.isArray($scope[watch]) || ($scope[watch] = []);
+                                        
 										$scope[watch].push({
 											key:key,
 											elem:elem,
 											attr:attr
 										});
-										// end edit
-
+                                        
                                         Octane.handle('statechange:'+watch,$this.refresh.bind($this));
                                          return watch;
                                     },'');
@@ -909,8 +914,8 @@
                                 _.each(targets,function(target){
                                    $update(target.key,target.elem,target.attr);
                                 });*/ 
-                                var scopeKey = e.type.replace('statechange:','');
-                                _.isArray($scope[scopeKey]) && _.each($scope[scopeKey],$update); 
+                                var key = e.type.replace('statechange:','');
+                                _.isArray($scope[key]) && _.each($scope[key],$update); 
                                        
 							},
             // recursively look through the ViewModel for targets to update
@@ -940,11 +945,19 @@
                                 var elem = updateTarget.elem;
                                 var attr = updateTarget.attr;
                                 var fresh = Octane.get(key);
+                                var filter = elem.getAttribute('o-filter');
                                 var prop,updater;
+                                
+                                // remove cached elements no longer on DOM 
+                                if(!elem.parentNode){
+                                    _.pull(this.scope[key],updateTarget);
+                                }
                                 
 								if(__.isNull(fresh) || __.isUndefined(fresh)){
                                     fresh = '';
                                 }
+                                // break filter into name and optional parameter to pass as second argument to filtering function
+                                filter && ( filter = filter.split(',') );
                                 
                                 if(attr.indexOf('.') !== -1){ // there is a '.' in the attr, ex. 'style.color'
                                     // update style on element
@@ -955,10 +968,10 @@
 
                                     updater = new __.Switch({
                                         'html' : function(fresh){
-                                            elem.innerHTML = OctaneFilter.process(elem,fresh);
+                                            elem.innerHTML = filter ? Octane.applyFilter(filter[0],fresh,filter[1]) : fresh;
                                         },
                                         'text' : function(fresh){
-                                            elem.textContent = OctaneFilter.process(elem,fresh);
+                                            elem.textContent = filter ? Octane.applyFilter(filter[0],fresh,filter[1]) : fresh;
                                         },
                                         'value' : function(fresh){
                                             elem.value = fresh;
@@ -1569,35 +1582,25 @@
     /* ------------------------------------------------------- */
 
         _octane.filters = {};
-        _octane.filterMap = {};
         
-        Octane.assignment('[o-filter]',function(elem,filter){
-            
-            elem.innerHTML = Octane.applyFilter(elem,elem.textContent);
-        });                      
-       
         Octane.define({
+            // filterFunction as -> function(dataToBeFiltered[,optionalParameter to be passed])
             filter : function(name,filterFunction){
-                _octane.filterMap[name] = filterFunction;
+                _octane.filters[name] = filterFunction;
             },
-            applyFilter : function(elem,content){
-                var filtered = content;
-                var filterMap = elem.getAttribute('o-filter') || [];
-                var filter = filterMap[0];
-                var param = filterMap[1];
+            applyFilter : function(filter,dirty,param){
+                var filtered = dirty;
                 
                 try {
-                    filtered = _octane.filters[filter].apply(null,[content,param]);
+                    filtered = _octane.filters[filter].apply(null,[dirty,param]);
                 } catch(ex){
                     Octane.log(ex);
-                }  
+                }
+                return filtered;
             }       
         });
         
-        
        
-       
-        
        /* ------------------------------------------------------- */
 	   /*                          TASKS                          */
 	   /* ------------------------------------------------------- */
@@ -1957,37 +1960,59 @@
 
                 var pattern = /\{\{([^{^}]+)\}\}/g;
                 var matches = template.match(pattern);
+                var n;
 
                 if(_.isArray(matches)){
-                    matches.forEach(function(match){
-
-                        var $key = match.replace(/[{}]+/g,'');
-                        var regexp = new RegExp("(\\{\\{"+key+"\\}\\})","g");
-                        var key = $key.split(' ')[0];
-                        var filter = $key.spilt(' ')[1]; // if a filter is defined on the key
-                        var keySplit = key.split('.');
-                        var l = keySplit.length;
-                        var value = keySplit.reduce(function (prev,curr,index,arr){
-                            if(index == (l-1) && _.isObject(prev)){ // last iteration
-                               return prev[curr];
-                            }
-                            if(_.isObject(prev)){ 
-                                return prev[curr]; // go one level deeper
-                            } else { 
-                                return null; // no further nesting, value defined in key does not exist
-                            }
-                        },data) || ''; // start with data object passed to template
-                        var param;
-                        
-                        if(filter){
-                            filter = filter.split(':')[1]);
-                            param = param
-                        
-                        filter && (value = Octane.applyFilter(filter,param,value)); // apply filter if defined
-                        template = template.replace(regexp,value);
-                    });
+                    n = matches.length;
+                    while(n--){
+                        template = this._replace(template,matches[n],data);
+                    }  
                 }
                 return template;
+            },
+            _replace : function replace (template,match,data){
+                        
+                // match ex. {{postedBy.firstName @filter:myFilter @param:myParam}}
+
+                var stripped = match.replace(/[{}]+/g,''); // stripped ex. postedBy.firstName @filter:myFilter @param:myParam
+
+                var split = stripped.split(' ');   // split ex. ["postedBy.firstName","@filter:myFilter","@param:myParam"]
+
+                var key = split[0]; // key ex. "postedBy.firstName"
+
+                var filter = split[1];  // filter ex. "@filter:myFilter" 
+
+                var param = split[2];  // param ex. "@param:myParam"
+
+                var regexp = new RegExp("(\\{\\{"+stripped+"\\}\\})","g"); 
+                //var regexp = new RegExp("("+match+")","g");
+
+                var nested = key.split('.'); // nested ex. ["postedBy","firstName"]
+
+                var n = nested.length;
+
+                var value = nested.reduce(function (prev,curr,index){
+                    if(index == (n-1) && _.isObject(prev)){ // last iteration
+                       return prev[curr]; // return value
+                    }
+                    if(_.isObject(prev)){ 
+                        return prev[curr]; // go one level deeper
+                    } else { 
+                        return null; // no further nesting, value defined in key does not exist
+                    }
+                },data) || ''; // start with data object passed to template
+
+                // apply filter if present
+                if(filter){
+                    param && ( param = param.replace('@param:','') );
+                    filter = filter.replace('@filter:','');
+                    value = Octane.applyFilter(filter,value,param);
+                }
+
+                // replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}} 
+                // in template with filtered value of data.postedBy.firstName, 
+                // or data.postedBy.firstName if "myFilter" didn't exist
+                return  template.replace(regexp,value); 
             },
             compile : function(scope){
                 
@@ -2023,17 +2048,6 @@
                 div.normalize();
                 nodes = div.childNodes;
                 
-                // apply filters to templated data
-                // before it's applied to DOM
-                Octane.ViewModel.parse(div);
-                var toFilter = div.querySelectorAll('[o-filter]');
-                var n = toFilter.length;
-                var el;
-                while(n--){
-                    el = toFilter[n];
-                    el.innerHTML = Octane.ViewModel.filter(el,el.innerHMTL);
-                }
-                
                 swatch = new __.Switch({
                     prepend : function(elem,nodes){
                         var i=0,n=nodes.length,node;
@@ -2061,6 +2075,7 @@
                     }
                 });
                 swatch.run(method,[elem,nodes,content]);
+                
                 Octane.recompile(elem);
             },
             prototype : new OctaneBase
@@ -2098,21 +2113,20 @@
             
         
     /* ------------------------------------------------------- */
-	/*            O-CONTROLLER HANDLER ASSIGNMENT              */
+	/*                     O-CONTROLLER ORDINANCE              */
 	/* ------------------------------------------------------- */
         
-        Octane.compiler('[o-controller]',function(elem){
+        Octane.designate('[o-controller]',function(elem,designation){
             
-            var value = elem.getAttribute('o-controller');
             var obj, action, event, controller, method;
 
             try{
-                obj = JSON.parse(value);
+                obj = JSON.parse(designation);
                 event = Object.keys(obj)[0];
                 action = obj[event];
             }catch(ex){
                 event = 'click';
-                action = value;
+                action = designation;
             }
 
             controller = action.split('.')[0];
@@ -2126,32 +2140,21 @@
                     Octane.log(ex);
                 }
             });
-            /*
-            Octane.handle(event,elem,function(e,elem){
-                try{
-                    controller[method].apply(controller,[elem]);
-                } catch (ex){
-                    Octane.log(ex);
-                }
-            });
-            */
         });
      
     /* ------------------------------------------------------- */
-	/*                 O-SYNC HANDLER ASSIGNMENT               */
+	/*                 O-SYNC ORDINANCE               */
 	/* ------------------------------------------------------- */
         
-        Octane.compiler('[o-sync]',function(elem){
+        Octane.designate('[o-sync]',function(elem,model){
             
             //var nested = elem.querySelectorAll('[o-sync]');
             //Octane.recompile(elem);
-            var model = elem.getAttribute('o-sync');
             var template = new Octane.Template(elem);
             template.save();
             elem.innerHTML = '';
 
             Octane.handle('statechange:'+model,function(e){
-                var model = elem.getAttribute('o-sync');
                 var data = Octane.ViewModel.get(model).get();
                 Octane.Template.get(elem._guid).set(data).renderTo(elem);
             });
