@@ -40,11 +40,11 @@ octane.module('OctaneModals',['ViewPrototype','UiOverlay']).extend({
                             var $this = this;
                             
                             this.adjustSize();
-                            bg.classList.add('loading');
+                            //bg.classList.add('loading');
                             
                             return Overlay.on()
                                 .then(function(){
-                                    bg.classList.remove('loading');
+                                    //bg.classList.remove('loading');
                                 })
                                 .then(function(){
                                     Velocity($this.elem,'scroll',{duration:300});

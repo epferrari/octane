@@ -26,32 +26,26 @@ o-view {
   background-color: white; }
 
 .view-left {
-  transform: translateX(-100%);
-  transition: translate 0.1s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transform: translateX(-100%); }
 
 .view-right {
-  transform: translateX(100%);
-  transition: translate 0.1s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transform: translateX(100%); }
 
 .view-top {
-  transform: translateY(-100%);
-  transition: translate 0.1s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transform: translateY(-100%); }
 
 .view-bottom {
-  transform: translateY(100%);
-  transition: translate 0.1s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transform: translateY(100%); }
 
 .view-fader {
-  opacity: 0;
-  transition: opacity 0.1s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  opacity: 0; }
 
 .view-dismissed {
   opacity: 1;
   visibility: visible;
   display: block;
   z-index: 10;
-  transform: translateX(0) translateY(0);
-  transition: transform 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transform: translateX(0) translateY(0); }
 
 .view-active {
   opacity: 1;
@@ -59,7 +53,7 @@ o-view {
   display: block;
   z-index: 100;
   transform: translateX(0) translateY(0);
-  transition: transform 0.8s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transition: transform 0.4s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 o-control#translator {
   list-style: none;
@@ -175,27 +169,27 @@ o-modal-container.active {
   z-index: 999999998;
   pointer-events: auto;
   opacity: 1;
-  transition: opacity 0.4s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transition: opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 o-modal {
   position: absolute;
-  visibility: hidden;
   height: 100%;
   width: 100%;
   opacity: 0;
   top: 0;
   left: 0;
-  z-index: 999999999;
+  z-index: -1;
   overflow-y: scroll;
   will-change: transform;
   transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 .modal-active {
   opacity: 1;
+  z-index: 999999999;
   visibility: visible;
   display: block;
   transform: translateX(0) translateY(0);
-  transition: transform 0.8s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.8s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  transition: transform 0.4s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.4s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 o-loading-container {
   position: fixed;
