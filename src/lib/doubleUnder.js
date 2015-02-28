@@ -194,7 +194,7 @@
 		// credit Cory LaViska, http://www.abeautifulsite.net/parsing-urls-in-javascript/
 		/* --------------------------------------------------------------------- */
 			
-		location : function (){
+		urlObject : function (){
 				 
 				 var parser = document.createElement('a'),
 					  searchObject = {},
