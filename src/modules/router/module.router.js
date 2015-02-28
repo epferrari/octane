@@ -9,7 +9,7 @@ octane.module('Router',['OctaneViews']).extend({
 
             _.isObject(params) || (params = {});
             // update the language in the url
-            var parsed = __.location().searchObject;	
+            var parsed = __.urlObject().searchObject;	
 
             _.extend(parsed,params);
 
@@ -311,7 +311,7 @@ octane.module('Router',['OctaneViews']).extend({
             history =  html && html.classList.contains('history');
 
             if(history){
-                return __.location().searchObject.view || false;
+                return __.urlObject().searchObject.view || false;
             } else {
                  var hash = window.location.hash,
                     param,

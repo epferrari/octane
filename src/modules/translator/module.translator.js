@@ -184,7 +184,7 @@
 
                 function findLang (){
 
-                    var parsed = __.location().searchObject;
+                    var parsed = __.urlObject().searchObject;
 
                     $M.lang = supportsLang(parsed.lang) || $M.defaultLang;
                 }
