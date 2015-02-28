@@ -2309,52 +2309,6 @@
                                 bootlog.push(name+': not loaded, loading...');
                                 return  module._initialize();
                             }
-                        },
-            // called at Octane.initialize()
-            runBootSequence : function(initConfig){
-			
-                            _.isPlainObject(initConfig) || (initConfig = {});
-
-                            // make sure core modules are loaded before 3rd party/app specific modules
-                            return _octane.modules['StartupUtilities']._initialize()
-                                .then(function(){
-                                    return _octane.modules['Router']._initialize();
-                                })
-                                .then(function(){
-                                    return _octane.modules['OctaneModals']._initialize();
-                                })
-                                .then(function(){ // precompile
-                                    return Compiler.run();
-                                })
-                                .then(function(){
-
-                                    var modules = _octane.modules;
-                                    var moduleNames = Object.keys(modules);
-                                    var m = moduleNames.length;
-                                    var modulesLoaded = [];    
-                                    var tryLoading = function(moduleName){
-
-                                        var module = modules[moduleName];
-                                        _octane.moduleConfigs[moduleName] || (_octane.moduleConfigs[moduleName] = {});
-                                        _.extend(_octane.moduleConfigs[moduleName],initConfig[moduleName]);
-                                        
-                                        if(!module.initialized){
-
-                                            bootlog.push(moduleName+': not loaded, loading...');
-                                            modulesLoaded.push( module._initialize());
-                                        }
-                                    };
-
-                                    // load each module
-                                    while(m--){
-                                        tryLoading( moduleNames[m] );
-                                    }
-
-                                    return Promise.all(modulesLoaded);
-                                })
-                                .catch(function(err){
-                                    bootlog.push(err);
-                                });
                         }
         });
       
