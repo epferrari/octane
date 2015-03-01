@@ -22,16 +22,20 @@
                         var
                         loadingContainer = octane.dom.loadingContainer(),
                         appContainer = octane.dom.appContainer(),
-                        view =  cfg.defaultView || octane.Router.requestedView()  || 'home';
+                        view =  cfg.defaultView || octane.Router.getUrlView()  || 'home';
 
                         appContainer.classList.remove('hidden');
 
                         setTimeout(function(){
-                            octane.route(view).then(function(){
+                            octane.route(view)
+                            
+                            .then(function(){
                                 return $.Velocity(loadingContainer,'fadeOut',{duration:500})
-                            }).then(function(){
+                            })
+                            .then(function(){
                                 document.body.removeChild(loadingContainer);
                             });
+                            
                         },500);
                     }
                 });

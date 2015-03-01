@@ -1,65 +1,54 @@
 // set-up for Views constructor
 
-octane.module('OctaneViews',['ViewPrototype']).extend({
+octane.module('OctaneViews',['ViewController']).extend({
     
     initialize : function(cfg){
            
         var $Views = {};
-        var $proto = this.import('ViewPrototype');
-    
-    /* ------------------------------------------------------- */
-    //  Application View Constructor
-    //
-    // @param id [string] id attribute of 'o-view' DOM element
-    // options : {starts:'left',loads:['slide','left','swing',500], exits:['slide','right','swing',500]}
-    // 
-    // @option starts: initial postion of the ViewFrame, default is left
-    // @option loads[from,easing,duration]
-    // @opton exits[to,easing,duration]
-    /* ------------------------------------------------------- */
-
-        function OctaneView(elem){
-            if(!_.isString(elem.id)) return {instanced:false};
-
-            this.define({
-
-                instanced	: true,
-                id			: elem.id,
-                title       : elem.getAttribute('title') || __.titleize(elem.id),
-                elem		: elem,
-                $elem 		: $(elem),
-                _guid		: octane.GUID(),
-                todoBeforeLoad : [],
-                todoAfterLoad : [],					
-            });
-            
-            // prototype method
-            this.configureLoading();
-        }
-
-        OctaneView.prototype = new octane.Base;
-        OctaneView.prototype.constructor = OctaneView;
-        OctaneView.prototype.augment($proto);
+        var ViewController = this.imports.ViewController.Factory;
+        var OctaneView = ViewController.extend({
         
-        (function(){
+            // Instance Methods
             
-            var $views = octane.dom.views();
-            var n = $views.length;
-            var config;
-            var id;
+            initialize : function(elem){
+                
+                        if(!elem) octane.error('Must pass an HTML element to OctanView');
+                    
+                        this.configure(elem);
+                        this.view = this.elem;
+                        this.name = _.capitalize(_.camelCase(this.title))+'ViewController';
+                        $Views[this.id] = this;
+                
+                    },
             
-            // bind html views to View objects 
-            while(n--){
-                id = $views[n].id;
-                config = JSON.parse($views[n].getAttribute('o-config'));
-                !$Views[id] && ($Views[id] = new OctaneView($views[n],config));
-            } 
-        })();
-        
-        octane.define({
-            getView : function(id){
-                return $Views[id] || false;
-            }
+            constructor : function OctaneView(){ return octane.Controller.apply(this,arguments); },
+            
+            destroy : function(){
+                        this._destroy();
+                        delete $Views[this.name];
+                    },
+            
+           
+        },{
+             // Static Methods
+            
+            create : function(elem){
+                        return new OctaneView(elem);
+                    },
+            
+            destroy : function(id){
+                        var view = this.get(id);
+                        view && view.destroy();
+                    },
+            
+            get : function(id){
+                        return $Views[id];
+                    }
         });
+        
+        octane.compiler('o-view',OctaneView.create.bind(OctaneView));
+        
+        
+        octane.define({ View : OctaneView });
     }
 });

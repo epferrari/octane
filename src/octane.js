@@ -238,7 +238,7 @@
             ordinances : [],
             
             designate : function(selector,task){
-                task._compilerID = Octane.GUID();
+                task._guid || (task._guid = Octane.GUID());
                 this.ordinances.push({
                     selector   : selector,
                     task        : task
@@ -253,7 +253,7 @@
                     return new Promise(function(resolve){
                         var selector = ordinance.selector;
                         var task = ordinance.task;
-                        var taskID = task._compilerID;
+                        var taskID = task._guid;
                         var designation; // the value of the defined ordinance attribute
                         
                         _.each(context.querySelectorAll(selector),function(elem){
@@ -269,7 +269,7 @@
                                 designation = elem.getAttribute(ord);
                                 
                                 try{
-                                    task.apply(null,[elem,designation]);
+                                    task(elem,designation);
                                 } catch (ex){
                                     Octane.log(ex);
                                 }
@@ -1686,7 +1686,7 @@
                             
                             while(n--){
                                 prop = stateProps[n];
-                                delete this.attributes[prop];
+                                delete this.state[prop];
                                 this.isRegistered() && Octane.fire('statechange:'+this.registeredTo()+'.'+prop);
                             }
                             // alert any subscribers
@@ -1861,16 +1861,13 @@
         
         
         
-		function OctaneController(name,viewID){
-			this.define({
-				name : name,
-                view : document.querySelector('o-view#'+viewID)
-			});
+		function OctaneController(name){
 			
-			// add this Controller instance to the _octane's controllers object
-            _octane.controllers[name] = this;
+            this.name = name;
             
             this.initialize && this.initialize.apply(this,arguments);
+            // add this Controller instance to the _octane's controllers object
+            _octane.controllers[this.name] = this;
 		}
 		
         
@@ -1879,16 +1876,43 @@
 		OctaneController.prototype = new OctaneBase;
         OctaneController.prototype.constructor = OctaneController;
         OctaneController.prototype.initialize = function(){};
+        OctaneController.prototype.defaults = {};
+        OctaneController.prototype.destroy = function(){
+            this._destroy.apply(this);
+        };
+        OctaneController.prototype.select = function(){
+            return this._select.apply(this,arguments);    
+        };
+        OctaneController.prototype.selectAll = function(){
+            return this._selectAll.apply(this,arguments);    
+        };
+        
+        
+        
+        
+        OctaneController.prototype.define({
+            _destroy : function(){
+                delete _octane.controllers[this.name];
+            },
+            _select : function(selector){
+                var node = (this.view instanceof HTMLElement) ? this.view : document;
+                return node.querySelector(selector);
+            },
+            _selectAll : function(selector){
+                var node = (this.view instanceof HTMLElement) ? this.view : document;
+                return node.querySelectorAll(selector);
+            }    
+       });
 
         
         
         
 		Octane.define({
-			controller 	: function (name,viewID){
+			controller 	: function (name){
 							if(!name){
-								return new OctaneController(Octane.GUID(),viewID);
+								return new OctaneController(Octane.GUID());
 							} else if(!_octane.controllers[name]){
-								return new OctaneController(name,viewID);
+								return new OctaneController(name);
 							} else {
 								return _octane.controllers[name];
 							}
@@ -1921,42 +1945,42 @@
       // prototype chaining Backbone.js style
         var extend = function(){
             
-            var className,config,staticMethods,parentFactory,parentDefaults,childFactory,Factory;
+            var className,config,staticMethods,ParentFactory,parentDefaults,Factory,_Factory;
             
             if(__.typeOf(arguments[0]) == 'string'){
                 className = arguments[0];
-                config = _.isPlainObject(arguments[1]) ? arguments[1] : {};
-                staticMethods = _.isPlainObject(arguments[2]) ? arguments[2] : {};
+                config = arguments[1] || {};
+                staticMethods = arguments[2] || {};
             }else{
-                config = _.isPlainObject(arguments[0]) ? arguments[0] : {};
-                staticMethods = _.isPlainObject(arguments[1]) ? arguments[1] : {};
+                config = arguments[0] || {};
+                staticMethods = arguments[1] || {};
             }
              
-            parentFactory = this;
-            parentDefaults = parentFactory.prototype.defaults || {};
+            ParentFactory = this;
+            parentDefaults = ParentFactory.prototype.defaults || {};
            
             if(config.constructor != Object && _.isFunction(config.constructor)){
-               childFactory = config.constructor;
+                Factory = config.constructor;
             } else {
-                childFactory = function(){ 
-                    //parentFactory.prototype.initialize.apply(this,arguments);
-                    return parentFactory.apply(this,arguments);
+                Factory = function(){
+                    return ParentFactory.apply(this,arguments);
                 };
             }
             
-            _.extend(childFactory,parentFactory,staticMethods);
+            _.extend(Factory,ParentFactory,staticMethods);
             
-            Factory = function(){ this.constructor = childFactory; };
-            Factory.prototype = parentFactory.prototype;
-            childFactory.prototype = new Factory;
+            _Factory = function(){ this.constructor = Factory; };
+            _Factory.prototype = ParentFactory.prototype;
+            Factory.prototype = new _Factory;
             
+            // ensure prototyp has a defaults object
+            Factory.prototype.defaults = {};
+            _.extend(Factory.prototype, config);
+            _.extend(Factory.prototype.defaults, parentDefaults, config.defaults);
             
-            childFactory.prototype.defaults = {};
-            childFactory.prototype.className = className || 'OctaneModel';
-            _.extend(childFactory.prototype, config);
-            _.extend(childFactory.prototype.defaults, parentDefaults, config.defaults);
+            Factory.__legacy__ = ParentFactory.prototype;
             
-            return childFactory;
+            return Factory;
         }
         
         
@@ -1974,6 +1998,7 @@
         
         Factory.prototype = new OctaneBase;
         Factory.prototype.initialize = function(){};
+        Factory.prototype.defaults = {};
         Octane.define.apply(Factory,[{
             define : Octane.define
         }]);
@@ -2154,7 +2179,7 @@
        
         _octane.moduleExports = {};
         
-        var bootlog = _octane.bootlog = [];
+        var bootlog = _octane.bootlog = Octane.bootlog = [];
         
 		
         
@@ -2162,7 +2187,9 @@
         function OctaneModule (name,dependencies){
             this.initialized = false;
             this.name = name;
+            this.imports = {};
             this.dependencies = dependencies;
+            this.dependenciesLoaded = [];
         }
        
         
@@ -2188,10 +2215,15 @@
                             }
                         },
             
+            _getImports  : function(){
+                            
+                            _.transform(this.dependenciesLoaded,function(imports,dependency){
+                                imports[dependency] = _octane.moduleExports[dependency];
+                            },this.imports);
+                        },
+            
             _initialize : function(){
-                                    
-                            this.dependenciesLoaded = [];
-
+                        
                             var $this = this;
                             var config = _octane.moduleConfigs[this.name] || {};
                             var message = [
@@ -2206,6 +2238,7 @@
                                     .then(function(){
 
                                         bootlog.push(message[1]);
+                                        $this._getImports($this.name);
                                         $this.initialize(config);
                                         Octane.App.set({
                                             "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
@@ -2251,13 +2284,13 @@
                                     bootlog.push(message[2]);
                                     // remove dependency from list
                                     this.dependenciesLoaded.push(dependency);
-                                    _.pull(this.dependencies,name);
+                                    _.pull(this.dependencies,dependency);
                                     return Promise.resolve();
                                 case (!dep.initialized): // module is not loaded, try to load it
                                     bootlog.push(message[3]);
                                     return dep._initialize().then(function(){
                                         $this.dependenciesLoaded.push(dependency);
-                                        _.pull($this.dependencies,name);
+                                        _.pull($this.dependencies,dependency);
                                     })
                                     .catch(function(err){
                                         bootlog.push(err);
@@ -2607,9 +2640,9 @@
         
     
           
-    /* ------------------------------------------------------- */
-	/*                 O-CONTROLLER ORDINANCE                  */
-	/* ------------------------------------------------------- */
+    /*-------------------------------------------------------*/
+	/*                 O-CONTROLLER ORDINANCE				*/
+	/*-------------------------------------------------------*/
        	
 		
 		
@@ -2635,10 +2668,11 @@
 
             controller = action.split('.')[0];
             method = action.split('.')[1];
-
+           
             elem.addEventListener(event,function(e){
                 var $controller = _octane.controllers[controller];
                 try{
+                    
                     $controller[method].apply($controller,[elem]);
                 } catch (ex){
                     Octane.log(ex);
@@ -2655,9 +2689,9 @@
         
     
          
-    /* ------------------------------------------------------- */
+    /* -------------------------------------------------------*/
 	/*                     O-SYNC ORDINANCE                    */
-	/* ------------------------------------------------------- */
+	/* ------------------------------------------------------*/
        	
 		
 		
@@ -2691,9 +2725,9 @@
         
     
        
-    /* ------------------------------------------------------- */
-	/*                          INIT                           */
-	/* ------------------------------------------------------- */
+    /* -------------------------------------------------------*/
+	/*                          			INIT                           	*/
+	/* -------------------------------------------------------*/
        	
 		
 		

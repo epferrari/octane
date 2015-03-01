@@ -1,9 +1,22 @@
-octane.module('ViewPrototype').extend({
+octane.module('ViewController').extend({
     
     initialize : function(cfg){
         
-        this.export({
-            configureLoading : function(){
+        var ViewController = octane.Factory.extend({
+           
+            configure : function(elem){
+                
+                _.extend(this,{
+                    instanced       : true,
+                    id              : elem.id,
+                    title           : elem.getAttribute('title') || _.startCase(elem.id),
+                    elem            : elem,
+                    $elem           : $(elem),
+                    _guid           : octane.GUID(),
+                     beforeLoadTasks: [],
+                    onloadTasks     : [],
+                    onExitTasks     : []
+                }); 
                 
                 var isClassed = false;
                 var viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'];
@@ -20,172 +33,94 @@ octane.module('ViewPrototype').extend({
                 }
                 !isClassed && this.elem.classList.add('view-left');
             },
-            handleEvent : function(e){
-                switch(e.type){
-                    case 'translated':
-                        this.setCanvasHeight();
-                        break;
-                    case 'resize':
-                        this.setCanvasHeight();
-                        break;
-                    case 'orientationchange':
-                        this.setCanvasHeight();
-                        break;  
-                }
-            },
-            load : function(){
-                var $this = this;
-                octane.dom.viewContainer().style.height = $(window).height()+'px';
-                return this.callBeforeLoadPromises().finally(function(){
-                    return new Promise(function(resolve){
-                        // scroll to top of page
-                        $('body').velocity('scroll',{duration:100});
-                        $this.elem.classList.add('view-active');
-                        // adjust the canvas height and load the view,
-                        // use cached height if available
-                        setTimeout(function(){
-                            resolve();
-                        },805);
-                    });
-                }).then(function(){
-                    $this.setCanvasHeight();
-                }).then(function(){
-                    $this.callAfterLoadCallbacks();
-                });
-            },
-            queueExit  : function(){
-                
-                var $this = this;
-                
-                return new Promise(function(resolve){
-                    $this.elem.classList.add('view-dismissed');
-                    $this.elem.classList.remove('view-active');
-                    resolve();
-                });
-            },
-            exit : function (){
-
-                var $this = this;
-
-                return new Promise(function(resolve){
-                    setTimeout(function(){
-                        $this.elem.classList.remove('view-dismissed');
-                    },1000);
-                    resolve();
-                });
-            },
+            
             setCanvasHeight : function($pixels){
                 
-                var
-                appContainer = octane.dom.appContainer(),
-                appContainerNodes = [],
-                appContainerNodeList = appContainer.childNodes,
-                appContainerHeight,
-                viewContainer = octane.dom.viewContainer(),
-                viewNodes = [],
-                viewNodeList = this.elem.childNodes,
-                windowHeight = window.document.body.offsetHeight,
-                viewTotalHeight,
-                viewContainerHeight = viewContainer.offsetHeight,
-                freeSpace;
-                
-                this.elem.style.height = viewContainer.style.height = windowHeight;
-                
-                /*
-                // convert appContainer's NodeList to real array
-                for(var i=0,n=appContainerNodeList.length; i<n; i++){
-                    appContainerNodes.push(appContainerNodeList[i]);
-                }
-                // convert current view's NodeList to real array
-                for(var j=0,m=viewNodeList.length; j<m;j++){
-                    viewNodes.push(viewNodeList[j]);
-                }
-                // get total height of app container nodes (including view container)
-                appContainerHeight = appContainerNodes.reduce(function(height,node,index){
-                    return (node && node.nodeType == (Node.ELEMENT_NODE)) ? node.offsetHeight + height : height;
-                },0);
-                // less the view container's height, if any
-                freeSpace = windowHeight - (appContainerHeight - viewContainerHeight);
-                // initially set the viewContainer as window height
-                viewContainer.style.height = windowHeight+'px';
-                // get total height of view from its inner elements
-                viewTotalHeight = viewNodes.reduce(function(height,node,index){
-                    return (node && node.nodeType == (Node.ELEMENT_NODE)) ? node.offsetHeight + height : height;
-                },0);
-                // set the view container height to the greater
-                viewContainerHeight = (viewTotalHeight > freeSpace) ? viewTotalHeight : freeSpace;
-                // animate
-                $.Velocity.animate(viewContainer,{height: viewContainerHeight+'px'});
-                */
+                var viewContainer = octane.dom.viewContainer();
+                var windowHeight = window.document.body.offsetHeight;
+                this.elem.style.height = viewContainer.style.height = windowHeight+'px';
                
             },
-            
-            addBeforeLoadPromise : function(promise,args){
+			
+            beforeLoad : function(promise,args){
                 try{
-                    this.todoBeforeLoad.push([promise,args]);
+                    this.beforeLoadTasks.push([promise,args]);
                 } catch(ex){
-                    octane.log('cannot push "beforeLoad" callback to view '+this.id+', reason: '+ex.message);
+                    octane.log('cannot push "beforeLoad" promise to view '+this.id+', reason: '+ex.message);
+                }    
+            },
+			
+            onload : function(callback,args){
+                try{
+                   this.onloadTasks.push([callback,args]);
+                }catch(ex){
+                    octane.log('cannot push "onload" callback to view '+this.id+', reason: '+ex.message);
                 }
             },
-                
-            addAfterLoadCallback: function(callback,args){
+			
+            onExit : function(callback,args){
                 try{
-                   this.todoAfterLoad.push([callback,args]);
+                   this.onExitTasks.push([callback,args]);
                 }catch(ex){
-                    octane.log('cannot push "afterLoad" callback to view '+this.id+', reason: '+ex.message);
+                    octane.log('cannot push "onExit" callback to view '+this.id+', reason: '+ex.message);
                 }
             },
             
-            callBeforeLoadPromises : function(){
+            _load : function(){
+                this.setCanvasHeight();
                 
-                var $view = this;
-                var todos = this.todoBeforeLoad;
-                var completed = [];
+                return this._runBeforeLoad()
+                    .bind(this)
+                    .finally(function(){
+                        this.elem.classList.add('view-active');
+                        $.Velocity(this.elem,'scroll',{duration:100});
+                        return Promise.delay(405);
+                    })
+                    .then( this.setCanvasHeight )
+                    .then( this._runOnload );
+            },
+            
+            _exit : function (){
                 
-                for(var i=0,n=todos.length; i<n; i++){
-                    try{
-                        execute(todos[i]);
-                    } catch(ex){
-                        octane.log('could not call "beforeLoad" function for view '+this.id+' , reason: '+ex.message);
-                        continue;
-                    }
-                }
+                this.elem.classList.remove('view-dismissed');
+                return this._runOnExit().delay(805);
+            },
+            
+            _queueExit  : function(){
                 
-                // helper
-                function execute(promise){
-                    
-                    var func = promise[0];
-                    var args = _.isArray(promise[1]) ? promise[1] : [promise[1]];
-                    
-                    completed.push(func.apply($view,args));
-                }
+                this.elem.classList.add('view-dismissed');
+                this.elem.classList.remove('view-active');
+                return Promise.delay(405);
+            },
+            
+            _runBeforeLoad : function(){
                 
+                var todos = this.beforeLoadTasks;
+                var completed = _.map(todos,this._execute);
                 return Promise.settle(completed);
             },
-            
-            callAfterLoadCallbacks : function (){
+            _runOnload : function(){
                 
-                var $view = this;
-                var todos = this.todoAfterLoad;
-
-                for (var i=0,n = todos.length; i < n; i++){
-                    try{
-                        execute(todos[i]);
-                    } catch (ex){
-                        octane.log('could not call afterLoad" callback for view '+this.id+' , reason: '+ex.message);
-                        continue;
-                    }
-                }
+                var todos = this.onloadTasks;
+                var completed = _.map(todos,this._execute);
+                return Promise.all(completed);
+            },
+            _runOnExit : function(){
                 
-                // helper
-                function execute(callback){
-                    
-                    var func = callback[0];
-                    var args = _.isArray(callback[1]) ? callback[1] : [callback[1]];
-                    
-                    func.apply($view,args);
-                }
-            }
+                var todos = this.onExitTasks;
+                var completed = _.map(todos,this._execute);
+                return Promise.all(completed);
+            },
+            _execute : function(callback){
+                var f = callback[0];
+                var args = _.isArray(callback[1]) ? callback[1] : [callback[1]];
+                return f.apply(this,args);
+            }    
         });
+                                                      
+        this.export({
+            Factory        : ViewController,
+            animations     : (cfg.viewAnimations || 'css')
+        });                                              
     } // end initialize
 }); // end module
