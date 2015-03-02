@@ -71,7 +71,9 @@
         
         
         Object.defineProperty(OctaneBase.prototype,'Base',{
-            value : OctaneBase,
+            value : function(){
+                return new OctaneBase();
+            },
             writable : false,
             configurable : false
         });
@@ -1863,11 +1865,11 @@
         
 		function OctaneController(name){
 			
-            this.name = name;
+            _.isString(name) && (this.name = name);
             
             this.initialize && this.initialize.apply(this,arguments);
             // add this Controller instance to the _octane's controllers object
-            _octane.controllers[this.name] = this;
+            this.name && (_octane.controllers[this.name] = this);
 		}
 		
         
@@ -1880,27 +1882,9 @@
         OctaneController.prototype.destroy = function(){
             this._destroy.apply(this);
         };
-        OctaneController.prototype.select = function(){
-            return this._select.apply(this,arguments);    
-        };
-        OctaneController.prototype.selectAll = function(){
-            return this._selectAll.apply(this,arguments);    
-        };
-        
-        
-        
-        
         OctaneController.prototype.define({
             _destroy : function(){
                 delete _octane.controllers[this.name];
-            },
-            _select : function(selector){
-                var node = (this.view instanceof HTMLElement) ? this.view : document;
-                return node.querySelector(selector);
-            },
-            _selectAll : function(selector){
-                var node = (this.view instanceof HTMLElement) ? this.view : document;
-                return node.querySelectorAll(selector);
             }    
        });
 
@@ -2449,7 +2433,7 @@
         function Template(elem){
             
             var name = elem.getAttribute('name');
-            this.id = name || elem._guid || (elem._guid = Octane.GUID());
+            this.id = name || elem.name || elem._guid || (elem._guid = Octane.GUID());
             this.markup = elem.innerHTML;
             this.content = ''; 
         }
@@ -2465,6 +2449,14 @@
             },
             create : function(elem){
                 return new Template(elem);
+            },
+            fromString : function(name,string){
+              
+                var div = document.createElement('div');
+                div.name = name;
+                div.innerHTML = string;
+                return new Template(div);
+                
             },
             parse : function (template,data){
 
