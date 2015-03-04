@@ -1271,7 +1271,8 @@
                             // protected via closure
                             var isRegistered = false;
                             var registeredTo = null;
-
+                            
+                            
                             // save original methods
                             model.__legacy__ = {
                                 set : model.set,
@@ -1804,35 +1805,37 @@
                 
                         },
             // access a bound model's unset method from the application object
-            unset       : function(){
+            unset       : function(toUnset,timeout,throttle){
                             
-                            
-                            var subject = arguments[0];
-                            var toUnset, swatch;
+                            if(!toUnset) return;
                 
-                            swatch = new __.Switch({
-                                'string' : function(sub){
-                                    toUnset = sub.split(',');
-                                    toUnset = toUnset.map(function(key){
-                                       return key.trim();
-                                    });
-                                },
-                                'array' : function(sub){
-                                    toUnset = sub;
-                                },
-                                'default' : function(){
-                                    toUnset = [];
-                                }
-                            }).run(__.typeOf(subject),[subject]);
-
-                            toUnset.forEach(function(keystring){
+                            _.isArray(toUnset) || (toUnset = toUnset.split(','));
+                
+                            var subject = arguments[0];
+                            var unset = function(keystring){
+                                    keystring = keystring.trim();
+                                    var  modelName = OctaneModel._parseName(keystring);
+                                    var key = OctaneModel._parseKey(keystring);
+                                    var model = _octane.models[modelName];
+                                    model && model.unset(key);
+                            };
+                            
+                            if(timeout && (__.typeOf(timeout) == 'number')){ // timout the unset 
                                 
-                                var  modelName = OctaneModel._parseName(keystring);
-                                var key = OctaneModel._parseKey(keystring);
-                                var model = _octane.models[modelName];
-                               
-                                model && model.unset(key);
-                            });
+                                if(throttle){                                // throttle the unsets
+                                    _.each(toUset,function(keystring,i){     
+                                        setTimeout(function(){
+                                            unset(keystring);
+                                        },timeout*(i+1));                   // make sure we timeout the 0 index
+                                    });
+                                }else{                                      // unset all together after timeout
+                                    setTimeout(function(){
+                                        _.each(toUnset,unset);
+                                    },timeout); 
+                                }    
+                            } else {
+                                _.each(toUnset,unset);                      // unset all immediately                    
+                            }
                         }   
 		});
  	
@@ -1863,9 +1866,11 @@
         
         
         
-		function OctaneController(name){
+		function OctaneController(name,config){
 			
             _.isString(name) && (this.name = name);
+            
+           _.isPlainObject(config) && _.extend(this,config);
             
             this.initialize && this.initialize.apply(this,arguments);
             // add this Controller instance to the _octane's controllers object
@@ -1892,11 +1897,11 @@
         
         
 		Octane.define({
-			controller 	: function (name){
+			controller 	: function (name,config){
 							if(!name){
 								return new OctaneController(Octane.GUID());
 							} else if(!_octane.controllers[name]){
-								return new OctaneController(name);
+								return new OctaneController(name,config);
 							} else {
 								return _octane.controllers[name];
 							}
@@ -2282,6 +2287,7 @@
                                     });
                             } 
                         }
+                
         });
         
         
@@ -2435,7 +2441,8 @@
             var name = elem.getAttribute('name');
             this.id = name || elem.name || elem._guid || (elem._guid = Octane.GUID());
             this.markup = elem.innerHTML;
-            this.content = ''; 
+            this.content = '';
+            this.parent = elem.parentElement;
         }
         
         
@@ -2540,7 +2547,7 @@
                     elem.parentElement.removeChild(elem);
                 }   
             },
-            render : function (template,elem,method){
+            _render : function (template,elem,method){
                 
                 // a surrogate
                 var div = document.createElement('div');
@@ -2598,16 +2605,16 @@
                 return this; // chainable
             },
             replace : function(elem){
-                Template.render(this,elem,'replace');
+                Template._render(this,elem,'replace');
             },
             renderTo : function(elem){
-               Template.render(this,elem,'elem');
+               Template._render(this,elem,'elem');
             },
             prependTo : function(elem){
-                Template.render(this,elem,'prepend');
+                Template._render(this,elem,'prepend');
             },
             appendTo : function(elem){
-                Template.render(this,elem,'append');
+                Template._render(this,elem,'append');
             },
             save : function(){
                 if(!_octane.templates[this.id]){
@@ -2615,6 +2622,24 @@
                 }else{
                     Octane.log('Could not create template '+this.id+'. Already exists');
                 } 
+            },
+            append  : function(){
+                var parent = this.parent;
+                if(parent instanceof HTMLElement){
+                   this.appendTo(parent);
+                }
+            },
+            prepend : function(){
+                var parent = this.parent;
+                if(parent instanceof HTMLElement){
+                   this.prependTo(parent);
+                }
+            },
+            render : function(){
+                var parent = this.parent;
+                if(parent instanceof HTMLElement){
+                   this.renderTo(parent);
+                }
             }
         });
         
@@ -2647,25 +2672,29 @@
        
         Octane.designate('[o-controller]',function(elem,designation){
             
-            var obj, action, event, controller, method;
+            var arr,event,controller,method,assignments,controllerMethod,param;
 
-            try{
-                obj = JSON.parse(designation);
-                event = Object.keys(obj)[0];
-                action = obj[event];
-            }catch(ex){
-                event = 'click';
-                action = designation;
+            try{                    // passed as JSON array ['event','ControllerName','methodName','optionalParam']
+                arr                 = JSON.parse(designation);
+                event               = designation[0];
+                controller          = designation[1];
+                method              = designation[2];
+                param               = designation[3];
+            }catch(ex){             // passed as string ex. 'ListViewController.refresh @param:15, assume click event
+                event               = 'click';
+                assignments         = designation.split(' ');
+                controllerMethod    = assignments[0];
+                controllerMethod    = controllerMethod.split('.');
+                controller          = controllerMethod[0];
+                method              = controllerMethod[1];
+                param               = assignments[1] ? assignments[1].replace(/[@].*[:]/,'') : null;   
             }
-
-            controller = action.split('.')[0];
-            method = action.split('.')[1];
+            
            
             elem.addEventListener(event,function(e){
                 var $controller = _octane.controllers[controller];
                 try{
-                    
-                    $controller[method].apply($controller,[elem]);
+                    $controller[method].apply($controller,[elem,param]);
                 } catch (ex){
                     Octane.log(ex);
                 }

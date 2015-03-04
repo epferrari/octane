@@ -258,10 +258,10 @@ o-app-container {
     opacity: 0;
     transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
-.o-btn {
+.o-btn, .o-modal-dismiss, .o-back {
   cursor: pointer;
-  min-height: 50px;
-  min-width: 50px; }
+  min-height: 30px;
+  min-width: 30px; }
 
 [o-route] {
   cursor: pointer; }

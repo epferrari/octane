@@ -62,3 +62,7 @@ o-modal {
         transform 0.4s cubic-bezier(0.465,0.183,0.153,0.946),
         opacity 0.4s cubic-bezier(0.465,0.183,0.153,0.946);
 }
+
+.o-modal-dismiss{
+    @extend .o-btn;
+}

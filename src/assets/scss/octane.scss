@@ -86,8 +86,12 @@ o-app-container{
 
 .o-btn {
 	cursor:pointer;
-    min-height:50px;
-    min-width:50px;    
+    min-height:30px;
+    min-width:30px;    
+}
+
+.o-back{
+    @extend .o-btn;
 }
 
 [o-route]{
