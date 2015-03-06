@@ -7,6 +7,7 @@ o-modal-container{
     //z-index:-1; safari
     pointer-events:none;
     overflow-y:hidden;
+    overflow-x:hidden;
    
     opacity:0;
     will-change: opacity;
