@@ -1623,24 +1623,33 @@
                             }
                         },
             
-            _unset      : function(){
+            _unset      : function(toUnset,timeout,throttle){
                 
-                            var keys;
-                            var toUnset = {};
-							
-                            if(_.isString(arguments[0])){
-                                keys = [ arguments[0] ];
-                            } else if(_.isArray(arguments[0])){
-                                keys = arguments[0];
+                            var $this = this;
+                            if(!toUnset) return;
+                
+                            _.isArray(toUnset) || (toUnset = toUnset.split(','));
+                
+                            if(timeout && (__.typeOf(timeout) == 'number')){ // timout the unset 
+                                
+                                if(throttle){                                // throttle the unsets
+                                    _.each(toUnset,function(keystring,i){     
+                                        setTimeout(function(){
+                                            $this.set( keystring,void(0) );
+                                        },timeout*(i+1));                   // make sure we timeout the 0 index
+                                    });
+                                }else{                                      // unset all together after timeout
+                                    setTimeout(function(){
+                                        _.each(toUnset,function(keystring){
+                                            $this.set( keystring, void(0) );
+                                        });
+                                    },timeout); 
+                                }    
                             } else {
-                                return;
+                                _.each(toUnset,function(keystring){         // unset all immediately  
+                                    $this.set( keystring, void(0) );
+                                });                                       
                             }
-                
-                            _.each(keys,function(key){
-                                toUnset[key] = null;
-                            });
-                
-                            this.set(toUnset);
                         
                         },
             
@@ -1811,19 +1820,18 @@
                 
                             _.isArray(toUnset) || (toUnset = toUnset.split(','));
                 
-                            var subject = arguments[0];
                             var unset = function(keystring){
-                                    keystring = keystring.trim();
-                                    var  modelName = OctaneModel._parseName(keystring);
-                                    var key = OctaneModel._parseKey(keystring);
-                                    var model = _octane.models[modelName];
-                                    model && model.unset(key);
+                                keystring = keystring.trim();
+                                var  modelName = OctaneModel._parseName(keystring);
+                                var key = OctaneModel._parseKey(keystring);
+                                var model = _octane.models[modelName];
+                                model && model.unset(key);
                             };
                             
                             if(timeout && (__.typeOf(timeout) == 'number')){ // timout the unset 
                                 
                                 if(throttle){                                // throttle the unsets
-                                    _.each(toUset,function(keystring,i){     
+                                    _.each(toUnset,function(keystring,i){     
                                         setTimeout(function(){
                                             unset(keystring);
                                         },timeout*(i+1));                   // make sure we timeout the 0 index
@@ -2035,11 +2043,13 @@
             
             applyFilter : function(filter,dirty,param){
                             var filtered = dirty;
-
-                            try {
-                                filtered = _octane.filters[filter].apply(null,[dirty,param]);
-                            } catch(ex){
-                                Octane.log(ex);
+                            var $filter;
+                            if($filter = _octane.filters[filter]){
+                                try {
+                                    filtered = $filter.apply(null,[dirty,param]);
+                                } catch(ex){
+                                    Octane.log(ex);
+                                }
                             }
                             return filtered;
                         }       
@@ -2216,10 +2226,10 @@
                             var $this = this;
                             var config = _octane.moduleConfigs[this.name] || {};
                             var message = [
-                                this.name+': initializing...',
-                                this.name+': successfully initialized!',
-                                this.name+': already initialized, continuing...',
-                                this.name+': failed to initialize!'
+                                "       "+this.name+': initializing...',
+                                "       "+this.name+': successfully initialized!',
+                                "       "+this.name+': already initialized, continuing...',
+                                'FAILED '+this.name+': failed to initialize!'
                             ]; 
 
                             if(!this.initialized){
@@ -2256,10 +2266,10 @@
                             var $this = this;
                             var dep = _octane.modules[dependency];
                             var message = [
-                                this.name+': no dependencies, preparing to initialize...',
-                                this.name+': Could not load module, missing module dependency "'+ dependency +'"',
-                                this.name+': dependency "'+ dependency +'" loaded and initialized, continuing...',
-                                this.name+': dependency "'+ dependency +'" not yet loaded, loading now...'
+                                "       "+this.name+': no dependencies, preparing to initialize...',
+                                'FAILED '+this.name+': Could not load module, missing module dependency "'+ dependency +'"',
+                                "       "+this.name+': dependency "'+ dependency +'" loaded and initialized, continuing...',
+                                "       "+this.name+': dependency "'+ dependency +'" not yet loaded, loading now...'
                             ];
 
                             switch(true){
@@ -2303,8 +2313,8 @@
                             var n = deps.length;
                             var results = [];
                             var message = [
-                                module.name+': checking dependencies...',
-                                module.name+': no dependencies, preparing to initialize...'
+                                '       '+module.name+': checking dependencies...',
+                                "       "+module.name+': no dependencies, preparing to initialize...'
                             ];
 
                             bootlog.push(message[0]);
@@ -2329,7 +2339,7 @@
                             
                             if(!module.initialized){
 
-                                bootlog.push(name+': not loaded, loading...');
+                                bootlog.push("       "+name+': not loaded, loading...');
                                 return  module._initialize();
                             }
                         }
@@ -2488,7 +2498,7 @@
 
                 var stripped = match.replace(/[{}]+/g,''); // stripped ex. postedBy.firstName @filter:myFilter @param:myParam
 
-                var split = stripped.split(' ');   // split ex. ["postedBy.firstName","@filter:myFilter","@param:myParam"]
+                var split = stripped.split(/\s/);   // split ex. ["postedBy.firstName","@filter:myFilter","@param:myParam"]
 
                 var key = split[0]; // key ex. "postedBy.firstName"
 
@@ -2687,7 +2697,7 @@
                 controllerMethod    = controllerMethod.split('.');
                 controller          = controllerMethod[0];
                 method              = controllerMethod[1];
-                param               = assignments[1] ? assignments[1].replace(/[@].*[:]/,'') : null;   
+                param               = assignments[1] ? assignments[1].replace(/[@]\w*[:]/,'') : null;   
             }
             
            
