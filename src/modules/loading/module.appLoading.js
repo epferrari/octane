@@ -16,30 +16,6 @@
                     screenReader : 'Loading'
                 }).become('appLoading');
 
-                octane.controller('LoadingController').augment({
-                    removeLoadingScreen : function(){
-                        // unhide the rest of content hidden behind the loader    
-                        var
-                        loadingContainer = octane.dom.loadingContainer(),
-                        appContainer = octane.dom.appContainer(),
-                        view =  cfg.defaultView || octane.Router.getUrlView()  || 'home';
-
-                        appContainer.classList.remove('hidden');
-
-                        setTimeout(function(){
-                            octane.route(view)
-                            
-                            .then(function(){
-                                return $.Velocity(loadingContainer,'fadeOut',{duration:500})
-                            })
-                            .then(function(){
-                                document.body.removeChild(loadingContainer);
-                            });
-                            
-                        },500);
-                    }
-                });
-
                 octane
                     .hook('appLoading.progress',function($state){
                         $state.progress = $state.progress <= 100 ? $state.progress : 100;
@@ -61,6 +37,28 @@
                             'appLoading.message' : 'Initializting startup utility '+titleize(e.detail)
                         })
                     })
-                    .handle('octane:ready',octane.controller('LoadingController').removeLoadingScreen);
+                    .handle('octane:ready',this.controllers.LoadingController.removeLoadingScreen);
             }
-		});
+        })
+        .controller('LoadingController',{
+                
+             removeLoadingScreen : function(){
+                 // unhide the rest of content hidden behind the loader  
+                 var loadingContainer = octane.loadingContainer;
+                 var view =  octane.defaultView || octane.Router.getUrlView()  || 'home';
+   
+                 octane.appContainer.classList.remove('hidden');
+   
+                 setTimeout(function(){
+                     octane.route(view)
+   
+                     .then(function(){
+                         return $.Velocity(loadingContainer,'fadeOut',{duration:500})
+                     })
+                     .then(function(){
+                         document.body.removeChild(loadingContainer);
+                     });
+   
+                 },500);
+             }
+      });

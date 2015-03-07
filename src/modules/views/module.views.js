@@ -4,15 +4,15 @@ octane.module('OctaneViews',['ViewController']).extend({
     
     initialize : function(cfg){
            
-        var $Views = {};
-        var ViewController = this.imports.ViewController.Factory;
-        var OctaneView = ViewController.extend({
+        var $Views          = {};
+        var ViewController  = this.imports.ViewController.Factory;
+        var OctaneView      = ViewController.extend({
         
             // Instance Methods
             
             initialize : function(elem){
                 
-                        if(!elem) octane.error('Must pass an HTML element to OctanView');
+                        if(!elem) octane.error('Must pass an HTML element to OctaneView');
                     
                         this.configure(elem);
                         this.view = this.elem;
@@ -49,6 +49,6 @@ octane.module('OctaneViews',['ViewController']).extend({
         octane.compiler('o-view',OctaneView.create.bind(OctaneView));
         
         
-        octane.define({ View : OctaneView });
+        octane.engrave({ View : OctaneView });
     }
 });

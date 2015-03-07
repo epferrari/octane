@@ -2,19 +2,18 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
     
     initialize : function(cfg){
         
-        var $Modals = {};
-        var imports = this.imports;
-        var ViewController = imports.ViewController.Factory;
-        var animBy = imports.ViewController.animations;
-        var Overlay = imports.UiOverlay;
-        var Velocity = Velocity || $.Velocity;
-        var bg = octane.dom.modalContainer();
-        var modalQueue = [];
-        var currentModal = false;
-        var block = false;
+        var $Modals         = {};
+        var imports         = this.imports;
+        var ViewController  = imports.ViewController.Factory;
+        var animBy          = imports.ViewController.animations;
+        var Overlay         = imports.UiOverlay;
+        var Velocity        = Velocity || $.Velocity;
+        var bg              = octane.modalContainer;
+        var modalQueue      = [];
+        var currentModal    = false;
+        var block           = false;
         
-        
-        var OctaneModal = ViewController.extend({
+        var OctaneModal     = ViewController.extend({
             
             // Instance Methods
             
@@ -34,7 +33,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
             
             call        : function(){
 
-                            var routerWasLocked = octane.Router.isLocked();
+                            var routerWasLocked = octane.Router.isLocked;
                             var modalLoaded;
 
                             if(!block){                                     
@@ -45,7 +44,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
                                     
                                     modalLoaded = Overlay.on().bind(this).then(this._load);
                                 
-                                } else if (currentModal.id !== this.id){    // another modal is onscreen, remove it
+                                } else if (currentModal && !this.isCurrent){    // another modal is onscreen, remove it
                                     
                                     modalLoaded = currentModal._exit() 
                                         .bind(this)
@@ -66,8 +65,8 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
             
             dismiss     : function(){
                             
-                            var routerWasLocked = octane.Router.isLocked();
-                            if(currentModal == this){
+                            var routerWasLocked = octane.Router.isLocked;
+                            if(this.isCurrent){
                                 octane.Router.lock();
                                 
                                 this._exit()
@@ -108,10 +107,6 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
             destroy     : function(){
                             this._destroy();
                             delete $Modals[this.name];
-                        },
-            
-            isCurrent    : function(){
-                            return (this === currentModal);
                         },
            
             _load        : function (){
@@ -175,19 +170,20 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
             dismiss     : function (){
 
                             currentModal && currentModal.dismiss();
-                        },
-            
-            current     : function(){
-                            return currentModal;
-                        },
-            
-            isLocked    : function(){
-                            return block;
                         }
         });
             
-       
-
+        octane.defineGetter.apply(OctaneModal.prototype,['isCurrent',function(){
+            return (this === currentModal);
+        }]);
+        
+        octane.defineGetter.apply(OctaneModal,['current',function(){
+            return currentModal;
+        }]);
+        
+        octane.defineGetter.apply(OctaneModal,['isLocked',function(){
+            return block;
+        }]);
         
        
 
@@ -225,7 +221,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
             .handle('load resize orientationchange',function(){
                 currentModal && currentModal.adjustSize();
             })
-            .define({ Modal : OctaneModal });
+            .engrave({ Modal : OctaneModal });
         
     } // end initialize
 }); // end module
@@ -235,7 +231,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
          function OctaneModal(elem){
             if(!_.isString(elem.id)) return {instanced:false};
 
-            this.define({
+            this.engrave({
 
                 instanced	: true,
                 id			: elem.id,
@@ -251,7 +247,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
         }
         
         OctaneModal.prototype = new octane.Base;
-        OctaneModal.prototype.define({
+        OctaneModal.prototype.engrave({
             constructor :  OctaneModal,
             configureLoading : ViewProto.configureLoading,    
             addAfterLoadCallback    : ViewProto.addAfterLoadCallback,

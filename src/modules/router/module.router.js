@@ -1,6 +1,6 @@
 // JavaScript Document
 
-octane.module('Router',['OctaneViews']).extend({
+octane.module('OctaneRouter',['OctaneViews']).extend({
     
     initialize : function (cfg) {
 	
@@ -101,7 +101,7 @@ octane.module('Router',['OctaneViews']).extend({
                 
                 var $view           = octane.View.get(viewID);
                 var viewOnScreen    = ( $view == currentView   );
-                var modalOnScreen   = octane.Modal.current();
+                var modalOnScreen   = octane.Modal.current;
                 
                 silent || (silent = $view.silent || false);
                 
@@ -282,7 +282,9 @@ octane.module('Router',['OctaneViews']).extend({
             }
          }
        
-        octane.define({ 
+        
+        
+        octane.engrave({ 
             Router      : {},
             route       : function(viewID,silent){
                             return route(viewID,silent).catch(function(ex){
@@ -295,28 +297,35 @@ octane.module('Router',['OctaneViews']).extend({
             onroute     : routeThen
         });
         
+        
+        
         // Router Public API				
-        octane.define.apply(octane.Router,[{
+        octane.engrave.apply(octane.Router,[{
             getUrlView      : getRequestedView,
             pushState		: pushState,
-            getQueue        : function(){
-                                return queuedRoute;
-                            },
             lock            : blockRouting,
             unlock          : unblockRouting,
-            isLocked        : function(){
-                                return routingBlocked;
-                            },
             before          : beforeRoute
         }]);
         
-        octane.define.apply(octane.View,[{
-            current         : function(){
-                                return currentView;
-                            }
+        
+        
+        // Router getters
+        octane.defineGetter.apply(octane.Router,['isLocked',function(){
+            return routingBlocked;
+        }]);
+        
+        octane.defineGetter.apply(octane.Router,['queue',function(){
+            return queuedRoute;
+        }]);
+        
+        octane.defineGetter.apply(octane.View,['current',function(){
+            return currentView;
         }]);
             
            
+        
+        
         // resize canvas to proper dimensions
         octane
             .handle('translated resize orientationchange',function(){

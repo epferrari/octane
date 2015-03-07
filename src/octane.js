@@ -116,7 +116,7 @@
         
         
 		// quick method to define immutable properties
-		Object.defineProperty(OctaneBase.prototype,'define',{
+		Object.defineProperty(OctaneBase.prototype,'engrave',{
 			value : function (isWritable,prop,val){
 							
 							if(_.isBoolean(arguments[0])){
@@ -161,7 +161,27 @@
 			configuarable : false
 		});
 		
-    
+        Object.defineProperty(OctaneBase.prototype,'defineGetter',{
+            value : function(name,getter){
+               Object.defineProperty(this,name,{ 
+                   get: getter,
+                   configurable : false
+               })
+            },
+            writable: false,
+            configurable : false
+        });
+        
+        Object.defineProperty(OctaneBase.prototype,'defineSetter',{
+            value : function(name,setter){
+               Object.defineProperty(this,name,{ 
+                   set: setter,
+                   configurable : false
+               })
+            },
+            writable: false,
+            configurable : false
+        });
         
         
     /* ------------------------------------------------------- */
@@ -204,7 +224,7 @@
     
         
 		// set a unique identifier for the DOM element so we don't double count it
-		Octane.define({
+		Octane.engrave({
 			GUID     : function(){
                         var random4 = function() {
                             return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
@@ -289,7 +309,7 @@
         
         
         
-        Octane.define({
+        Octane.engrave({
             
             compiler : function(selector,task){
                         Compiler.designate.apply(Compiler,[selector,task]);
@@ -335,7 +355,7 @@
             state = 'pending';
             this.result = null;
             this.error = null;
-            this.define({
+            this.engrave({
                 isResolved : function(){
                     return state == 'resolved';
                 },
@@ -357,7 +377,7 @@
                 var n = callbacks.length;
                 var i=0;
                 
-                this.define({ 
+                this.engrave({ 
                     result : data
                 });
                 for(;i<n;i++){
@@ -369,7 +389,7 @@
             var reject = function(error){
                 
                 state = 'rejected';
-                this.define({ error : error });
+                this.engrave({ error : error });
                 
                 var callbacks = this.rejectCallbacks;
                 var n = callbacks.length;
@@ -408,7 +428,7 @@
         
         OctanePromise.prototype = new OctaneBase;
         OctanePromise.prototype.constructor = OctanePromise;
-        OctanePromise.prototype.define({
+        OctanePromise.prototype.engrave({
             then : function(resolve,reject){
             
                 _.isFunction(resolve) ||( resolve = function(){} );
@@ -431,7 +451,7 @@
         
         
         
-        Octane.define({
+        Octane.engrave({
             promisify : function(deferred){
                 var args = Array.prototype.slice.call(arguments,1); 
                 return new Promise(function(resolve,reject){
@@ -485,7 +505,7 @@
         
         
         
-        Octane.define({
+        Octane.engrave({
             
             log         : function(message){
                             Octane.hasModule('Debug') && _octane.log(message);
@@ -607,7 +627,7 @@
         
         
         Http.prototype = new OctaneBase;
-        Http.prototype.define({
+        Http.prototype.engrave({
             
             get : function(){
                 return http(this.url,'GET',null,this.headers);
@@ -631,7 +651,7 @@
         
         
         
-        Octane.define({
+        Octane.engrave({
             http        : function(url,headers){
                             return new Http(url,headers);
                         },
@@ -753,7 +773,7 @@
         
         
         
-        Octane.define({
+        Octane.engrave({
 			
             handle		: function(type,$elem,$handler){
                                 
@@ -874,7 +894,7 @@
         
         
         
-		Octane.define({
+		Octane.engrave({
 			
             library     : function(name,lib){
                         
@@ -927,7 +947,7 @@
     
         	
 		function ViewModel(){
-			this.define({ scope : {} });
+			this.engrave({ scope : {} });
             this.parse();
             this.refreshAll();
 		}
@@ -936,7 +956,7 @@
         
         
 		ViewModel.prototype = new OctaneBase;
-		ViewModel.prototype.define({
+		ViewModel.prototype.engrave({
             
             // find bound elements on the DOM
 			parse        : function(scope){
@@ -1283,6 +1303,7 @@
                             // attach to a named model for data-binding
                             _.extend(model,{
                                 become : function(name){
+                                    this.detach();  // make sure we're detached from one ViewModel reference before binding to another
                                     _octane.models[name] && _octane.models[name].detach();
                                     _octane.models[name] = this;
                                     isRegistered = true;
@@ -1402,7 +1423,7 @@
             var registeredTo= null;
             
             this.className = this.className || 'OctaneModel';
-            this.define({
+            this.engrave({
                 guid : 'model_'+Octane.GUID(),
                 state : {},
                 become : function(name){
@@ -1447,7 +1468,7 @@
         
         
         // static methods
-        Octane.define.call(OctaneModel,{
+        Octane.engrave.call(OctaneModel,{
             
             // static factory
             create      : function(data,bind){
@@ -1535,7 +1556,7 @@
         OctaneModel.prototype.defaults = {};
         OctaneModel.prototype.constructor = OctaneModel;
 		
-        OctaneModel.prototype.define({
+        OctaneModel.prototype.engrave({
             
 			_set	    : function(){
                         
@@ -1745,7 +1766,7 @@
 		
 		
         
-        Octane.define({
+        Octane.engrave({
            
             Model       : OctaneModel,
             
@@ -1895,7 +1916,7 @@
         OctaneController.prototype.destroy = function(){
             this._destroy.apply(this);
         };
-        OctaneController.prototype.define({
+        OctaneController.prototype.engrave({
             _destroy : function(){
                 delete _octane.controllers[this.name];
             }    
@@ -1904,7 +1925,7 @@
         
         
         
-		Octane.define({
+		Octane.engrave({
 			controller 	: function (name,config){
 							if(!name){
 								return new OctaneController(Octane.GUID());
@@ -1996,14 +2017,14 @@
         Factory.prototype = new OctaneBase;
         Factory.prototype.initialize = function(){};
         Factory.prototype.defaults = {};
-        Octane.define.apply(Factory,[{
-            define : Octane.define
+        Octane.engrave.apply(Factory,[{
+            engrave : Octane.engrave
         }]);
         
         
         
         
-        Octane.define({ Factory : Factory });
+        Octane.engrave({ Factory : Factory });
         
         
         
@@ -2034,7 +2055,7 @@
        
         _octane.filters = {};
         
-        Octane.define({
+        Octane.engrave({
             
             // filterFunction as -> function(dataToBeFiltered[,optionalParameter to be passed])
             filter      : function(name,filterFunction){
@@ -2080,7 +2101,7 @@
         // param 1 : a model key to listen for change on
         // add param 2 as function(data held in model[key])
         
-        Octane.define({ 
+        Octane.engrave({ 
             
             task        : function(key,$task){
                 
@@ -2135,7 +2156,7 @@
         // if one model data value changes depending on another, a hook is the place for that logic
         // key is the incoming data key to parse for, func is the function to apply
          
-         Octane.define({ 
+         Octane.engrave({ 
              
              hook       : function hook(oBind,func){
 
@@ -2178,16 +2199,17 @@
        
         _octane.moduleExports = {};
         
-        var bootlog = _octane.bootlog = Octane.bootlog = [];
+        var bootlog = _octane.bootlog = [];
         
 		
         
         
         function OctaneModule (name,dependencies){
-            this.initialized = false;
-            this.name = name;
-            this.imports = {};
-            this.dependencies = dependencies;
+            this.initialized        = false;
+            this.name               = name;
+            this.imports            = {};
+            this.controllers        = {};
+            this.dependencies       = dependencies;
             this.dependenciesLoaded = [];
         }
        
@@ -2197,7 +2219,7 @@
         OctaneModule.prototype = new OctaneBase;
         OctaneModule.prototype.initialize = function(){};
         OctaneModule.prototype.constructor = OctaneModule;
-        OctaneModule.prototype.define({
+        OctaneModule.prototype.engrave({
             
             import      : function(module){
                                 return _octane.moduleExports[module];
@@ -2238,6 +2260,7 @@
 
                                         bootlog.push(message[1]);
                                         $this._getImports($this.name);
+                                            
                                         $this.initialize(config);
                                         Octane.App.set({
                                             "loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
@@ -2296,7 +2319,14 @@
                                         Promise.reject(err);
                                     });
                             } 
-                        }
+                        },
+            controller      : function(name,methods){
+                            
+                            // give the controller the module's config hash
+                            (methods || (methods = {})).moduleConfig = (_octane.moduleConfigs[this.name] || {}); 
+                            this.controllers[name] = octane.controller(name,methods);
+                            return this; // chainable
+            }
                 
         });
         
@@ -2348,7 +2378,7 @@
         
         
         
-		Octane.define({
+		Octane.engrave({
             
             module     : function(name,dependencies){ 
                             return (_octane.modules[name] = new OctaneModule(name,dependencies) );
@@ -2385,38 +2415,35 @@
         
     
        
-        // global model and controller
+       
         // octane DOM elements
-            
         
-        Octane.define({ dom : {} });
+        Octane.defineGetter('loadingContainer',function(){
+            return document.getElementsByTagName('o-loading-container')[0] || document.createElement('o-loading-container');
+        });
         
-        Octane.define.call(Octane.dom,{
-            
-            loadingContainer : function(){
-                return document.getElementsByTagName('o-loading-container')[0] || document.createElement('o-loading-container');
-            },
-            
-            bgContainer : function(){
-                return document.getElementsByTagName('o-background')[0] || document.createElement('o-background');
-            },
-            
-            appContainer : function(){
-                return document.getElementsByTagName('o-app-container')[0] || document.createElement('o-app-container');
-            },
-            
-            viewContainer  : function(){
-                return document.getElementsByTagName('o-view-container')[0] || document.createElement('o-view-container');
-
-            },
-            
-            modalContainer : function(){
-                return document.getElementsByTagName('o-modal-container')[0] || document.createElement('o-modal-container');
-            },
-            
-            views    : function(){
-                return document.getElementsByTagName('o-view') || [];
-            }
+        Octane.defineGetter('bgContainer',function(){
+            return document.getElementsByTagName('o-background')[0] || document.createElement('o-background');
+        });
+        
+        Octane.defineGetter('appContainer',function(){
+            return document.getElementsByTagName('o-app-container')[0] || document.createElement('o-app-container');
+        });
+        
+        Octane.defineGetter('viewContainer',function(){
+            return document.getElementsByTagName('o-view-container')[0] || document.createElement('o-view-container');
+        });
+        
+        Octane.defineGetter('modalContainer',function(){
+            return document.getElementsByTagName('o-modal-container')[0] || document.createElement('o-modal-container');
+        });
+        
+        Octane.defineGetter('listViewElements',function(){
+            return document.getElementsByTagName('o-view');
+        });
+        
+        Octane.defineGetter('listModalElements',function(){
+            return document.getElementsByTagName('o-modal');
         });
        	
 		
@@ -2608,7 +2635,7 @@
         
         
         // instance methods
-        Template.prototype.define({
+        Template.prototype.engrave({
             
             set : function(data){
                 this.content = Template.parse(this.markup,data);
@@ -2656,7 +2683,7 @@
         
         
         
-        Octane.define({ Template : Template });
+        Octane.engrave({ Template : Template });
        	
 		
 		
@@ -2748,44 +2775,53 @@
         });
        	
 		
-		
+		_octane.context = 'web';
          
-   
+        Object.defineProperty(Octane,'context',{
+            get : function(){
+                return _octane.context;
+            },
+            set : function(cx){
+                var contexts = ['html4','html5','web','cordova'];
+                __.inArray(contexts,cx) && (_octane.context = cx);
+            }
+        });
         
     
         
     
        
     /* -------------------------------------------------------*/
-	/*                          			INIT                           	*/
+	/*                        INIT                             */
 	/* -------------------------------------------------------*/
        	
 		
 		
          
-   
-        
-    
-        
-    
+
        
-        Octane.define({
-            initialize : function initialize (config){
+        Octane.engrave({
+            initialize : function initialize (appConfig,moduleConfigs){
                 
-                
-                
-                OctaneModule.config = _.isPlainObject(config) ? config : {};
-                
-                
-                // don't reinitialize
+                 // don't reinitialize
                 if(Octane.initialized) return;
-               
                 
-                Octane.define({initialized : true });
+                
+                
+                _.isPlainObject(appConfig) || (appConfig = {});
+                _.isPlainObject(moduleConfigs) || (moduleConfigs = {});
+                
+        
+                
+                Octane.defaultView  = appConfig.defaultView;
+                Octane.context      = appConfig.context;
+                OctaneModule.config = moduleConfigs;
+                
+                
                
                 
                 // parse the DOM initially to create virtual DOM model
-                Octane.define({
+                Octane.engrave({
                     // default application models
                     ViewModel   : new ViewModel(),
                     App         : new OctaneModel().become('App'),
@@ -2797,7 +2833,7 @@
                 
                 Octane.App.set({
                     loadingProgress : 0,
-                    name : config.appName
+                    name : appConfig.appName
                 });
                 
                 
@@ -2829,7 +2865,10 @@
                 // make sure core modules are loaded before 3rd party/app specific modules
                 return _octane.modules['StartupUtilities']._initialize()
                     .then(function(){
-                        return _octane.modules['Router']._initialize();
+                        return _octane.modules['AppLoading']._initialize();
+                    })
+                    .then(function(){
+                        return _octane.modules['OctaneRouter']._initialize();
                     })
                     .then(function(){
                         return _octane.modules['OctaneModals']._initialize();
@@ -2845,6 +2884,7 @@
                         return Compiler.run();
                     })
                     .then(function(){
+                        Octane.engrave({initialized : true });
                         Octane.fire('octane:ready');    
                     })
                     .catch(function(err){

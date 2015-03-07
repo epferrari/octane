@@ -4,10 +4,10 @@
         initialize :function(cfg){
         
             var 
-            bgContainer = octane.dom.bgContainer(),
-            appContainer = octane.dom.appContainer(),
-            viewContainer = octane.dom.viewContainer(),
-            modalContainer = octane.dom.modalContainer(),
+            bgContainer = octane.bgContainer,
+            appContainer = octane.appContainer,
+            viewContainer = octane.viewContainer,
+            modalContainer = octane.modalContainer,
             Overlay, // controller
             Background, // controller
             AppContainer, // controller
@@ -49,7 +49,7 @@
             /*                            CONTROLLERS                              */
             /* ------------------------------------------------------------------- */
 
-            ModalContainer = octane.controller('ModalContainerController').augment({
+            ModalContainer = octane.controller('ModalContainerController',{
                 // darken the modal background and disable click-thrus
                 activate : {
                     // css animation
@@ -93,7 +93,7 @@
                 }
             });
 
-            AppContainer = octane.controller('AppContainerController').augment({      
+            AppContainer = octane.controller('AppContainerController',{      
                 hide : {
                     css : function (){
                         return new Promise(function(resolve){
@@ -132,7 +132,7 @@
 
 
 
-            Background = octane.controller('BackgroundController').augment({
+            Background = octane.controller('BackgroundController',{
                 // swap out the app container with a static image of itself
                 activate : {
                     css : function(){
@@ -192,7 +192,7 @@
             });
 
 
-            Overlay = octane.controller('OverlayController').augment({
+            Overlay = octane.controller('OverlayController',{
 
                 on : function(){
                     if(hasCssFilterSupport){    

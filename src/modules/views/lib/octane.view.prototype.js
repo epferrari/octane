@@ -36,9 +36,8 @@ octane.module('ViewController').extend({
             
             setCanvasHeight : function($pixels){
                 
-                var viewContainer = octane.dom.viewContainer();
                 var windowHeight = window.document.body.offsetHeight;
-                this.elem.style.height = viewContainer.style.height = windowHeight+'px';
+                this.elem.style.height = octane.viewContainer.style.height = windowHeight+'px';
                
             },
 			
