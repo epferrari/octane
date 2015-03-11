@@ -263,22 +263,21 @@
                 
                 task._compilerId || (task._compilerId = Octane.GUID());
                 
-                var ords = this.ordinances
+                var ords = this.ordinances;
                 ( ords[selector] || (ords[selector] = []) ).push(task);     
             },
             
             applyOrdinance : function(context,selector){
                 
-                if(!context){
+                if(!selector){
                     selector = context;
                     context = document;
                 }
                 var tasks = this.ordinances[selector];
                 
                 return new Promise(function(resolve,reject){
-                    
                     _.each(context.querySelectorAll(selector),function(elem){
-                        _.each(task,function(task){
+                        _.each(tasks,function(task){
                             
                             var taskId = task._compilerId;
                             var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
@@ -2782,6 +2781,19 @@
                 Octane.Template.get(elem._guid).set(data).renderTo(elem);
             });
         });
+        
+        
+        
+        Octane.designate('[o-src]',function(elem,value){
+            var pattern = /\{\{([^{^}]+)\}\}/g;
+            pattern.test(value) || (elem.src = value);
+        });
+        
+        
+        Octane.designate('[o-bg-img]',function(elem,value){
+            var pattern = /\{\{([^{^}]+)\}\}/g;
+            pattern.test(value) || ( elem.style.backgroundImage = 'url('+value+')' );
+        });
        	
 		
 		
@@ -2873,8 +2885,6 @@
                 
                 // compile DOM templates
                 Octane.Template.compile();
-                //Compiler.applyOrdinance('o-template');
-                Compiler.applyOrdinance('[o-sync]');
                 
                 
                 // Octane initialize returns a Promise!
