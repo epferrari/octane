@@ -257,51 +257,66 @@
         
         var Compiler = {
             
-            ordinances : [],
+            ordinances : {},
             
             designate : function(selector,task){
-                task._guid || (task._guid = Octane.GUID());
-                this.ordinances.push({
-                    selector   : selector,
-                    task        : task
-                });    
+                
+                task._compilerId || (task._compilerId = Octane.GUID());
+                
+                var ords = this.ordinances
+                ( ords[selector] || (ords[selector] = []) ).push(task);     
             },
             
-            run : function(context){
-              
-                context || (context = document);
-                var tasksCompleted;
-                var taskRunner = function(ordinance){
-                    return new Promise(function(resolve){
-                        var selector = ordinance.selector;
-                        var task = ordinance.task;
-                        var taskID = task._guid;
-                        var designation; // the value of the defined ordinance attribute
-                        
-                        _.each(context.querySelectorAll(selector),function(elem){
+            applyOrdinance : function(context,selector){
+                
+                if(!context){
+                    selector = context;
+                    context = document;
+                }
+                var tasks = this.ordinances[selector];
+                
+                return new Promise(function(resolve,reject){
+                    
+                    _.each(context.querySelectorAll(selector),function(elem){
+                        _.each(task,function(task){
+                            
+                            var taskId = task._compilerId;
+                            var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
+                            
                             // set hash so we don't re-apply a task
                             elem._compiled || (elem._compiled = {});
-                            if(!elem._compiled[taskID]){
-                                
-                                elem._compiled[taskID] = true;
+                            if(!elem._compiled[taskId]){
                                 
                                 // pass the value of the ordinance to the task
+                                // *if the ordinance is an attribute, selected by wrapped []
                                 var ord = selector.match(/\[(.*)\]/);
                                 _.isArray(ord) && (ord = ord[1]);
-                                designation = elem.getAttribute(ord);
-                                
+                                ordValue = elem.getAttribute(ord);
+
                                 try{
-                                    task(elem,designation);
+                                    // run the task
+                                    task(elem,ordValue);
+                                    // set hashed taskId to true so it doesn't re-run on the same element
+                                    elem._compiled[taskId] = true;
                                 } catch (ex){
                                     Octane.log(ex);
                                 }
                             }
                         });
-                        resolve();
                     });
-                };
+                    resolve();
+                });
+                    
+            },
+            run : function(context){
               
-                tasksCompleted = this.ordinances.map(taskRunner);
+                context || (context = document);
+                
+                var $this = this;
+                var tasksCompleted = (Object.keys(this.ordinances)).map(function(selector){
+                    return $this.applyOrdinance(context,selector);
+                });
+                
                 return Promise.all(tasksCompleted);
             }
         };
@@ -2461,12 +2476,6 @@
        	
 		
 		
-         
-   
-        
-    
-        
-    
        
         _octane.templates = {};
         
@@ -2775,17 +2784,7 @@
         });
        	
 		
-		_octane.context = 'web';
-         
-        Object.defineProperty(Octane,'context',{
-            get : function(){
-                return _octane.context;
-            },
-            set : function(cx){
-                var contexts = ['html4','html5','web','cordova'];
-                __.inArray(contexts,cx) && (_octane.context = cx);
-            }
-        });
+		
         
     
         
@@ -2796,8 +2795,25 @@
 	/* -------------------------------------------------------*/
        	
 		
-		
+        
+        
+		_octane.context = 'web';
+        
+        
+        
+        
+        
+        Object.defineProperty(Octane,'context',{
+            get : function(){
+                return _octane.context;
+            },
+            set : function(cx){
+                var contexts = ['html4','html5','web','cordova'];
+                __.inArray(contexts,cx) && (_octane.context = cx);
+            }
+        });
          
+        
 
        
         Octane.engrave({
@@ -2857,7 +2873,8 @@
                 
                 // compile DOM templates
                 Octane.Template.compile();
-                
+                //Compiler.applyOrdinance('o-template');
+                Compiler.applyOrdinance('[o-sync]');
                 
                 
                 // Octane initialize returns a Promise!
@@ -2892,6 +2909,9 @@
                     });
             }
         });
+        
+        
+        
         
         window.octane = window.$o = Octane;
         
