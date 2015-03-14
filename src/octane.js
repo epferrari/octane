@@ -1043,6 +1043,10 @@
                                 Octane
                                 .handle('input click select',elem,$this.uptake)
                                 .handle('statechange:'+oBind,$this.refresh);
+                                
+                                if(elem.type == 'file'){
+                                    Octane.handle('change',elem,$this.uptake);
+                                }
 
                                 deep = oBind.split('.'),
                                 l = deep.length;
@@ -1284,7 +1288,11 @@
                             // remove model name from string
                             var modelName = oBind ? OctaneModel._parseName(oBind) : null;
                             var pointer = oBind ? OctaneModel._parseKey(oBind) : null;
-
+                            
+                            if(element.type === 'file'){
+                                Octane.set(oBind,element.files);
+                                return;
+                            }
                             if(element.tagName == 'TEXT-AREA'){
                                 element.value = element.innerHTML;
                             }
@@ -2074,6 +2082,8 @@
             // filterFunction as -> function(dataToBeFiltered[,optionalParameter to be passed])
             filter      : function(name,filterFunction){
                             _octane.filters[name] = filterFunction;
+                            
+                            return Octane;
                         },
             
             applyFilter : function(filter,dirty,param){
@@ -2786,20 +2796,53 @@
         
         Octane.designate('[o-src]',function(elem,value){
             var pattern = /\{\{([^{^}]+)\}\}/g;
-            pattern.test(value) || (elem.src = value);
+            if(!pattern.test(value)){
+                elem.src = value;
+                elem.removeAttribute('o-src');
+            }
+            
         });
         
         
         Octane.designate('[o-bg-img]',function(elem,value){
             var pattern = /\{\{([^{^}]+)\}\}/g;
-            pattern.test(value) || ( elem.style.backgroundImage = 'url('+value+')' );
+            if(!pattern.test(value)){
+                 elem.style.backgroundImage = 'url('+value+')';
+                elem.removeAttribute('o-bg-img');
+            }
         });
        	
 		
 		
         
     
-        
+        var UiMessages = OctaneModel.extend({
+            hint : function(){
+               
+                var setObject,toUnset,timeout;
+                
+                // handle key,value and {key:value}
+                if(_.isString(arguments[0])){
+                    setObject = {};
+                    setObject[arguments[0]] = arguments[1];
+                    timeout = arguments[2];
+                } else if(_.isObject(arguments[0])){
+                    setObject = arguments[0];
+                    timeout = arguments[1];
+                } else {
+                    return {};
+                }
+                timeout || (timeout = 5000);
+                
+                // automatically remove after 5 seconds or specified time
+                toUnset = Object.keys(setObject);
+                this._set(setObject);
+                this._unset(toUnset,timeout);
+            }
+        });
+                
+            
+                
     
        
     /* -------------------------------------------------------*/
@@ -2853,9 +2896,11 @@
                     // default application models
                     ViewModel   : new ViewModel(),
                     App         : new OctaneModel().become('App'),
-                    uiMessages  : new OctaneModel().become('uiMessages'),
+                    uiMessages  : new UiMessages().become('uiMessages'),
                     uiStyles    : new OctaneModel().become('uiStyles')
                 });
+                
+               
                 
                 
                 
