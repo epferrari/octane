@@ -1,0 +1,27 @@
+/* Scss Document */
+
+.block{
+	display:block;
+	min-height:1px;
+}
+
+o-base-container{
+	@extend .block;
+	height : auto;
+	width: 100%;
+	max-width:980px;
+	margin-left:auto;
+	margin-right: auto;
+   position:relative;
+}
+
+/* full-height container for page content */
+o-page-container{
+	@extend o-base-container;
+	padding-top:$menuBarHeight+px;
+	height:100%;
+	overflow-y:scroll;
+	overflow-x:hidden;
+	-webkit-overflow-scrolling: touch;
+
+}

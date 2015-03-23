@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+
+
+
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title o-lang="header-title"></title>
+
+    <link type="text/css" rel="stylesheet" href="assets/css/My Cool Octane Project-min.css" />
+</head>
+
+<body class="container-fluid octane">
+
+    <o-loading-container>
+
+        <!-- Loading View -->
+        <style>
+            h6 {
+                color: white;
+                margin-top: 5px;
+            }
+        </style>
+
+        <div id="initial-loading">
+
+
+            <div class="progress">
+                <div o-update='{"style.width":"appLoading.percent","aria-valuenow":"appLoading.progress"}' class="progress-bar progress-bar-warning progress-bar-striped active" role="progressbar" aria-valuenow=0 aria-valuemin=0 aria-valuemax=0 style="width: 0%">
+                </div>
+                <span class="sr-only" o-update='{"text":"appLoading.screenReader"}'>
+						45% Complete
+					</span>
+            </div>
+
+            <div o-update='{"text":"bootlog.status"}' class="loading-message">
+                Loading...
+            </div>
+
+            <div class="branding">
+                <img src="assets/img/logo.png" class="logo" />
+            </div>
+
+
+        </div>
+
+
+
+    </o-loading-container>
+
+    <o-app-container class="hidden">
+
+        <!-- header -->
+        <header class="header" role="banner">
+
+            <div id="header-inner" class="row">
+
+                <div class="col-md-2">
+                    <img src="./assets/img/logo.png" class="logo" o-route="home" />
+                </div>
+
+                <div class="col-md-7">
+                    <h1>
+						<span o-lang="tool-title"></span>
+						<span class="vertical">&nbsp;</span>
+						<span 
+							o-update='{"text":"App.viewTitle"}'
+						</span>	
+					</h1>
+                </div>
+
+                <div class="col-md-3">
+
+                    <!-- Translator dropdown-->
+                    <o-control id="translator"></o-control>
+
+                </div>
+
+            </div>
+
+            <div class="row header-gradient">
+            </div>
+
+        </header>
+
+        <o-view-container>
+
+        </o-view-container>
+
+        <!-- partial: footer -->
+        <footer class="row footer">
+
+            <div class="row" style="padding-right:0px; width:100%">
+                <div class="col-md-10 col-md-push-1">
+
+                    <ul>
+                        <li class="btn o-btn" o-route="home" o-lang="btn-home">
+                        </li>
+                        <li class="btn o-btn" o-route="choose-conditions" o-lang="btn-choose-conditions">
+                        </li>
+                        <li class="btn o-btn" o-route="results" o-lang="btn-results">
+                        </li>
+                        <li class="btn o-btn" o-route="legal" o-lang="btn-legal">
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+        </footer>
+
+    </o-app-container>
+
+    <o-modal-container>
+
+    </o-modal-container>
+
+    <o-background>
+    </o-background>
+
+    <script type="text/javascript" src="assets/js/My Cool Octane Project-min.js"></script>
+</body>
+
+</html>

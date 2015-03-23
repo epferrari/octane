@@ -1,0 +1,240 @@
+/* Framework */
+/* Bourbon 4.0.2
+ * http://bourbon.io
+ * Copyright 2011-2014 thoughtbot, inc.
+ * MIT License */
+/* Scss Document */
+ul {
+  list-style: none;
+  -webkit-padding-start: 0px !important; }
+
+/* Scss Document */
+/* Scss Document */
+/* one off for responding to width changes */
+/* add breakpoint widths to any element */
+/* for gradients, just add variables (use percentages for opacity!!) 
+c1-pos = color1 position, i.e. top, bottom. op-c1 = color1 opacity, and so forth */
+/* Scss Document */
+div#app-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  background-image: url(../img/loader-light.gif);
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: cover !important;
+  padding-top: 33%; }
+  div#app-loading-screen:before {
+    contents: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #373737; }
+  div#app-loading-screen > div {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    width: 33%;
+    height: 50px;
+    text-align: center; }
+    div#app-loading-screen > div h4 {
+      color: white; }
+
+/* Scss Document */
+.block, o-base-container, o-page-container {
+  display: block;
+  min-height: 1px; }
+
+o-base-container, o-page-container {
+  height: auto;
+  width: 100%;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative; }
+
+/* full-height container for page content */
+o-page-container {
+  padding-top: 40px;
+  height: 100%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; }
+
+/* Scss Document */
+ui-message, ui-message-dark, ui-message-light {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9em;
+  color: #BCBCBC;
+  padding: 3px; }
+
+ui-message-dark {
+  color: #313131; }
+
+ui-message-light {
+  color: #ffffff; }
+
+/* Modules */
+/* Scss Document */
+/* Widgets */
+/* Collapsible Panels */
+.collapsible {
+  overflow-y: hidden;
+  max-height: 0px;
+  transition-property: all;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  .collapsible.visible {
+    max-height: 10000px;
+    transition-property: all;
+    transition-duration: 0.6s;
+    transition-timing-function: cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+
+/* Global */
+h1 {
+  color: white;
+  font-family: "univers-cond-light";
+  font-size: 25px;
+  font-weight: 100;
+  padding-left: 10px;
+  padding-right: 10px; }
+
+h2 {
+  color: white;
+  font-family: "univers-cond-light";
+  font-size: 25px;
+  font-weight: 100; }
+
+div#application {
+  margin-top: 15px; }
+
+.btn {
+  margin-top: 15px; }
+
+.stats {
+  margin-bottom: 15px;
+  background-color: #282626;
+  min-height: 125px;
+  color: white; }
+  @media screen and (min-width: 1px) and (max-width: 768px) {
+    .stats {
+      padding-bottom: 30px; } }
+  @media screen and (max-width: 480px) {
+    .stats {
+      height: auto; } }
+  @media screen and (min-width: 481px) and (max-width: 768px) {
+    .stats {
+      height: auto; } }
+  @media screen and (min-width: 769px) and (max-width: 992px) {
+    .stats {
+      height: 210px; } }
+  @media screen and (min-width: 993px) and (max-width: 1200px) {
+    .stats {
+      height: 217.5px; } }
+  @media screen and (min-width: 1201px) {
+    .stats {
+      height: 217.5px; } }
+  .stats h3 {
+    color: white !important; }
+  .stats ul {
+    list-style: none; }
+  .stats li {
+    padding-bottom: 5px; }
+    .stats li span {
+      padding-bottom: 5px; }
+  .stats.small:last-child {
+    margin-bottom: 0px !important; }
+  .stats.large {
+    margin-bottom: 15px;
+    background-color: #282626;
+    min-height: 450px;
+    color: white; }
+  .stats .result-data {
+    color: #ffcc00; }
+
+.jumbo-text {
+  line-height: 200px;
+  font-size: 150px;
+  text-align: center;
+  font-weight: bold; }
+
+span.btn-primary {
+  line-height: 20px;
+  padding-top: 15px;
+  min-height: 45px;
+  margin-left: 2.5%;
+  margin-right: 2.5%;
+  margin-bottom: 10px;
+  width: 95%; }
+  span.btn-primary span.glyphicon {
+    float: right; }
+
+.black-text {
+  color: black; }
+
+.block-25 {
+  display: block;
+  padding: 1%;
+  height: auto;
+  float: left; }
+  @media screen and (max-width: 480px) {
+    .block-25 {
+      width: 100%; } }
+  @media screen and (min-width: 481px) and (max-width: 768px) {
+    .block-25 {
+      width: 100%; } }
+  @media screen and (min-width: 769px) and (max-width: 992px) {
+    .block-25 {
+      width: 50%; } }
+  @media screen and (min-width: 993px) and (max-width: 1200px) {
+    .block-25 {
+      width: 33.33%; } }
+  @media screen and (min-width: 1201px) {
+    .block-25 {
+      width: 25%; } }
+
+/********************/
+/*				   	      */
+/* loading screen 	*/
+/*				   	      */
+/********************/
+o-loading-container {
+  background-image: url(./img/Cat-Honeycomb-grey.jpg);
+  background-size: cover;
+  background-position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: #DDDDDD;
+  padding-top: 30%; }
+  o-loading-container .loading-message {
+    text-align: center;
+    font-family: "univers-cond-light";
+    color: white;
+    font-size: 18px; }
+  o-loading-container .progress,
+  o-loading-container .loading-message {
+    margin-left: auto;
+    margin-right: auto;
+    width: 300px;
+    max-width: 90%;
+    height: 20px; }
+  o-loading-container .branding .logo {
+    position: absolute;
+    bottom: 0;
+    right: 0px;
+    margin: 20px;
+    width: 40px; }
+
+/*# sourceMappingURL=app.css.map */
