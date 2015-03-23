@@ -1,0 +1,143 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'install' ]
+2 info using npm@2.1.8
+3 info using node@v0.10.33
+4 warn package.json CAT-PassMatch@0.0.2 No repository field.
+5 warn package.json CAT-PassMatch@0.0.2 No README data
+6 verbose install where, deps [ '/Users/Ferrari/Projects/Selection Tools/pass-match-v2/app',
+6 verbose install   [ 'grunt',
+6 verbose install     'grunt-bower-concat',
+6 verbose install     'grunt-contrib-clean',
+6 verbose install     'grunt-contrib-concat',
+6 verbose install     'grunt-contrib-copy',
+6 verbose install     'grunt-contrib-cssmin',
+6 verbose install     'grunt-contrib-htmlmin',
+6 verbose install     'grunt-contrib-sass',
+6 verbose install     'grunt-contrib-uglify',
+6 verbose install     'grunt-contrib-watch',
+6 verbose install     'grunt-html-build',
+6 verbose install     'ios-sim' ] ]
+7 verbose install where, peers [ '/Users/Ferrari/Projects/Selection Tools/pass-match-v2/app',
+7 verbose install   [] ]
+8 info preinstall CAT-PassMatch@0.0.2
+9 verbose already installed skipping grunt-contrib-clean@^0.6.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+10 verbose already installed skipping grunt-contrib-concat@^0.5.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+11 verbose already installed skipping grunt-contrib-copy@^0.7.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+12 verbose already installed skipping grunt-contrib-cssmin@^0.11.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+13 verbose already installed skipping grunt-contrib-htmlmin@^0.3.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+14 verbose already installed skipping grunt-contrib-sass@^0.8.1 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+15 verbose already installed skipping grunt-contrib-uglify@^0.6.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+16 verbose already installed skipping grunt-contrib-watch@^0.6.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+17 verbose already installed skipping grunt-html-build@0.4.1 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+18 silly cache add args [ 'ios-sim@~3.1.1', null ]
+19 verbose cache add spec ios-sim@~3.1.1
+20 verbose already installed skipping grunt@^0.4.5 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+21 silly cache add parsed spec { raw: 'ios-sim@~3.1.1',
+21 silly cache add   scope: null,
+21 silly cache add   name: 'ios-sim',
+21 silly cache add   rawSpec: '~3.1.1',
+21 silly cache add   spec: '>=3.1.1 <3.2.0',
+21 silly cache add   type: 'range' }
+22 verbose addNamed ios-sim@>=3.1.1 <3.2.0
+23 silly addNamed semver.valid null
+24 silly addNamed semver.validRange >=3.1.1 <3.2.0
+25 silly addNameRange { name: 'ios-sim', range: '>=3.1.1 <3.2.0', hasData: false }
+26 silly mapToRegistry name ios-sim
+27 silly mapToRegistry using default registry
+28 silly mapToRegistry registry https://registry.npmjs.org/
+29 silly mapToRegistry uri https://registry.npmjs.org/ios-sim
+30 verbose addNameRange registry:https://registry.npmjs.org/ios-sim not in flight; fetching
+31 verbose already installed skipping grunt-bower-concat@^0.4.0 /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+32 verbose request uri https://registry.npmjs.org/ios-sim
+33 verbose request no auth needed
+34 info attempt registry request try #1 at 22:45:04
+35 verbose request id 68d8c42fa0fc03df
+36 verbose etag "5N2I9S5HWR4XHX26339ANL7X5"
+37 http request GET https://registry.npmjs.org/ios-sim
+38 http 200 https://registry.npmjs.org/ios-sim
+39 silly get cb [ 200,
+39 silly get   { date: 'Mon, 23 Mar 2015 03:45:04 GMT',
+39 silly get     server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+39 silly get     etag: '"LZQ64UFJSCLICI2NUYOLIGEP"',
+39 silly get     'content-type': 'application/json',
+39 silly get     'cache-control': 'max-age=60',
+39 silly get     'content-length': '16374',
+39 silly get     'accept-ranges': 'bytes',
+39 silly get     via: '1.1 varnish',
+39 silly get     age: '0',
+39 silly get     'x-served-by': 'cache-ord1726-ORD',
+39 silly get     'x-cache': 'MISS',
+39 silly get     'x-cache-hits': '0',
+39 silly get     'x-timer': 'S1427082304.908820,VS0,VE66',
+39 silly get     vary: 'Accept',
+39 silly get     'keep-alive': 'timeout=10, max=50',
+39 silly get     connection: 'Keep-Alive' } ]
+40 silly addNameRange number 2 { name: 'ios-sim', range: '>=3.1.1 <3.2.0', hasData: true }
+41 silly addNameRange versions [ 'ios-sim',
+41 silly addNameRange   [ '1.8.0',
+41 silly addNameRange     '1.8.1',
+41 silly addNameRange     '1.8.2',
+41 silly addNameRange     '1.9.0',
+41 silly addNameRange     '2.0.0',
+41 silly addNameRange     '2.0.1',
+41 silly addNameRange     '3.0.0',
+41 silly addNameRange     '3.1.0',
+41 silly addNameRange     '3.1.1',
+41 silly addNameRange     '4.0.0',
+41 silly addNameRange     '4.0.1' ] ]
+42 verbose addNamed ios-sim@3.1.1
+43 silly addNamed semver.valid 3.1.1
+44 silly addNamed semver.validRange 3.1.1
+45 silly cache afterAdd ios-sim@3.1.1
+46 verbose afterAdd /Users/Ferrari/.npm/ios-sim/3.1.1/package/package.json not in flight; writing
+47 verbose afterAdd /Users/Ferrari/.npm/ios-sim/3.1.1/package/package.json written
+48 silly install resolved [ { name: 'ios-sim',
+48 silly install resolved     version: '3.1.1',
+48 silly install resolved     description: 'launch iOS apps into the iOS Simulator from the command line (Xcode 6.0)',
+48 silly install resolved     main: 'ios-sim',
+48 silly install resolved     scripts: { preinstall: 'rake build' },
+48 silly install resolved     bin: { 'ios-sim': 'build/Release/ios-sim' },
+48 silly install resolved     repository: { type: 'git', url: 'https://github.com/phonegap/ios-sim' },
+48 silly install resolved     keywords: [ 'ios-sim', 'iOS Simulator' ],
+48 silly install resolved     author: { name: 'Landon Fuller, Jeff Haynie, Eloy Duran, Shazron Abdullah' },
+48 silly install resolved     license: 'MIT',
+48 silly install resolved     gitHead: 'c6ec64397e5fa462f1ea2d4e4fdc123a856618f9',
+48 silly install resolved     bugs: { url: 'https://github.com/phonegap/ios-sim/issues' },
+48 silly install resolved     homepage: 'https://github.com/phonegap/ios-sim',
+48 silly install resolved     _id: 'ios-sim@3.1.1',
+48 silly install resolved     _shasum: '1129c3fda31b917ef656b8c53fd276392b51c6e8',
+48 silly install resolved     _from: 'ios-sim@>=3.1.1 <3.2.0',
+48 silly install resolved     _npmVersion: '1.4.14',
+48 silly install resolved     _npmUser: { name: 'shazron', email: 'shazron@gmail.com' },
+48 silly install resolved     maintainers: [ [Object] ],
+48 silly install resolved     dist:
+48 silly install resolved      { shasum: '1129c3fda31b917ef656b8c53fd276392b51c6e8',
+48 silly install resolved        tarball: 'http://registry.npmjs.org/ios-sim/-/ios-sim-3.1.1.tgz' },
+48 silly install resolved     directories: {},
+48 silly install resolved     _resolved: 'https://registry.npmjs.org/ios-sim/-/ios-sim-3.1.1.tgz',
+48 silly install resolved     readme: 'ERROR: No README data found!' } ]
+49 info install ios-sim@3.1.1 into /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+50 info installOne ios-sim@3.1.1
+51 verbose installOne of ios-sim to /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app not in flight; installing
+52 warn locking Error: EACCES, open '/Users/Ferrari/.npm/_locks/ios-sim-a3fb244dcec8bf4b.lock'
+52 warn locking  /Users/Ferrari/.npm/_locks/ios-sim-a3fb244dcec8bf4b.lock failed { [Error: EACCES, open '/Users/Ferrari/.npm/_locks/ios-sim-a3fb244dcec8bf4b.lock']
+52 warn locking   errno: 3,
+52 warn locking   code: 'EACCES',
+52 warn locking   path: '/Users/Ferrari/.npm/_locks/ios-sim-a3fb244dcec8bf4b.lock' }
+53 verbose stack Error: Attempt to unlock /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app/node_modules/ios-sim, which hasn't been locked
+53 verbose stack     at unlock (/usr/local/lib/node_modules/npm/lib/utils/locker.js:66:11)
+53 verbose stack     at cb (/usr/local/lib/node_modules/npm/lib/install.js:929:5)
+53 verbose stack     at /usr/local/lib/node_modules/npm/lib/install.js:933:20
+53 verbose stack     at /usr/local/lib/node_modules/npm/lib/utils/locker.js:40:9
+53 verbose stack     at cb (/usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:149:38)
+53 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:177:38
+53 verbose stack     at Object.oncomplete (fs.js:107:15)
+54 verbose cwd /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app
+55 error Darwin 14.0.0
+56 error argv "node" "/usr/local/bin/npm" "install"
+57 error node v0.10.33
+58 error npm  v2.1.8
+59 error Attempt to unlock /Users/Ferrari/Projects/Selection Tools/pass-match-v2/app/node_modules/ios-sim, which hasn't been locked
+60 error If you need help, you may report this error at:
+60 error     <http://github.com/npm/npm/issues>
+61 verbose exit [ 1, true ]

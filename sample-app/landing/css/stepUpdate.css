@@ -1,0 +1,137 @@
+/* Scss Document */
+body {
+  overflow: hidden; }
+
+body {
+  background-image: url(../assets/field.jpg);
+  background-size: cover;
+  background-repeat: no-repeat; }
+
+#page {
+  background-size: cover;
+  background-repeat: repeat;
+  background-position: center; }
+
+#hero {
+  background-image: url(../assets/StepUpOurGame-logo.png);
+  background-size: auto 90%;
+  background-repeat: no-repeat;
+  background-position: center; }
+
+#headline {
+  font-family: "octin-sports",serif;
+  text-align: center;
+  color: white;
+  text-shadow: #3C3939 5px; }
+  @media screen and (max-width: 512px) {
+    #headline h2 {
+      font-size: 20px; } }
+
+.clock {
+  font-family: "octin-sports",serif;
+  color: white !important;
+  margin: 0 auto;
+  display: block;
+  width: 625px; }
+
+.clock * {
+  overflow: visible !important; }
+
+.flip-clock-label {
+  color: white !important;
+  font-size: 20px; }
+
+#onefire-media {
+  position: absolute;
+  bottom: 0;
+  font-family: "octin-sports",serif;
+  color: white;
+  text-align: right; }
+  #onefire-media small {
+    color: white; }
+  #onefire-media h5 {
+    padding-right: 5px; }
+  #onefire-media a {
+    color: #DCBB22;
+    decoration: none; }
+    #onefire-media a:hover {
+      decoration: none; }
+
+/* applying class via javascript because media queries fail with minimum-ui viewport attribute */
+@media screen and (max-width: 768px) {
+  .viewport-md .clock {
+    margin: 0 auto;
+    display: block;
+    width: 475px; }
+  .viewport-md .flip-clock-wrapper ul {
+    height: 50px;
+    line-height: 50px !important; }
+    .viewport-md .flip-clock-wrapper ul li {
+      line-height: 50px !important; }
+  .viewport-md .flip-clock-wrapper ul li a div.up:after {
+    top: 24px; }
+  .viewport-md .flip-clock-divider {
+    height: 50px; }
+  .viewport-md .flip-clock-dot {
+    height: 6px;
+    width: 6px;
+    left: 7px; }
+  .viewport-md .flip-clock-dot.top {
+    top: 17px; }
+  .viewport-md .flip-clock-dot.bottom {
+    bottom: 8px; }
+  .viewport-md .flip-clock-divider .flip-clock-label {
+    font-size: 16px; }
+  .viewport-md .flip-clock-divider.days .flip-clock-label {
+    right: -66px; }
+  .viewport-md .flip-clock-divider.hours .flip-clock-label {
+    right: -69px; }
+  .viewport-md .flip-clock-divider.minutes .flip-clock-label {
+    right: -78px; }
+  .viewport-md .flip-clock-divider.seconds .flip-clock-label {
+    right: -78px; }
+  .viewport-md .flip-clock-wrapper ul {
+    width: 37px; }
+  .viewport-md .flip-clock-wrapper ul li a div div.inn {
+    font-size: 30px; } }
+
+/* applying class via javascript because media queries fail with minimum-ui viewport attribute */
+@media screen and (max-width: 512px) {
+  .viewport-sm .clock {
+    margin: 0 auto;
+    display: block;
+    width: 300px; }
+  .viewport-sm .flip-clock-wrapper ul {
+    height: 30px;
+    line-height: 30px !important; }
+    .viewport-sm .flip-clock-wrapper ul li {
+      line-height: 30px !important; }
+  .viewport-sm .flip-clock-wrapper ul li a div.up:after {
+    top: 15px; }
+  .viewport-sm .flip-clock-divider {
+    height: 30px; }
+  .viewport-sm .flip-clock-dot {
+    height: 6px;
+    width: 6px;
+    left: 7px; }
+  .viewport-sm .flip-clock-dot.top {
+    top: 15px; }
+  .viewport-sm .flip-clock-dot.bottom {
+    bottom: 0px; }
+  .viewport-sm .flip-clock-divider .flip-clock-label {
+    font-size: 16px; }
+  .viewport-sm .flip-clock-divider.days .flip-clock-label {
+    right: -50px; }
+  .viewport-sm .flip-clock-divider.hours .flip-clock-label {
+    right: -55px; }
+  .viewport-sm .flip-clock-divider.minutes .flip-clock-label {
+    right: -63px; }
+  .viewport-sm .flip-clock-divider.seconds .flip-clock-label {
+    right: -65px; }
+  .viewport-sm .flip-clock-wrapper ul {
+    -webkit-padding-start: 0px;
+    width: 20px !important; }
+    .viewport-sm .flip-clock-wrapper ul .flip, .viewport-sm .flip-clock-wrapper ul .play, .viewport-sm .flip-clock-wrapper ul li {
+      width: 20px !important; }
+  .viewport-sm .flip-clock-wrapper ul li a div div.inn {
+    font-size: 20px; } }

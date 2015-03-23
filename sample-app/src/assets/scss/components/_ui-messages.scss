@@ -1,0 +1,22 @@
+/* Scss Document */
+
+
+ui-message{
+   display:block;
+   width:100%;
+   text-align:center;
+   font-size:0.9em;
+   color:#BCBCBC;
+   padding:3px;
+}
+
+ui-message-dark{
+   @extend ui-message;
+   color: #313131;
+}
+
+ui-message-light{
+   @extend ui-message;
+   color: #ffffff;
+}
+   
