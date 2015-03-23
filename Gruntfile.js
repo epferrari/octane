@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-	
+
 	// plugins
 	grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-sass');
@@ -13,14 +13,14 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-postcss');
     grunt.loadNpmTasks('grunt-autoprefixer');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
-	
+
     var src = {
-        
+
 		html:{
 			index: "src/index.html"
 		},
 		js:{
-			
+
 			watchMe:[
                 "src/assets/**/*.js",
                 "!src/assets/js/_bower.js"
@@ -38,7 +38,7 @@ module.exports = function(grunt) {
             ]
 		},
 		css	:{
-			
+
 			bower:"src/assets/css/_bower.css",
 			concatMe:[
                 "src/assets/css/<%= pkg.name %>.css"
@@ -60,12 +60,12 @@ module.exports = function(grunt) {
 			watchMe:"src/**/*.scss",
 			octane:["src/assets/scss/octane.scss"]
 		},
-			
-        
+
+
 	};
-	
+
 	var build = {
-		
+
 		html : {
 			index	: "build/index.html"
 		},
@@ -85,9 +85,9 @@ module.exports = function(grunt) {
 		},
 		fonts :{
 			dir:"build/assets/fonts/"
-		}	
+		}
 	};
-		
+
 
    var dist = {
 	   	html : {
@@ -112,14 +112,14 @@ module.exports = function(grunt) {
 			dir:"dist/assets/fonts/"
 		}
 	};
-    
-    var autoprefixer = require('autoprefixer-core');
-    
+
+  var autoprefixer = require('autoprefixer-core');
+
   	// Project configuration.
 	grunt.initConfig({
-		
+
 		pkg: 		grunt.file.readJSON('package.json'),
-		
+
 		bower_concat:{
 						all:{
 							dest	:	src.js.bower,
@@ -134,12 +134,13 @@ module.exports = function(grunt) {
 							}
 						}
 					},
-		
+
 		clean:      {
 						build	:	['build'],
-						dist	:	['dist']
+						dist	:	['dist'],
+						example : ['example-project/src/octane_core']
 					},
-		
+
 		// compile sass files into src/css
 		sass:		{
 						all:{
@@ -149,7 +150,7 @@ module.exports = function(grunt) {
 							}]
 						}
 					},
-        
+
 		// concat js and css files and save them to staging/
 		// staged for minification
 		concat:     {
@@ -177,9 +178,9 @@ module.exports = function(grunt) {
                         }
                     },
          */
-        
+
         autoprefixer : {
-                        
+
                         options : {
                             browsers:['last 2 versions','ie 9','ie 10']
                         },
@@ -192,7 +193,7 @@ module.exports = function(grunt) {
                             dest:build.css.main
                         }
                     },
-		
+
 		uglify:		{
 						dist:{
 							options:{
@@ -224,7 +225,7 @@ module.exports = function(grunt) {
 								}]
 						}
 					},
-		
+
 		cssmin:		{
 						dist:{
 							files:[{
@@ -236,7 +237,7 @@ module.exports = function(grunt) {
 							}]
 						}
 					},
-		
+
 		copy:		{
 						dist:{
 							files:[{
@@ -254,16 +255,16 @@ module.exports = function(grunt) {
 								dest	:"dist/bower.json"
 							}]
 						},
+
 						build:{
-							
 							files:[{
                                 // copy unconcatenated js files
 								expand	:true,
 								flatten	: true,
 								src		: [
-                                    src.js.concatMe,
-                                    src.js.debug
-                                ],
+                            src.js.concatMe,
+                            src.js.debug
+                        ],
 								dest	: build.js.dir
 							},{
                                 // copy unconcatenated css files
@@ -285,9 +286,25 @@ module.exports = function(grunt) {
 								src		: src.img.glob,
 								dest	: build.img.dir
 							}]
+						},
+
+					example : {				// copy octane core files into example project dir
+							files:[{
+									expand 	: true,
+									flatten : false,
+									cwd			: 'build/',
+									src			: ['**/*'],
+									dest		: 'example-project/src/octane_core/build/'
+							},{
+									expand 	: true,
+									flatten : false,
+									cwd			: 'dist/',
+									src			: ['**/*'],
+									dest		: 'example-project/src/octane_core/dist/'
+							}]
 						}
 					},
-		
+
 		watch:		{
 						options:{livereload:true},
 						js:{
@@ -306,7 +323,7 @@ module.exports = function(grunt) {
 							tasks:["build"]
 						}
 					},
-		 
+
 		 jshint: 	{
 						options: {
 							  curly: true,
@@ -320,63 +337,67 @@ module.exports = function(grunt) {
 						 files:{
 							 src: dist.js.mini
 						 }
-					},
-	})
-	
+					}
+	});
+
 	// Default task(s).
 	grunt.registerTask('default',['build']);
-	  
+
 	// other task(s)
 	grunt.registerTask('dist', [
-		
+
 		// clean dist
 			'clean:dist',
-			
+
         // compile css
 			'sass',
-		
+
 		// concat front end dependencies
 			'bower_concat',
-			
+
 		// concat all js/css
         // do not include bower dependencies
 			'concat',
-        
-        // post process css with auto prefixer
-            'autoprefixer:dist',
-			
+
+    // post process css with auto prefixer
+        'autoprefixer:dist',
+
 		// minify js/css into release directory
 			'cssmin',
 			'uglify:dist',
-			
+
 		// copy assets to release directory
 			'copy:dist',
-		
+
+		// copy core files to example project
+			'clean:example',
+			'copy:example'
+
 		// lint
 			//'jshint'
-     		
+
 	]);
-	
+
 	grunt.registerTask('build', [
-		
+
 		//clean build directory
 			'clean:build',
-			
+
 		// compile css
 			'sass',
-	
+
 		// concat dependencies
 			'bower_concat',
-			
+
 		// minify the _bower.js
 			'uglify:build',
-			
+
 		// copy files to build dir
 			'copy:build',
-        
-        // post process css with auto prefixer
-            'autoprefixer:build'
+
+    // post process css with auto prefixer
+      'autoprefixer:build'
 	]);
-	
-	
+
+
 };
