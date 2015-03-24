@@ -216,7 +216,7 @@ module.exports = function(grunt) {
 							dest	:	src.js.bower,
 							cssDest	:	src.css.bower,
 							dependencies:{
-								"lodash"	:	"jquery",
+								"lodash"		:	"jquery",
 								"velocity"	:	"jquery",
 								"bootstrap"	:	"jquery",
 							},
