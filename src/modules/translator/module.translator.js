@@ -16,28 +16,28 @@
         /*              CONFIG             */
         /* ------------------------------- */
 
-        
+
         //  @config langData [obj]: language data in JSON format
-        //  @config paginated [bool]: 
+        //  @config paginated [bool]:
        	//      true:	the translation table is split into [page][contentID]
         //      false:	the translation table is a dictionary of only [contentID]s (default)
         //  @config defaultLang [string]: a default language or (default:English)
         //  @config langSupport [array]: supported languages for the translator (default:['English'])
 
     octane.module('Translator').extend({
-        
+
         initialize : function (config){
 
             // dummy
             var $M = {};
-            config = config || {};
+            config || (config = {});
 
             /* ------------------------------- */
             // private protected properties
             /* ------------------------------- */
 
                 // set by param
-                $M.rosettaStone = ( _.isObject(config.langData) ) 	? config.langData 	  : {};
+                //$M.rosettaStone = ( _.isObject(config.langData) ) 	? config.langData 	  : {};
                 // set by config
                 $M.isPaginated	= ( _.isBoolean(config.paginated) ) ? config.paginated 	  : false;
                 $M.langSupport  = ( _.isArray(config.langSupport) ) ? config.langSupport  : ['English'];
@@ -46,7 +46,7 @@
                                         wrapper 	: $('o-control#translator'),
                                         outerUL 	: $('<ul class="nav nav-pills"></ul>'),
                                         outerLI 	: $('<li class="dropdown"></li>'),
-                                        pill 		: $('<a id="selected-language" class="dropdown-toggle closed" data-toggle="dropdown"></a>'),
+                                        pill 		  : $('<a id="selected-language" class="dropdown-toggle closed" data-toggle="dropdown"></a>'),
                                         caret 		: $('<span class="caret"></span>'),
                                         innerUL 	: $('<ul class="dropdown-menu" role="menu"></ul>'),
                                         classKey 	: 'language-selector',
@@ -95,7 +95,7 @@
                                         regexp:/^_?(japanese|jap|ja|日本語|nihongo)$/i
                                     }
                                 ];
-                // also set by config   
+                // also set by config
                 $M.defaultLang	= supportsLang(config.defaultLang) || $M.languages[0];
 
             /* ------------------------------- */
@@ -275,7 +275,7 @@
                             pill.removeClass('open').addClass('closed');
                             $M.dropdown.innerUL.hide();
                         }
-                    });			
+                    });
                 }
 
 
@@ -326,9 +326,11 @@
                 octane.handle('view:routed',octane.Translator.translate);
                 findLang();
                 renderControls($M.langSupport);
-                translate();
+
+                octane.Dictionary.get(config.langData).then(function(data){
+                  translate(data);
+                });
+
             })();
         }// end initialize
     });
-
-	
