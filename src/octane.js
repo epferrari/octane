@@ -1004,7 +1004,7 @@
 
 
 
-    /* ------------------------------------------------------- */
+  /* ------------------------------------------------------- */
 	/*                      VIEW MODEL                        */
 	/* ------------------------------------------------------- */
 
@@ -1224,8 +1224,8 @@
                             }  // end if o-update
                         },
 
-			// run event type thru ViewModel scope to update elems/attrs bound to model
-			refresh 	: 	function (e){
+						// run event type thru ViewModel scope to update elems/attrs bound to model
+						refresh 	: 	function (e){
 
                             // ignore non statechange events
                             if(e.type.split(':')[0] != 'statechange') return;
@@ -1256,7 +1256,7 @@
                         },
 
             // recursively look through the ViewModel for targets to update
-             _getUpdateTargets : function(object){
+            _getUpdateTargets : function(object){
 
                             var keys = Object.keys(object);
                             var $this = this;
@@ -1276,7 +1276,7 @@
                         },
 
             // perform an update on a single
-			_update       : function(updateTarget){
+						_update       : function(updateTarget){
 
                             var viewmodel = this;
                             var key = updateTarget.key;
@@ -1339,7 +1339,7 @@
 
 
             // respond to user changes to DOM data bound to this model
-			uptake		: 	function(event,element){
+						uptake			: 	function(event,element){
 
                             var oBind = element._bind;
                             // remove model name from string
@@ -1365,7 +1365,7 @@
                         },
 
             // integrate a Backbone Model into Octane's data binding system
-            bind : function(model,become){
+            bind 				: function(model,become){
 
                             // protected via closure
                             var isRegistered = false;
@@ -1439,7 +1439,7 @@
                         },
 
             // remove an integrated Backbone Model
-            unbind : function(bind){
+            unbind 			: function(bind){
 
                             var model = _octane.models[bind];
                             if(model){
@@ -1462,7 +1462,7 @@
                             }
             },
 
-            get : function(bind){
+            get 				: function(bind){
                             return _octane.models[bind];
                         }
 
@@ -1490,28 +1490,30 @@
 
 
 
-        _octane.models = {};
+    _octane.models = {};
 
 
 
 
         // base Model factory
-		function OctaneModel(data,bind){
+		function OctaneModel(data,viewmodel){
 
             var isRegistered = false;
             var registeredTo= null;
 
+						this.viewmodel = viewmodel;
             this.className = this.className || 'OctaneModel';
-            this.engrave({
+            this.extend({
                 guid : 'model_'+Octane.GUID(),
                 state : {},
                 become : function(name){
-                    _octane.models[name] && _octane.models[name].detach();
-                    _octane.models[name] = this;
-                    isRegistered = true;
-                    registeredTo = name;
-                    Octane.fire('statechange:'+name);
-                    return this;
+									var models = octane.models;
+                  models[name] && models[name].detach();
+                  models[name] = this;
+                  isRegistered = true;
+                  registeredTo = name;
+                  Octane.fire('statechange:'+name);
+                  return this;
                 },
                 detach : function(){
                     if( isRegistered ){
@@ -1537,10 +1539,12 @@
                     return this.detatch.apply(this);
                 }
             });
+						// set defaults from prototype
             this.set(this.defaults);
+						// overwrite with data passed to constructor
             this.set(data);
             this.initialize && this.initialize.apply(this,arguments);
-            if(bind) this.become(bind);
+            if(viewmodel) this.become(viewmodel);
         }
 
 
@@ -1635,9 +1639,9 @@
         OctaneModel.prototype.defaults = {};
         OctaneModel.prototype.constructor = OctaneModel;
 
-        OctaneModel.prototype.engrave({
+        OctaneModel.prototype.defineProp({
 
-			_set	    : function(){
+						_set	    	: function(){
 
                             var setObject,keystrings,n,m,key,value;
 
@@ -1851,7 +1855,7 @@
 
             // functional alias for calling new octane.Model()
             // returns a named model if it already exists
-			model 		: function (name){
+						model 			: function (name){
                             var model;
                             if(_octane.models[name]){
                                 model = _octane.models[name];
@@ -1956,9 +1960,9 @@
 
 
 
-       /* ------------------------------------------------------- */
-	   /*                     CONTROLLERS                         */
-	   /* ------------------------------------------------------- */
+    /* ------------------------------------------------------- */
+	  /*                     CONTROLLERS                         */
+	  /* ------------------------------------------------------- */
 
 
 
@@ -2075,7 +2079,7 @@
             _.extend(Factory.prototype, config);
             _.extend(Factory.prototype.defaults, parentDefaults, config.defaults);
 
-            Factory.__legacy__ = ParentFactory.prototype;
+            Factory.__super__ = ParentFactory.prototype;
 
             return Factory;
         }
@@ -2097,7 +2101,7 @@
         Factory.prototype.initialize = function(){};
         Factory.prototype.defaults = {};
         Octane.defineProp.apply(Factory,[{
-            engrave : Octane.defineProp
+            defineProp : Octane.defineProp
         }]);
 
 
@@ -2166,9 +2170,9 @@
 
 
 
-       /* ------------------------------------------------------- */
-	   /*                          TASKS                          */
-	   /* ------------------------------------------------------- */
+    /* ------------------------------------------------------- */
+	  /*                          TASKS                          */
+	  /* ------------------------------------------------------- */
 
 
 
@@ -2567,12 +2571,12 @@
 
             get : function(id){
 
-					if(_octane.templates[id]){
-						return _octane.templates[id];
-					} else {
-						Octane.log('Template ' +id+ ' does not exist');
-						return this.create();
-					}
+							if(_octane.templates[id]){
+								return _octane.templates[id];
+							} else {
+								Octane.log('Template ' +id+ ' does not exist');
+								return this.create();
+							}
             },
 
             create : function(elem){
@@ -2581,10 +2585,10 @@
 
             fromString : function(name,string){
 
-					if(!string) {
-						string = name;
-						name = undefined;
-					}
+							if(!string) {
+								string = name;
+								name = undefined;
+							}
                 var div = document.createElement('div');
                 div.name = name;
                 div.innerHTML = string;
@@ -2669,7 +2673,8 @@
             },
 
             _cache : function(elem){
-                if(elem){
+
+								if(elem){
                     // compile nested templates
                     this.compile(elem);
                     var tmp = this.create(elem);
@@ -2680,9 +2685,9 @@
 
             _render : function (template,elem,method){
 
-					if(template.content == '') template.content = template.markup;
+							if(template.content == '') template.content = template.markup;
 
-					// a surrogate
+							// a surrogate
                 var div = document.createElement('div');
 								var firstChild = elem.firstChild;
                 var content = template.content;
@@ -2791,9 +2796,9 @@
 
 
 
-    /*-------------------------------------------------------*/
-	/*                 O-CONTROLLER ORDINANCE				*/
-	/*-------------------------------------------------------*/
+  /*-------------------------------------------------------	*/
+	/*                 O-CONTROLLER ORDINANCE									*/
+	/*-------------------------------------------------------	*/
 
 
 
@@ -2844,7 +2849,7 @@
 
 
 
-    /* -------------------------------------------------------*/
+  /* -------------------------------------------------------*/
 	/*                     O-SYNC ORDINANCE                    */
 	/* ------------------------------------------------------*/
 
@@ -2924,14 +2929,14 @@
 
 
 
-    /* -------------------------------------------------------*/
+  /* -------------------------------------------------------*/
 	/*                        INIT                             */
 	/* -------------------------------------------------------*/
 
 
 
 
-		_octane.context = 'web';
+				_octane.context = 'web';
 
 
 
