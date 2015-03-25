@@ -6,6 +6,7 @@ $transition : 0.465,0.183,0.153,0.946;
 @import '../../modules/translator/scss/_translator';
 @import '../../modules/modals/scss/_modal';
 @import '../../modules/loading/scss/_loading';
+@import '../../modules/debug/scss/_debug';
 
 
 html,body{
@@ -33,16 +34,16 @@ o-background{
     width:100%;
     top:0;
     left:0;
-   
+
     opacity:0;
     will-change: opacity;
-    transition: opacity 0.3s cubic-bezier($transition); 
+    transition: opacity 0.3s cubic-bezier($transition);
 }
 
 o-background.active{
     opacity:1;
     transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
-    
+
     canvas{
         width:101%;
         margin-left:-0.5%;
@@ -67,15 +68,15 @@ o-app-container{
     overflow-y:hidden;
     z-index: 1;
     float:left;
-    
+
     //padding-bottom:30px;
     height:auto;
     width:100%;
-    
+
     background-color:white;
     opacity:1;
     transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
-    
+
     &.hidden{
         opacity:0;
         transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
@@ -87,7 +88,7 @@ o-app-container{
 .o-btn {
 	cursor:pointer;
     min-height:30px;
-    min-width:30px;    
+    min-width:30px;
 }
 
 .o-back{
@@ -105,7 +106,7 @@ o-app-container{
 .display-none{
     display:none;
 }
- 
+
 .loading{
     &:after{
         content:"";
@@ -122,4 +123,3 @@ o-app-container{
         background-repeat:no-repeat;
     }
 }
-

@@ -200,6 +200,35 @@ o-loading-container {
   left: 0;
   z-index: 99999999999; }
 
+octane-debugger {
+  font-family: 'Source Code Pro' !important;
+  padding-left: 10px;
+  display: block;
+  height: 25px;
+  position: fixed;
+  z-index: 999999999999;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background-color: #000000;
+  border-top: thin #ffffff solid;
+  color: white;
+  opacity: 0.6; }
+  octane-debugger ul, octane-debugger li {
+    margin-left: 10px;
+    list-style: none;
+    display: inline-block;
+    font-size: 14px !important; }
+  octane-debugger li {
+    font-family: 'Source Code Pro' !important;
+    padding-right: 5px;
+    padding-top: 1.5px;
+    cursor: pointer; }
+    octane-debugger li:hover {
+      color: #24ffed; }
+  octane-debugger i {
+    padding-right: 3px; }
+
 html, body {
   height: 100%; }
 
