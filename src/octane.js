@@ -938,7 +938,7 @@
 
                             elem.dispatchEvent && elem.dispatchEvent(e);
                         },
-		});
+				});
 
 
 
@@ -962,38 +962,38 @@
 
 
 
-		_octane.dicts = {};
+				_octane.dicts = {};
 
-    Octane.defineProp({
+		    Octane.defineProp({
 
-        Dictionary : {
+		        Dictionary : {
 
-          create : function(name,data){
+		          create : function(name,data){
 
-            if(_.isObject(data) && !_octane.dicts[name]){
-              _octane.dicts[name] = data;
-              octane.fire('created:dictionary:'+name);
-              return Octane;
-            } else {
-              Octane.error('could not create dictionary '+name+'.')
-            }
-          },
+		            if(_.isObject(data) && !_octane.dicts[name]){
+		              _octane.dicts[name] = data;
+		              octane.fire('created:dictionary:'+name);
+		              return Octane;
+		            } else {
+		              Octane.error('could not create dictionary '+name+'.')
+		            }
+		          },
 
-          get   : function(name){
-              return new Promise(function(resolve){
-                var dict = _octane.dicts[name];
+		          get   : function(name){
+		              return new Promise(function(resolve){
+		                var dict = _octane.dicts[name];
 
-                if(dict){
-                    resolve(dict)
-                } else {
-                  octane.handle('created:dictionary:'+name, function(e){
-                      resolve(_octane.dicts[name]);
-                  });
-                }
-            });
-          }
-        }
-    });
+		                if(dict){
+		                    resolve(dict)
+		                } else {
+		                  octane.handle('created:dictionary:'+name, function(e){
+		                      resolve(_octane.dicts[name]);
+		                  });
+		                }
+		            });
+		          }
+		        }
+		    });
 
 
 
@@ -2614,7 +2614,7 @@
                 return template;
             },
 
-            _replace : function replace (template,match,data){
+            _replace : function (template,match,data){
 
                 // match ex. {{postedBy.firstName @filter:myFilter @param:myParam}}
 
