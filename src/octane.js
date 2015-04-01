@@ -335,31 +335,31 @@
 
 							return new Promise(function(resolve,reject){
 									_.each(context.querySelectorAll(selector),function(elem){
-											_.each(tasks,function(task){
+										_.each(tasks,function(task){
 
-													var taskId = task._compilerId;
-													var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
+											var taskId = task._compilerId;
+											var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
 
-													// set hash so we don't re-apply a task
-													elem._compiled || (elem._compiled = {});
-													if(!elem._compiled[taskId]){
+											// set hash so we don't re-apply a task
+											elem._compiled || (elem._compiled = {});
+											if(!elem._compiled[taskId]){
 
-															// pass the value of the ordinance to the task
-															// *if the ordinance is an attribute, selected by wrapped []
-															var ord = selector.match(/\[(.*)\]/);
-															_.isArray(ord) && (ord = ord[1]);
-															ordValue = elem.getAttribute(ord);
+												// pass the value of the ordinance to the task
+												// *if the ordinance is an attribute, selected by wrapped []
+												var ord = selector.match(/\[(.*)\]/);
+												_.isArray(ord) && (ord = ord[1]);
+												ordValue = elem.getAttribute(ord);
 
-															try{
-																	// run the task
-																	task(elem,ordValue);
-																	// set hashed taskId to true so it doesn't re-run on the same element
-																	elem._compiled[taskId] = true;
-															} catch (ex){
-																	Octane.log(ex);
-															}
-													}
-											});
+												try{
+														// run the task
+														task(elem,ordValue);
+														// set hashed taskId to true so it doesn't re-run on the same element
+														elem._compiled[taskId] = true;
+												} catch (ex){
+														Octane.log(ex);
+												}
+											}
+										});
 									});
 									resolve();
 							});
@@ -370,10 +370,9 @@
 
 							context || (context = document);
 
-							var $this = this;
 							var tasksCompleted = (Object.keys(this.ordinances)).map(function(selector){
-									return $this.applyOrdinance(context,selector);
-							});
+									return this.applyOrdinance(context,selector);
+							}.bind(this));
 
 							return Promise.all(tasksCompleted);
 					}
@@ -1263,6 +1262,11 @@
 
 										},
 
+				// testing: calling from model instead of by event
+				_refresh_ : function(key){
+											_.isArray(this.scope[key]) && _.each(this.scope[key],this._update.bind(this));
+				},
+
 				// recursively look through the ViewModel for targets to update
 				_getUpdateTargets : function(object){
 
@@ -1447,9 +1451,9 @@
 										},
 
 				// remove an integrated Backbone Model
-				unbind 			: function(bind){
+				unbind 			: function(binding){
 
-												var model = _octane.models[bind];
+												var model = _octane.models[binding];
 												if(model){
 														if(model.__legacy__){
 																model.set = model.__legacy__.set;
@@ -1470,8 +1474,8 @@
 												}
 										},
 
-				get 				: function(bind){
-												return _octane.models[bind];
+				get 				: function(binding){
+												return _octane.models[binding];
 										}
 
 		});
@@ -1562,8 +1566,8 @@
 				Octane.defineProp.call(OctaneModel,{
 
 					// static factory
-					create      : function(data,bind){
-													return new this(data,bind);
+					create      : function(data,binding){
+													return new this(data,binding);
 											},
 
 					// set method for Backbone models bound with Octane.ViewModel
@@ -1608,7 +1612,8 @@
 																	$this.__legacy__.set.apply($this,[ attrKey,cached[attrKey],options ]);
 																	// alert octane listeners
 																	if($this.isRegistered()){
-																			octane.fire('statechange:'+$this.registeredTo()+'.'+key);
+																			Octane.fire('statechange:'+$this.registeredTo()+'.'+key);
+																			//Octane.ViewModel._refresh_($this.registeredTo());
 																	}
 															}
 													});
@@ -1617,21 +1622,21 @@
 											},
 
 					// get the model name from a keystring, ex "App.loading.message" would return "App"
-					_parseName  : function(bind){
+					_parseName  : function(binding){
 													try {
-															return bind.split('.')[0];
+															return binding.split('.')[0];
 													} catch (ex){
-														 Octane.error('could not parse model name from '+bind+': '+ex.message);
+														 Octane.error('could not parse model name from '+binding+': '+ex.message);
 															return false;
 													}
 											},
 
 					// get the nested key from a keystring, ex "App.loading.message" would return "loading.message"
-					_parseKey   : function(o_bind){
+					_parseKey   : function(binding){
 													try{
-															return o_bind.split('.').slice(1).join('.');
+															return binding.split('.').slice(1).join('.');
 													} catch (ex){
-															Octane.error('could not parse model key from '+o_bind+': '+ex.message);
+															Octane.error('could not parse model key from '+binding+': '+ex.message);
 															return false;
 													}
 											}
@@ -1696,26 +1701,26 @@
 					// use reduce to set a value using a nested key, ex "App.loading.message" would set {App:{loading:{message:value}}}
 					_setState   : function(keystring,value){
 
-															var $state = this.state;
-															var keyArray = keystring.split('.');
-															var k = keyArray.length;
-															var modelUpdated;
+													var $state = this.state;
+													var keyArray = keystring.split('.');
+													var k = keyArray.length;
+													var modelUpdated;
 
-															try{
-																	keyArray.reduce(function(o,x,index){
-																			if(index == (k-1)){ // last iteration
-																					return o[x] = value;
-																			}else{
-																					return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create if object if not already
-																			}
-																	},$state);
-																	modelUpdated = true;
-															}catch(ex){
-																	modelUpdated = false;
-																	Octane.log('Unable to set model data "'+keystring+'"',ex);
-															}
+													try{
+															keyArray.reduce(function(o,x,index){
+																	if(index == (k-1)){ // last iteration
+																			return o[x] = value;
+																	}else{
+																			return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create if object if not already
+																	}
+															},$state);
+															modelUpdated = true;
+													}catch(ex){
+															modelUpdated = false;
+															Octane.log('Unable to set model data "'+keystring+'"',ex);
+													}
 
-															modelUpdated && this.isRegistered() &&  Octane.fire('statechange:'+this.registeredTo()+'.'+keystring);
+													modelUpdated && this.isRegistered() &&  Octane.fire('statechange:'+this.registeredTo()+'.'+keystring);
 
 											},
 
@@ -1912,12 +1917,12 @@
 													}
 
 													// helper
-													function doSet(keystring){
+													function doSet(binding){
 
-															var modelName = OctaneModel._parseName(keystring);
-															var key = OctaneModel._parseKey(keystring);
-															var value = fresh[keystring];
-															var model = _octane.models[modelName];
+															var name = OctaneModel._parseName(binding);
+															var key = OctaneModel._parseKey(binding);
+															var value = fresh[binding];
+															var model = _octane.models[name] || (_octane.models[name] = Octane.model.create(null,name));
 
 															model && model.set(key,value);
 													}
@@ -1930,20 +1935,20 @@
 
 													_.isArray(toUnset) || (toUnset = toUnset.split(','));
 
-													var unset = function(keystring){
-															keystring = keystring.trim();
-															var  modelName = OctaneModel._parseName(keystring);
-															var key = OctaneModel._parseKey(keystring);
-															var model = _octane.models[modelName];
+													var unset = function(binding){
+															binding 	= binding.trim();
+															var name 	= OctaneModel._parseName(binding);
+															var key 	= OctaneModel._parseKey(binding);
+															var model = _octane.models[name];
 															model && model.unset(key);
 													};
 
 													if(timeout && (__.typeOf(timeout) == 'number')){ // timout the unset
 
 															if(throttle){                                // throttle the unsets
-																	_.each(toUnset,function(keystring,i){
+																	_.each(toUnset,function(binding,i){
 																			setTimeout(function(){
-																					unset(keystring);
+																					unset(binding);
 																			},timeout*(i+1));                   // make sure we timeout the 0 index
 																	});
 															}else{                                      // unset all together after timeout
@@ -2377,7 +2382,9 @@
 				};
 
 				function bootlog(msg,a,b){
-					_octane.bootlog.push( msgs[msg](a,b) );
+					var message = msgs[msg](a,b);
+					_octane.bootlog.push( message );
+					Octane.set('Bootlog.status',message);
 				}
 
 
@@ -2954,10 +2961,25 @@
 				Octane.designate('[o-bg-img]',function(elem,value){
 						var pattern = /\{\{([^{^}]+)\}\}/g;
 						if(!pattern.test(value)){
-								 elem.style.backgroundImage = 'url('+value+')';
+								elem.style.backgroundImage = 'url('+value+')';
 								elem.removeAttribute('o-bg-img');
 						}
 				});
+
+
+				Octane.designate('[o-view]',function(elem,binding){
+
+					var views = _octane.views;
+					if(!views[binding]){
+						views[binding] = [];
+						Octane.handle('statechange:'+binding,function(){
+							each(_octane.views[binding],function(view){
+								view.render();
+							})
+						});
+					}
+
+				})
 
 
 
