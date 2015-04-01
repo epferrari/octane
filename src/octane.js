@@ -1018,19 +1018,19 @@
 
 
 		function ViewModel(){
-			this.engrave({ scope : {} });
-            this.parse();
-            this.refreshAll();
+			this.defineProp({ scope : {} });
+      this.parse();
+      this.refreshAll();
 		}
 
 
 
 
 		ViewModel.prototype = new OctaneBase;
-		ViewModel.prototype.engrave({
+		ViewModel.prototype.defineProp({
 
             // find bound elements on the DOM
-			parse        : function(scope){
+						parse        : function(scope){
 
                             scope || (scope = document);
                             var $this = this;
@@ -1043,7 +1043,7 @@
                         },
 
             // set up a watch on bound elements
-			watch        : function(elem){
+						watch        : function(elem){
 
                             var $this = this;
                             var $scope = this.scope;
@@ -1087,7 +1087,7 @@
                             }
                         },*/
 
-            _watchBinds : function(elem){
+      			_watchBinds 	: function(elem){
 
                             var $this = this;
                             var oBind = elem.getAttribute('o-bind');
@@ -1817,13 +1817,13 @@
                             this.clear().set(defaults || this.defaults);
                         }
 
-		});
+			});
 
 
 
 
-        // overwritable aliases for extension classes
-        OctaneModel.prototype.augment({
+    // overwritable aliases for extension classes
+    OctaneModel.prototype.extend({
 
             get         : function(){
                             return this._get.apply(this,arguments);
@@ -1844,12 +1844,12 @@
             destroy     : function(){
                             this._destroy();
                         }
-        });
+    });
 
 
 
 
-        Octane.defineProp({
+    Octane.defineProp({
 
             Model       : OctaneModel,
 
@@ -1952,6 +1952,52 @@
 		});
 
 
+		function OctaneCollection(models){
+
+			this.models = [];
+
+			this.model = OctaneModel;
+			this.initialize(arguments);
+			this.models.add(models);
+		}
+
+		OctaneCollection.prototype = new OctaneBase;
+
+		OctaneCollection.prototype.defineProp({
+
+			initialize : function(){},
+			create 	: function(){},
+			get 		: function(){},
+			set 		: function (){},
+			remove 	: function(){},
+			where 	: function(){},
+			pluck 	: function(){},
+			fetch 	: function(){},
+			push		: function(){},
+			pop			: function(){},
+			shift 	: function(){},
+			unshift : function(){},
+			slice 	: function(){},
+			add 		: function (models){}
+
+		});
+
+		var methods = ['forEach', 'each', 'map', 'collect', 'reduce', 'foldl',
+    'inject', 'reduceRight', 'foldr', 'find', 'detect', 'filter', 'select',
+    'reject', 'every', 'all', 'some', 'any', 'include', 'contains', 'invoke',
+    'max', 'min', 'toArray', 'size', 'first', 'head', 'take', 'initial', 'rest',
+    'tail', 'drop', 'last', 'without', 'difference', 'indexOf', 'shuffle',
+    'lastIndexOf', 'isEmpty', 'chain', 'sample', 'partition'];
+
+
+	  _.each(methods, function(method) {
+	    if (!_[method]) return;
+	    OctaneCollection.prototype[method] = function() {
+	      var args = slice.call(arguments);
+	      args.unshift(this.models);
+	      return _[method].apply(_, args);
+	    };
+	  });
 
 
 
@@ -2112,7 +2158,7 @@
 
 
 
-        OctaneModel.extend = OctaneController.extend =  Factory.extend = extend;
+        OctaneModel.extend = OctaneController.extend =  OctaneCollection.extend = Factory.extend = extend;
 
 
 
