@@ -2,19 +2,19 @@ module.exports = function(grunt) {
 
 	// plugins
 	grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-contrib-sass');
+		grunt.loadNpmTasks('grunt-contrib-sass');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-  	grunt.loadNpmTasks('grunt-contrib-watch');
+		grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-cssmin');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-bower-concat');
 	grunt.loadNpmTasks('grunt-html-build');
-    grunt.loadNpmTasks('grunt-postcss');
-    grunt.loadNpmTasks('grunt-autoprefixer');
+		grunt.loadNpmTasks('grunt-postcss');
+		grunt.loadNpmTasks('grunt-autoprefixer');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 
-    var src = {
+		var src = {
 
 		html:{
 			index: "src/index.html"
@@ -22,26 +22,26 @@ module.exports = function(grunt) {
 		js:{
 
 			watchMe:[
-                "src/assets/**/*.js",
-                "!src/assets/js/_bower.js"
-            	],
+								"src/assets/**/*.js",
+								"!src/assets/js/_bower.js"
+							],
 			bower: "src/assets/js/_bower.js",
 			concatMe: [
-                "src/lib/doubleUnder.js",
-                "src/octane.js",
-                "src/lib/startup_utilities.js",
-                "src/modules/**/*.js",
-                "!src/modules/debug/**"
-            ],
-            debug:[
-                "src/modules/debug/module.debug.js"
-            ]
+								"src/lib/doubleUnder.js",
+								"src/octane.js",
+								"src/lib/startup_utilities.js",
+								"src/modules/**/*.js",
+								"!src/modules/debug/**"
+						],
+						debug:[
+								"src/modules/debug/module.debug.js"
+						]
 		},
 		css	:{
 
 			bower:"src/assets/css/_bower.css",
 			concatMe:[
-                "src/assets/css/<%= pkg.name %>.css"
+								"src/assets/css/<%= pkg.name %>.css"
 			]
 		},
 		img	:{
@@ -73,7 +73,7 @@ module.exports = function(grunt) {
 			dir		: "build/assets/js/",
 			bower	: "build/assets/js/_bower.js",
 			main	: "build/assets/js/<%= pkg.name %>.js",
-            debug   : "build/assets/js/debug.js"
+						debug   : "build/assets/js/debug.js"
 		},
 		css	:{
 			dir		: "build/assets/css/",
@@ -89,8 +89,8 @@ module.exports = function(grunt) {
 	};
 
 
-   var dist = {
-	   	html : {
+	 var dist = {
+			 html : {
 			index	: "dist/index.html"
 		},
 		js :{
@@ -113,9 +113,9 @@ module.exports = function(grunt) {
 		}
 	};
 
-  var autoprefixer = require('autoprefixer-core');
+	var autoprefixer = require('autoprefixer-core');
 
-  	// Project configuration.
+		// Project configuration.
 	grunt.initConfig({
 
 		pkg: 		grunt.file.readJSON('package.json'),
@@ -155,9 +155,9 @@ module.exports = function(grunt) {
 		// staged for minification
 		concat:     {
 						options:{
-                            separator:';'
-                        },
-                        js:{
+														separator:';'
+												},
+												js:{
 							src		: src.js.concatMe,
 							dest	: dist.js.main
 						},
@@ -166,38 +166,38 @@ module.exports = function(grunt) {
 							dest	: dist.css.main
 						}
 					},
-        /*
-        postcss:    {
-                        options:{
-                            processors:[
-                                autoprefixer(['last 2 versions','ie9','ie10']).postcss
-                            ]
-                        },
-                        dist : {
-                            src : dist.css.main
-                        }
-                    },
-         */
+				/*
+				postcss:    {
+												options:{
+														processors:[
+																autoprefixer(['last 2 versions','ie9','ie10']).postcss
+														]
+												},
+												dist : {
+														src : dist.css.main
+												}
+										},
+				 */
 
-        autoprefixer : {
+				autoprefixer : {
 
-                        options : {
-                            browsers:['last 2 versions','ie 9','ie 10']
-                        },
-                        dist:{
-                            src : dist.css.main,
-                            dest: dist.css.main
-                        },
-                        build:{
-                            src:build.css.main,
-                            dest:build.css.main
-                        }
-                    },
+												options : {
+														browsers:['last 2 versions','ie 9','ie 10']
+												},
+												dist:{
+														src : dist.css.main,
+														dest: dist.css.main
+												},
+												build:{
+														src:build.css.main,
+														dest:build.css.main
+												}
+										},
 
 		uglify:		{
 						dist:{
 							options:{
-							    drop_console:true,
+									drop_console:true,
 								mangle:true,
 								beautify:false,
 								banner:'/* <%= pkg.name %> - <%pkg.version %> - '+'<%= grunt.template.today("yyyy-mm-dd") %>*/'
@@ -258,16 +258,16 @@ module.exports = function(grunt) {
 
 						build:{
 							files:[{
-                                // copy unconcatenated js files
+																// copy unconcatenated js files
 								expand	:true,
 								flatten	: true,
 								src		: [
-                            src.js.concatMe,
-                            src.js.debug
-                        ],
+														src.js.concatMe,
+														src.js.debug
+												],
 								dest	: build.js.dir
 							},{
-                                // copy unconcatenated css files
+																// copy unconcatenated css files
 								flatten	:true,
 								expand	:true,
 								src		: [
@@ -326,13 +326,13 @@ module.exports = function(grunt) {
 
 		 jshint: 	{
 						options: {
-							  curly: true,
-							  eqeqeq: true,
-							  eqnull: true,
-							  browser: true,
-							  globals: {
+								curly: true,
+								eqeqeq: true,
+								eqnull: true,
+								browser: true,
+								globals: {
 								jQuery: true
-							  }
+								}
 						},
 						 files:{
 							 src: dist.js.mini
@@ -349,18 +349,18 @@ module.exports = function(grunt) {
 		// clean dist
 			'clean:dist',
 
-        // compile css
+				// compile css
 			'sass',
 
 		// concat front end dependencies
 			'bower_concat',
 
 		// concat all js/css
-        // do not include bower dependencies
+				// do not include bower dependencies
 			'concat',
 
-    // post process css with auto prefixer
-        'autoprefixer:dist',
+		// post process css with auto prefixer
+				'autoprefixer:dist',
 
 		// minify js/css into release directory
 			'cssmin',
@@ -395,8 +395,12 @@ module.exports = function(grunt) {
 		// copy files to build dir
 			'copy:build',
 
-    // post process css with auto prefixer
-      'autoprefixer:build'
+		// post process css with auto prefixer
+			'autoprefixer:build',
+
+		// copy core files to example project
+			'clean:example',
+			'copy:example'
 	]);
 
 

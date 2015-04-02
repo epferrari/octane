@@ -10,9 +10,11 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <title o-lang="header-title"></title>
+    <title o-update="Translations.header-title"></title>
 
-    <link type="text/css" rel="stylesheet" href="assets/css/My Cool Octane Project-min.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/_bower.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/app.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/octane-min.css" />
 </head>
 
 <body class="container-fluid octane">
@@ -20,26 +22,18 @@
     <o-loading-container>
 
         <!-- Loading View -->
-        <style>
-            h6 {
-                color: white;
-                margin-top: 5px;
-            }
-        </style>
 
         <div id="initial-loading">
 
 
             <div class="progress">
-                <div o-update='{"style.width":"appLoading.percent","aria-valuenow":"appLoading.progress"}' class="progress-bar progress-bar-warning progress-bar-striped active" role="progressbar" aria-valuenow=0 aria-valuemin=0 aria-valuemax=0 style="width: 0%">
+                <div o-model="appLoading" [style.width:percent] [aria-valuenow:progress] class="progress-bar progress-bar-warning progress-bar-striped active" role="progressbar" aria-valuenow=0 aria-valuemin=0 aria-valuemax=0 style="width: 0%">
                 </div>
-                <span class="sr-only" o-update='{"text":"appLoading.screenReader"}'>
-						45% Complete
-					</span>
+                <span o-model='appLoading' class="sr-only">{{progress @default(0)}}% Complete</span>
             </div>
 
-            <div o-update='{"text":"bootlog.status"}' class="loading-message">
-                Loading...
+            <div o-model='Bootlog' class="loading-message">
+                {{status @default(Loading...)}}
             </div>
 
             <div class="branding">
@@ -49,8 +43,6 @@
 
         </div>
 
-
-
     </o-loading-container>
 
     <o-app-container class="hidden">
@@ -58,34 +50,22 @@
         <!-- header -->
         <header class="header" role="banner">
 
-            <div id="header-inner" class="row">
+            <div class="row">
 
-                <div class="col-md-2">
-                    <img src="./assets/img/logo.png" class="logo" o-route="home" />
+                <div class="col-md-2" o-model="App">
+                    <img o-src="{{logo}}" class="logo" o-route="home" />
                 </div>
 
-                <div class="col-md-7">
-                    <h1>
-						<span o-lang="tool-title"></span>
-						<span class="vertical">&nbsp;</span>
-						<span 
-							o-update='{"text":"App.viewTitle"}'
-						</span>	
-					</h1>
+                <div class="col-md-7" o-model="App">
+                    <h1>{{viewTitle}}</h1>
                 </div>
 
                 <div class="col-md-3">
-
                     <!-- Translator dropdown-->
                     <o-control id="translator"></o-control>
-
                 </div>
 
             </div>
-
-            <div class="row header-gradient">
-            </div>
-
         </header>
 
         <o-view-container>
@@ -96,16 +76,29 @@
         <footer class="row footer">
 
             <div class="row" style="padding-right:0px; width:100%">
-                <div class="col-md-10 col-md-push-1">
+                <div class="col-md-10 col-md-push-1" o-model="Translations">
 
                     <ul>
-                        <li class="btn o-btn" o-route="home" o-lang="btn-home">
+                        <li class="btn o-btn" o-route="home">
+                            {{btn-home @default(Home)}}
                         </li>
-                        <li class="btn o-btn" o-route="choose-conditions" o-lang="btn-choose-conditions">
+                        <li class="btn o-btn" o-route="page1">
+                            {{btn-choose-conditions @default(Choose Conditions)}}
                         </li>
-                        <li class="btn o-btn" o-route="results" o-lang="btn-results">
+                        <li class="btn o-btn" o-route="page2">
+                            {{btn-results @default(Results)}}
                         </li>
-                        <li class="btn o-btn" o-route="legal" o-lang="btn-legal">
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
                         </li>
                     </ul>
 
@@ -123,7 +116,20 @@
     <o-background>
     </o-background>
 
-    <script type="text/javascript" src="assets/js/My Cool Octane Project-min.js"></script>
+    <script type="text/javascript" src="assets/js/_bower.js"></script>
+    <script type="text/javascript" src="assets/js/octane/doubleUnder.js"></script>
+    <script type="text/javascript" src="assets/js/octane/octane.js"></script>
+    <script type="text/javascript" src="assets/js/octane/filters.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.appLoading.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.debug.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.modals.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.router.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.translator.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.views.js"></script>
+    <script type="text/javascript" src="assets/js/octane/octane.view.prototype.js"></script>
+    <script type="text/javascript" src="assets/js/octane/octaneUI.js"></script>
+    <script type="text/javascript" src="assets/js/octane/startup_utilities.js"></script>
+    <script type="text/javascript" src="octane-initialize.js"></script>
 </body>
 
 </html>
