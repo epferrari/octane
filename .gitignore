@@ -1,8 +1,9 @@
+.brackets.json
+npm-debug.log
+
 /build/**
 
 /dist/**
-
-.brackets.json
 
 /node_modules/**
 
@@ -17,3 +18,5 @@
 /example-project/dist/**
 
 /example-project/src/octane_core/**
+
+/example-project/cordova
