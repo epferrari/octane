@@ -1,5 +1,5 @@
 {
-  "name": "My Cool Octane Project",
+  "name": "octane-example-project",
   "version": "0.0.0",
   "description": "A sample project built on the Octane MVC framework",
   "main": "index.js",
