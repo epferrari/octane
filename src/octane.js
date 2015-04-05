@@ -1108,7 +1108,7 @@
 								// ^result: ["postedBy.firstName","@filter:myFilter","@default(value)"]
 							var key = split.shift();
 								// ^result: "postedBy.firstName"
-							var modifiers = split.join();
+							var modifiers = split.join(' ');
 								// ^result: "@filter:myFilter(param) @default(value)"
 							var filterString 	= (modifiers.match( /@filter:(?=([^\s]+))/ ) || ['',''])[1];
 								// ^result: "myFilter(param)"
@@ -1116,9 +1116,7 @@
 								// ^result: "myFilter"
 							var filterParams 	= (filterString.match( /\((.*)\)/ ) || ['',''])[1];
 								// ^result: "param"
-							var defaultString = (modifiers.match( /@default(?=([^\s]+))/ ) || ['',''])[1];
-								// ^result: "default(value)"
-							var defaultValue	= ( defaultString.match( /\((.*)\)/ ) || ['',''])[1];
+							var defaultValue = (modifiers.match( /@default\((?:(.*))\)/ ) || ['',''])[1];
 								// ^result: "value"
 
 
@@ -1336,7 +1334,7 @@
 												// element hasn't been parsed yet
 												if(!elem._watched){
 														elem._watched = true;
-														elem.octaneID || Octane.guid(elem);
+														Octane.guid(elem);
 
 														//this._setFilters(elem);
 														this._watchBinds(elem);
@@ -1363,8 +1361,8 @@
 												var tmpl = Octane.Template.create(elem);
 												tmpl.save();
 												// initial render
-												console.log('model',model);
 												tmpl.set(Octane.get(model)).renderTo(elem);
+												elem.classList.add('compiled');
 
 												// re-render the element's innerHTML
 												Octane.handle('statechange:'+model,function(e){
