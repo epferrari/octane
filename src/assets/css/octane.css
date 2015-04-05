@@ -254,34 +254,28 @@ o-background {
   opacity: 0;
   will-change: opacity;
   transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  o-background.active {
+    opacity: 1;
+    transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+    o-background.active canvas {
+      width: 101%;
+      margin-left: -0.5%;
+      margin-top: -0.5%;
+      filter: blur(3px);
+      transform: translate-3d(0, 0, 0); }
 
-o-background.active {
-  opacity: 1;
-  transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
-  o-background.active canvas {
-    width: 101%;
-    margin-left: -0.5%;
-    margin-top: -0.5%;
-    filter: blur(3px);
-    /*
-        -webkit-filter:blur(3px);
-        -moz-filter:blur(3px);
-        -o-filter:blur(3px);
-        -ms-filter:blur(3px);
-    */
-    transform: translate-3d(0, 0, 0);
-    /*
-        -webkit-transform:translate-3d(0,0,0);
-        -moz-transform:translate-3d(0,0,0);
-    */ }
+[o-model] {
+  visibility: hidden; }
+  [o-model].compiled {
+    visibility: visible; }
 
 o-app-container {
-  overflow-x: hidden;
-  overflow-y: hidden;
   z-index: 1;
   float: left;
   height: auto;
   width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
   background-color: white;
   opacity: 1;
   transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
