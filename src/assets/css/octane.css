@@ -215,6 +215,7 @@ octane-debugger {
   color: white;
   opacity: 0.6; }
   octane-debugger ul, octane-debugger li {
+    margin-top: 0px !important;
     margin-left: 10px;
     list-style: none;
     display: inline-block;

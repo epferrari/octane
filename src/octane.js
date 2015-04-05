@@ -1145,7 +1145,7 @@
 							// apply filter if present
 							// Octane.applyFilter(filter name, value to be filtered [, array of params])
 							if(filter.length > 0){
-									value = Octane.applyFilter(filter,value,params.split(','));
+									value = Octane.applyFilter(filter,value,filterParams.split(','));
 							}
 
 							// replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}}
@@ -1369,7 +1369,7 @@
 												// re-render the element's innerHTML
 												Octane.handle('statechange:'+model,function(e){
 													var data = Octane.get(model);
-													Octane.Template.get(elem.octaneID).set(data).render(elem);
+													Octane.Template.get(elem.octaneID).set(data).renderTo(elem);
 												});
 											},
 
