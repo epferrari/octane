@@ -1,6 +1,19 @@
-build
-dist
-.brackets.json
-node_modules/**
-bower_components/**
+/build/**
 
+/dist/**
+
+.brackets.json
+
+/node_modules/**
+
+/bower_components/**
+
+/example-project/node_modules/**
+
+/example-project/bower_components/**
+
+/example-project/build/**
+
+/example-project/dist/**
+
+/example-project/src/octane_core/**

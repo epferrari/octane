@@ -2,10 +2,10 @@ module.exports = function(grunt) {
 
 	// plugins
 	grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-sass');
+	grunt.loadNpmTasks('grunt-contrib-sass');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-cssmin');
 	grunt.loadNpmTasks('grunt-contrib-htmlmin');
 	grunt.loadNpmTasks('grunt-contrib-copy');
@@ -81,8 +81,8 @@ module.exports = function(grunt) {
 				watchMe	:
 									[
 										[ modules+"/**/*.js" ],
-						        "!"+assets+"/js/_bower.js"
-						      ],
+										"!"+assets+"/js/_bower.js"
+									],
 				bower		: assets+"/js/_bower.js",
 				concatMe:
 									[
@@ -165,7 +165,7 @@ module.exports = function(grunt) {
 	})();
 
 
-   var dist = (function(){
+	 var dist = (function(){
 
 			var assets = "dist/assets";
 
@@ -203,12 +203,15 @@ module.exports = function(grunt) {
 			};
 		})();
 
-  	// Project configuration.
+		// Project configuration.
 	grunt.initConfig({
 
 		pkg: grunt.file.readJSON('package.json'),
 
 		bower_concat:{
+			options:{
+				separator: ';',
+			},
 						all:{
 							options:{
 								separator: ';',
@@ -380,7 +383,7 @@ module.exports = function(grunt) {
 							},
 							// modules
 							{
-                            	expand	:true,
+															expand	:true,
 								flatten	: false,
 								cwd			: 'src/octane_modules/',
 								src			:  ["**/*.js" ],
