@@ -16,7 +16,52 @@
 					<!-- Translator dropdown-->
 					<o-control id="translator"></o-control>
 				</div>
-
-				<p o-model="Bootlog">{{status @filter:caps}}</p>
 			</div>
+
+			<form class="form-horizontal">
+				<div class="form-group">
+					<label for="username" class="col-sm-2 control-label">
+						Email
+					</label>
+					<div class="col-sm-4">
+						<input
+							id="username"
+							type="text"
+							class="form-control"
+							placeholder="Username"
+							o-model="User"
+							o-bind="username"/>
+					</div>
+					<div class="col-sm-4" o-model="User">
+						{{username}}
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label for="userpass" class="col-sm-2 control-label">Password</label>
+					<div class="col-sm-4" >
+						<input
+							type="password"
+							class="form-control"
+							id="userpass"
+							placeholder="Password"
+							o-model="User"
+							o-bind="userpass">
+					</div>
+					<div class="col-sm-offset-2 col-sm-10" o-model="User">
+						{{userpass @filter:hidePassword(*)}}
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<div class="checkbox">
+							<label>
+								<input type="checkbox" o-model="User" o-bind="showPassword"> Show Password
+							</label>
+						</div>
+					</div>
+				</div>
+			</form>
+
 		</header>
