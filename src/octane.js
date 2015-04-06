@@ -5,8 +5,8 @@
 										// @author Ethan Ferrari
 										// ethanferrari.com/octane
 										// onefiremedia.com
-										// version 0.0.5
-										// January 2015
+										// version 0.0.6
+										// April 2015
 
 
 
@@ -764,11 +764,11 @@
 																	Octane.hasLibrary(cleanURL).then(resolve,reject);
 															} else {
 
-																	Octane.handle('script:loaded:'+cleanURL,function(){
+																	Octane.on('script:loaded:'+cleanURL,function(){
 																			content = _octane.loadedCache.pop();
 																			Octane.addLibrary(cleanURL,content).then(resolve,reject);
 																	});
-																	Octane.handle('script:failed:'+cleanURL,function(){
+																	Octane.on('script:failed:'+cleanURL,function(){
 																			reject('Script failed to load from '+url);
 																	});
 
@@ -833,7 +833,7 @@
 							},
 							'object' : function(elem,handler,e){
 									try{
-											handler.handleEvent(e,elem);
+											handler.onEvent(e,elem);
 									}catch(ex){/* ignore */}
 							}
 					});
@@ -871,7 +871,7 @@
 
 				Octane.defineProp({
 
-					handle		: function(type,$elem,$handler){
+					on					: function(type,$elem,$handler){
 
 													var types = type ? type.split(' ') : [];
 													var n=types.length;
@@ -888,8 +888,8 @@
 													}
 
 													while(n--){
-															_octane.addHandler(types[n],elem,handler);
-															window.addEventListener(types[n],_octane.eventHandler,false);
+														_octane.addHandler(types[n],elem,handler);
+														window.addEventListener(types[n],_octane.eventHandler,false);
 													}
 													return this; // chainable
 											},
@@ -1010,7 +1010,7 @@
 									if(dict){
 											resolve(dict)
 									} else {
-										octane.handle('created:dictionary:'+name, function(e){
+										octane.on('created:dictionary:'+name, function(e){
 												resolve(_octane.dicts[name]);
 										});
 									}
@@ -1314,7 +1314,7 @@
 						(this.model || '').split('.').reduce(function(o,x,i){
 							subBinding = (i === 0) ? x : o+'.'+x;
 							// set handler for each state change in a subBinding
-							Octane.handle('statechange:'+subBinding,function(){
+							Octane.on('statechange:'+subBinding,function(){
 								this.render();
 							}.bind(this));
 							return subBinding;
@@ -1381,8 +1381,8 @@
 												tmpl.save();
 
 												if(elem.getAttribute('o-bind')){
-													Octane.handle('input click select',elem,this.uptake.bind(this));
-													(__.inArray( ['file','checkbox'] ,elem.type)) &&	Octane.handle('change',elem,this.uptake.bind(this));
+													Octane.on('input click select',elem,this.uptake.bind(this));
+													(__.inArray( ['file','checkbox'] ,elem.type)) &&	Octane.on('change',elem,this.uptake.bind(this));
 												}
 
 												this._reducer(oID,model);
@@ -1417,7 +1417,7 @@
 														map[subBinding].push(oID);
 
 														// set handler for each state change in a subBinding
-														Octane.handle('statechange:'+subBinding,this.refresh.bind(this));
+														Octane.on('statechange:'+subBinding,this.refresh.bind(this));
 
 														return subBinding;
 
@@ -2398,7 +2398,7 @@
 															}else{
 																	watch = o+'.'+x;
 															}
-															Octane.handle('statechange:'+watch,function(e){
+															Octane.on('statechange:'+watch,function(e){
 																	var currentVal = Octane.get(key);
 																	if(currentVal != cache[key]){
 																			cache[key] = currentVal;
@@ -2809,7 +2809,7 @@
 						template.save();
 						elem.innerHTML = '';
 
-						Octane.handle('statechange:'+model,function(e){
+						Octane.on('statechange:'+model,function(e){
 								var data = Octane.ViewModel.get(model).get();
 								Octane.Template.get(elem._guid).set(data).renderTo(elem);
 						});
@@ -2841,7 +2841,7 @@
 					var views = _octane.views;
 					if(!views[binding]){
 						views[binding] = [];
-						Octane.handle('statechange:'+binding,function(){
+						Octane.on('statechange:'+binding,function(){
 							each(_octane.views[binding],function(view){
 								view.render();
 							})
