@@ -1,0 +1,116 @@
+
+$transition : 0.465,0.183,0.153,0.946;
+
+@import '_mixins';
+@import '../../modules/views/scss/_views';
+@import '../../modules/translator/scss/_translator';
+@import '../../modules/modals/scss/_modal';
+@import '../../modules/loading/scss/_loading';
+@import '../../modules/debug/scss/_debug';
+
+
+html,body
+{
+		height:100%;
+}
+body.octane
+{
+		overflow-x:hidden;
+		padding-left:0px !important;
+		padding-right:0px !important;
+}
+// override bootstrap
+header.row,
+footer.row,
+div.row
+{
+	margin-left:0px !important;
+	margin-right:0px !important;
+}
+o-background{
+	z-index:-1;
+	position:fixed;
+	height:100%;
+	width:100%;
+	top:0;
+	left:0;
+	opacity:0;
+	will-change: opacity;
+	transition: opacity 0.3s cubic-bezier($transition);
+	&.active
+	{
+		opacity:1;
+		transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+		canvas
+		{
+			width:101%;
+			margin-left:-0.5%;
+			margin-top:-0.5%;
+			filter:blur(3px);
+			transform: translate-3d(0,0,0);
+		}
+	}
+}
+// hide pre-compiled {{templating}}
+[o-model]
+{
+	visibility:hidden;
+	&.compiled { visibility:visible }
+}
+o-app-container
+{
+	z-index: 1;
+	float:left;
+	height:auto;
+	width:100%;
+	overflow-x:hidden;
+	overflow-y:hidden;
+	background-color:white;
+	opacity:1;
+	transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+	&.hidden
+	{
+		opacity:0;
+		transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
+	}
+}
+.o-btn
+{
+	cursor:pointer;
+	min-height:30px;
+	min-width:30px;
+}
+.o-back
+{
+	@extend .o-btn;
+}
+[o-route]
+{
+	cursor:pointer;
+}
+.hidden
+{
+	visibility:hidden !important;
+}
+.display-none
+{
+	display:none;
+}
+.loading
+{
+	&:after
+	{
+		content:"";
+		position:absolute;
+		top:0;
+		bottom:0;
+		left:0;
+		right:0;
+		width:100%;
+		height:100%;
+		background-image:url(../img/loader-light.gif);
+		background-size:100px auto;
+		background-position:center;
+		background-repeat:no-repeat;
+	}
+}

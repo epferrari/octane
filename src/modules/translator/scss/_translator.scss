@@ -1,0 +1,98 @@
+o-control#translator{
+	
+	list-style: none;
+	padding: 0px;
+	margin: 25px 0px 15px  0px !important;
+	z-index: 99999999999;
+    display:block;
+	border: none;
+	
+	.nav-pills{
+		margin-left:5px !important;
+	}
+	
+	// pill
+	li.dropdown {
+		a.dropdown-toggle{
+			cursor:pointer;
+			min-width:175px !important;
+			border: 2px solid white !important;
+			color:white !important;
+			background-color:#1D1D1D;
+			background-image:url(../img/down_arrow.png);
+			background-repeat:no-repeat;
+			background-position:95% center;
+		}
+		/*
+		// added js click handler instead of hover
+		&:hover{
+			ul{
+				position:absolute;
+				display:block;
+			}
+		}
+		*/
+		// language drop menu
+		ul.dropdown-menu {
+			min-width:175px !important;
+			z-index:99999999999;
+			background-color:black !important;
+			position:absolute;
+			li {
+				z-index:99999999999;
+				//position:relative;
+				cursor:pointer;
+				color:white;
+				list-style:none !important;
+				min-height:30px !important;
+				text-align:left !important;
+				padding-top:5px;
+				padding-left:15px;
+				&:hover{
+					color:black;
+					background-color:white;
+					text-shadow:none;
+				}
+				a{
+					display: block;
+					position: relative;
+					z-index: 99999999999;
+					&:hover {
+						text-decoration: none;
+						color: white;
+					}
+				}
+			}
+		}
+	}
+ 	/*li {
+		display: block;
+		position: relative;
+		float: left;
+		z-index: 99999999999;
+		
+		ul {
+			display: none;
+			position: relative;
+			top: 28px;
+			left: -20px;
+			z-index: 99999999999;
+			width: 150px;
+			 a {
+				display: block;
+				background: url(../img/down_arrow.png) right center no-repeat;
+				padding: 5px 54px 5px 20px;
+				text-decoration: none;
+				white-space: nowrap;
+				color: #fff;
+				position: relative;
+				z-index: 99999999999;
+				width: 75px;
+				&:hover	{
+					text-decoration: none;
+					color: white;
+				}
+			 }
+		}
+	}*/
+}
