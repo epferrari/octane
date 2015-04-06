@@ -136,8 +136,8 @@ module.exports = function(grunt) {
 					},
 
 		clean:      {
-						build	:	['build'],
-						dist	:	['dist'],
+						build		:	['build'],
+						dist		:	['dist'],
 						example : ['example-project/src/octane_core']
 					},
 
