@@ -1295,7 +1295,43 @@
 
 
 
+				function View(elem){
+					this.elem 		= elem;
+					Octane.guid(this);
+					this.elem.setAttribute('octane-id',this.octaneID);
+					this.template = Octane.Template.fromString(this.elem.outerHTML);
+					var binding 			= elem.getAttribute('o-model');
+					this.accessors('model',{
+						get : function(){ return binding;},
+						set : function(alias){
+							binding = alias;
+							this.attachHandlers();
+							this.render();
+						}
+					});
+					this.attachHandlers = function(){
+						var subBinding;
+						(this.model || '').split('.').reduce(function(o,x,i){
+							subBinding = (i === 0) ? x : o+'.'+x;
+							// set handler for each state change in a subBinding
+							Octane.handle('statechange:'+subBinding,function(){
+								this.render();
+							}.bind(this));
+							return subBinding;
+						}.bind(this),'');
+					};
+					this.render = function(data){
+						var state = (data || Octane.get(this.model));
+						this.elem.outerHTML = this.template.set(state).content;
+						this.elem = document.querySelector('[octane-id="'+this.octaneID+'"]');
+						this.elem.classList.add('compiled');
+						Octane.recompile(this.elem);
+					};
+					this.attachHandlers();
+					this.render();
+				}
 
+				View.prototype = new OctaneBase;
 
 
 
@@ -1323,7 +1359,8 @@
 												var n = $scope.length;
 
 												while(n--){
-													 this.watch($scope[n]);
+													 //this.watch($scope[n]);
+													new View($scope[n]);
 												}
 											},
 
