@@ -248,7 +248,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 						stateChangeEvent = history ? 'popstate' : 'hashchange';
 
 						// change the view with browser's forward/back buttons
-						octane.handle(stateChangeEvent,function(){
+						octane.on(stateChangeEvent,function(){
 								var view = getRequestedView();
 								view && octane.route(view);
 						});
@@ -330,7 +330,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 				// resize canvas to proper dimensions
 				octane
-						.handle('translated resize orientationchange',function(){
+						.on('translated resize orientationchange',function(){
 								currentView && currentView.setCanvasHeight();
 						})
 						.compiler('[o-route]',function(el){
@@ -346,7 +346,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 								// set up the octane event mediator
 								// so event won't get a second listener
 								// if you call .compile() again after .initialize()
-								octane.handle('octane:route',el,function(e,el){
+								octane.on('octane:route',el,function(e,el){
 										var route = el.getAttribute('o-route');
 										octane.route(route);
 								});
@@ -356,7 +356,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 										el.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
 								},false);
 
-								octane.handle('octane:routeback',el,function(){History.go(-1)});
+								octane.on('octane:routeback',el,function(){History.go(-1)});
 						});
 		} // end initialize
 }); // end module
