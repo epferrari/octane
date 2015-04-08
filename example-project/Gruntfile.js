@@ -203,11 +203,11 @@ module.exports = function(grunt) {
 
 		bower_concat:{
 						options:{
-							separator: ';',
+							separator: ';'
 						},
 						all:{
 							options:{
-								separator: ';',
+								separator: ';'
 							},
 							dest	:	src.js.bower,
 							cssDest	:	src.css.bower,
@@ -284,7 +284,7 @@ module.exports = function(grunt) {
 								banner:'/* <%= pkg.name %> - <%pkg.version %> - '+'<%= grunt.template.today("yyyy-mm-dd") %>*/'
 							},
 							files:[{
-								src: src.js.bower,
+								src: 	src.js.bower,
 								dest: dev.js.bower
 							}]
 						}
