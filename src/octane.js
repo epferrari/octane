@@ -304,6 +304,7 @@
 												configurable : false,
 												enumerable : false
 											});
+											if(obj.setAttribute) obj.setAttribute('octane-id',obj.octaneID);
 											return obj.octaneID;
 										}
 				});
@@ -332,14 +333,13 @@
 
 				var Compiler = {
 
-					ordinances : {},
+					ordinances 	: {},
+					nodeMap			: {},
+					designate 	: function(selector,task){
 
-					designate : function(selector,task){
-
-							task._compilerId || (task._compilerId = Octane.GUID());
-
+							var guid = Octane.guid(task);
 							var ords = this.ordinances;
-							( ords[selector] || (ords[selector] = []) ).push(task);
+							(ords[selector]||(ords[selector]={}))[guid] = task;
 					},
 
 					applyOrdinance : function(context,selector){
@@ -351,33 +351,37 @@
 							var tasks = this.ordinances[selector];
 
 							return new Promise(function(resolve,reject){
-									_.each(context.querySelectorAll(selector),function(elem){
-										_.each(tasks,function(task){
+									_.each(context.querySelectorAll(selector),function(elem,index){
 
-											var taskId = task._compilerId;
+										var guid = Octane.guid;
+										var elemId = guid(elem);
+										var tasks	 = this.ordinances[selector];
+										if(!context.contains(elem)) return this.nodeMap[elemId] = null; //memory manager
+
+										_.each(tasks,function(task,taskId){
+
 											var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
+											var map = this.nodeMap;
 
-											// set hash so we don't re-apply a task
-											elem._compiled || (elem._compiled = {});
-											if(!elem._compiled[taskId]){
+											// task has already been run, return early
+											if((map[elemId]||{})[taskId]) return;
 
-												// pass the value of the ordinance to the task
-												// *if the ordinance is an attribute, selected by wrapped []
-												var ord = selector.match(/\[(.*)\]/);
-												_.isArray(ord) && (ord = ord[1]);
-												ordValue = elem.getAttribute(ord);
+											// pass the value of the ordinance to the task
+											// *if the ordinance is an attribute, selected by wrapped []
+											var ord = selector.match(/\[(.*)\]/);
+											_.isArray(ord) && (ord = ord[1]);
+											ordValue = elem.getAttribute(ord);
 
-												try{
-														// run the task
-														task(elem,ordValue);
-														// set hashed taskId to true so it doesn't re-run on the same element
-														elem._compiled[taskId] = true;
-												} catch (ex){
-														Octane.log(ex);
-												}
+											try{
+												// run the task
+												task(elem,ordValue);
+												// set hashed taskId to true so it doesn't re-run on the same element
+												(map[elemId]||(map[elemId]={}))[taskId] = true;
+											} catch (ex){
+												Octane.log(ex);
 											}
-										});
-									});
+										},Compiler);
+									},Compiler);
 									resolve();
 							});
 
@@ -601,12 +605,12 @@
 
 					log         : function(message,error){
 
-								if(!Octane.hasModule('Debug')) return; // not in development, do not log
+												if(!Octane.hasModule('Debug')) return; // not in development, do not log
 
-								if(arguments.length === 1 && _.isObject(message)){
-									error = message;
-									message = 'No additional context provided';
-								}
+												if(arguments.length === 1 && _.isObject(message)){
+													error = message;
+													message = 'No additional context provided';
+												}
 												 _octane.log([message,(error||{})]);
 											},
 
@@ -724,7 +728,7 @@
 
 
 				Http.prototype = new OctaneBase;
-				Http.prototype.engrave({
+				Http.prototype.defineProp({
 
 					get : function(){
 							return http(this.url,'GET',null,this.headers);
@@ -820,21 +824,21 @@
 
 
 
-				_octane.eventHandler = function(e){
+				_octane.delegator = function(e){
 
-					var elem = e.target || e.srcElement;
-					var id = elem._guid;
-					var handlers = _octane.eventHandlerMap[id] ? _octane.eventHandlerMap[id][e.type] : [];
-					var swatch = new __.Switch({
+					var elem 			= e.target || e.srcElement;
+					var id 				= elem.octaneID;
+					var map 			= _octane.eventHandlerMap;
+					var handlers 	= map[id] ? map[id][e.type] : [];
+
+					var swatch 		= new __.Switch({
 							'function' : function(elem,handler,e){
-								 try{
-										 handler(e,elem);
-								 }catch(ex){/* ignore */}
+								try{ handler(e,elem);}
+								catch(ex){/* ignore */}
 							},
 							'object' : function(elem,handler,e){
-									try{
-											handler.onEvent(e,elem);
-									}catch(ex){/* ignore */}
+								try{ handler.handleEvent(e,elem);}
+								catch(ex){/* ignore */}
 							}
 					});
 
@@ -848,22 +852,10 @@
 
 
 
-				_octane.addHandler = function (type,elem,handler){
-
-					var id = elem._guid || (elem._guid = Octane.GUID());
-					var map = this.eventHandlerMap;
-					try{
-							map[id][type].push(handler);
-					} catch(ex){
-						 try{
-									map[id][type] = [];
-									map[id][type].push(handler);
-						 } catch (ex){
-									map[id] = {};
-									map[id][type] = [];
-									map[id][type].push(handler);
-						 }
-					}
+				_octane.addHandler = function (evt,guid,handler){
+					var map = _octane.eventHandlerMap;
+					((map[guid]||(map[guid]={}))[evt]||(map[guid][evt]=[])).push(handler);
+					window.addEventListener(evt,_octane.delegator,false);
 				};
 
 
@@ -871,27 +863,24 @@
 
 				Octane.defineProp({
 
-					on					: function(type,$elem,$handler){
+					on					: function(type,src,handler){
 
 													var types = type ? type.split(' ') : [];
-													var n=types.length;
-													var handler, elem;
+													var n			= types.length;
+													var a 		= arguments.length;
 
-													if(arguments.length == 3){
-															handler = arguments[2];
-															elem = arguments[1];
-													} else if (arguments.length == 2){
-															handler = arguments[1];
-															elem = window;
-													} else {
+													if(a!==3){
+														if(a === 2){
+															handler = src;
+															src = window;
+														}else{
 															return;
-													}
-
+													}}
+													var guid = Octane.guid(src);
 													while(n--){
-														_octane.addHandler(types[n],elem,handler);
-														window.addEventListener(types[n],_octane.eventHandler,false);
+														_octane.addHandler(types[n],guid,handler);
 													}
-													return this; // chainable
+													return Octane; // chainable
 											},
 
 					unhandle     : function(){
@@ -903,22 +892,22 @@
 														'3' :function(args){
 
 																handler = args[2];
-																						elem = args[1];
-																						type = args[0];
-																						try{
-																								_.pull(_octane.eventHandlerMap[elem._guid][type],handler);
-																						}catch(ex){ /* ignore */ }
-																				},
+																		elem = args[1];
+																		type = args[0];
+																		try{
+																				_.pull(_octane.eventHandlerMap[elem._guid][type],handler);
+																		}catch(ex){ /* ignore */ }
+																},
 
 														// remove all handlers for a single event type from an object
 														'2' : function(args){
 
-															elem = args[1];
-																type = args[0];
-																try{
-																		_octane.eventHandlerMap[elem._guid][type] = null;
-																}catch(ex){ /* ignore */ }
-															},
+																elem = args[1];
+																	type = args[0];
+																	try{
+																			_octane.eventHandlerMap[elem._guid][type] = null;
+																	}catch(ex){ /* ignore */ }
+																},
 
 														//
 														'1' : function(args){
@@ -1137,10 +1126,9 @@
 								value = defaultValue;
 							}
 							// apply filter if present
-							// Octane.applyFilter(filter name, value to be filtered [, array of params])
-							// model state is added to the beginning of the params array
+							// filter is applied to this arg with val and model properties set
 							if(filter.length > 0){
-								value = Octane.applyFilter(filter,value,data,filterParams.split(','));
+								value = (_octane.filters[filter] || function(){return this.input;}).apply( {input:value,model:data} , filterParams.split(','));
 							}
 
 							// replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}}
@@ -1153,7 +1141,6 @@
 
 							scope || (scope = document);
 
-							var $this = this;
 							var tmpls = scope.querySelectorAll('script[type="text/octane-template"],o-template');
 							var t = tmpls.length;
 
@@ -1290,6 +1277,13 @@
 		/* ------------------------------------------------------- */
 		/*                      VIEW MODEL                         */
 		/* ------------------------------------------------------- */
+
+
+
+
+
+
+
 
 
 
@@ -2338,25 +2332,13 @@
 
 				Octane.defineProp({
 
-					// filterFunction as -> function(dataToBeFiltered[,model state, optional parameters passed in HTML])
+					// filterFunction as -> function([params])
 					filter      : function(name,filterFunction){
 													_octane.filters[name] = filterFunction;
 
 													return Octane;
 											},
 
-					applyFilter : function(filter,dirty,modelState,params){
-													var filtered = dirty;
-													var $filter;
-													if($filter = _octane.filters[filter]){
-															try {
-																	filtered = $filter.apply(null,[dirty,modelState].concat(params));
-															} catch(ex){
-																	Octane.log('Could not apply filter "' + filter+'"',ex);
-															}
-													}
-													return filtered;
-											}
 				});
 
 
