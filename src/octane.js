@@ -184,21 +184,29 @@
 
 											for (var i=0,n = keys.length; i<n; i++){
 												key = keys[i];
-												Object.defineProperty(this,key,{
-													value : prop[key] ,
-													configurable : false,
-													writable: isWritable,
-													enumerable: true
-												});
-																				}
+												try{
+													Object.defineProperty(this,key,{
+														value : prop[key] ,
+														configurable : false,
+														writable: isWritable,
+														enumerable: true
+													});
+												} catch(ex){
+													Octane.log(ex)
+												}
+											}
 											break;
 										case _.isString(prop):
-											Object.defineProperty(this,prop,{
-												value : val,
-												configurable : false,
-												writable : isWritable,
-												enumerable:true
-											});
+											try{
+												Object.defineProperty(this,prop,{
+													value : val,
+													configurable : false,
+													writable : isWritable,
+													enumerable:true
+												});
+											} catch(ex){
+												Octane.log(ex);
+											}
 											break;
 									}
 																return this; // chainable
@@ -415,7 +423,13 @@
 											return Octane;
 									},
 
-					recompile : Compiler.run.bind(Compiler)
+					recompile : function(){
+						Compiler.run.apply(Compiler);
+					},
+
+					clearCompileCache : function(){
+						Compiler.nodeMap = {};
+					}
 				});
 
 
@@ -683,35 +697,35 @@
 							}
 
 							request.onreadystatechange = function(){
-									if(request.readyState === 4){
-											new __.Switch({
-													'200' : function(resolve){
-															var response;
-
-															try {
-																	response = JSON.parse(request.responseText);
-															} catch(ex){
-																	response = request.responseText;
-															}
-															resolve(response);
-													},
-													'404' : function(reslove,reject){
-															reject(Octane.error('The server responded with 400 not found'));
-													},
-													'500' : function(resolve,reject){
-															 reject(Octane.error('An internal server error occurred'));
-													}
-											}).run(request.status,[resolve,reject]);
+								var response;
+								if(request.readyState === 4){
+									switch(request.status){
+										case 200 :
+											try {
+												response = JSON.parse(request.responseText);
+											} catch(ex){
+												response = request.responseText;
+											}
+											resolve(response);
+											break;
+										case 404 :
+											reject(Octane.error('The server responded with 400 not found'));
+											break;
+										case 500 :
+											reject(Octane.error('An internal server error occurred'));
+											break;
 									}
+								}
 							};
 
 							request.open(method,url,true);
 
-						 for(var i=0,n = headerKeys.length; i<n; i++){
-									header = headerKeys[i];
-									value = $headers[header];
-									request.setRequestHeader(header,value);
+							for(var i=0,n = headerKeys.length; i<n; i++){
+								header = headerKeys[i];
+								value = $headers[header];
+								request.setRequestHeader(header,value);
 							}
+
 							request.send(encoded);
 					});
 				}
@@ -811,6 +825,96 @@
 
 
 
+		/* ------------------------------------------------------- */
+		/*                        FACTORIES                        */
+		/* ------------------------------------------------------- */
+
+
+
+
+
+
+
+
+
+				// prototype chaining Backbone.js style
+				var extend = function extend(){
+
+					var className,config,staticMethods,ParentFactory,parentDefaults,Factory,_Factory;
+
+					if(__.typeOf(arguments[0]) == 'string'){
+							className = arguments[0];
+							config = arguments[1] || {};
+							staticMethods = arguments[2] || {};
+					}else{
+							config = arguments[0] || {};
+							staticMethods = arguments[1] || {};
+					}
+
+					ParentFactory = this;
+					parentDefaults = ParentFactory.prototype.defaults || {};
+
+					if(config.constructor != Object && _.isFunction(config.constructor)){
+							Factory = config.constructor;
+					} else {
+							Factory = function(){
+									return ParentFactory.apply(this,arguments);
+							};
+					}
+
+					_.extend(Factory,ParentFactory,staticMethods);
+
+					_Factory = function(){ this.constructor = Factory; };
+					_Factory.prototype = ParentFactory.prototype;
+					Factory.prototype = new _Factory;
+
+					// ensure prototyp has a defaults object
+					Factory.prototype.defaults = {};
+					_.extend(Factory.prototype, config);
+					_.extend(Factory.prototype.defaults, parentDefaults, config.defaults);
+
+					Factory.__super__ = ParentFactory.prototype;
+
+					return Factory;
+				}
+
+
+
+
+				// a factory for creating constructor functions
+				// that can inherit from each other
+				// imbued with the static methods define and extend that cannot be overwritten
+				var Factory = function(){
+						this.initialize.apply(this,arguments);
+				};
+
+
+
+
+				Factory.prototype = new OctaneBase;
+				Factory.prototype.initialize = function(){};
+				Factory.prototype.defaults = {};
+				Octane.defineProp.apply(Factory,[{
+						defineProp : function(){
+							Octane.defineProp.apply(this,arguments);
+							return this;
+						}
+				}]);
+
+
+
+
+				Octane.defineProp({ Factory : Factory });
+
+
+
+
+
+
+
+
+
+
 
 
 		/* ------------------------------------------------------- */
@@ -819,140 +923,140 @@
 
 
 
-				_octane.eventHandlerMap = {};
 
 
 
 
-				_octane.delegator = function(e){
 
-					var elem 			= e.target || e.srcElement;
-					var id 				= elem.octaneID;
-					var map 			= _octane.eventHandlerMap;
-					var handlers 	= map[id] ? map[id][e.type] : [];
 
-					var swatch 		= new __.Switch({
-							'function' : function(elem,handler,e){
-								try{ handler(e,elem);}
-								catch(ex){/* ignore */}
-							},
-							'object' : function(elem,handler,e){
-								try{ handler.handleEvent(e,elem);}
-								catch(ex){/* ignore */}
-							}
-					});
 
-					try{
-						_.each(handlers,function(handler){
-								swatch.run(__.typeOf(handler),[elem,handler,e]);
-						});
-					}catch(ex){/* ignore */}
-				};
+				//var customEvent = function
 
 
 
 
-				_octane.addHandler = function (evt,guid,handler){
-					var map = _octane.eventHandlerMap;
-					((map[guid]||(map[guid]={}))[evt]||(map[guid][evt]=[])).push(handler);
-					window.addEventListener(evt,_octane.delegator,false);
-				};
+				// Decorator for Application Object, Views, Frames, and anything else that needs its own event cache
+				var EventDelegation = {
+
+					init				: function(){
+
+													var eventMap = {}; // set up an event map for the 'this' binding's object
 
 
+													Octane.defineGetter.call(this,'Events',function(){
+														return eventMap;
+													});
 
+													Octane.defineGetter.call(this,'_sub',function(){
+														return (this.elem || window);
+													});
+													Octane.defineGetter.call(this,'_pub',function(){
+														return (this.elem || window);
+													});
 
-				Octane.defineProp({
+													this.clearEventCache = function(){
+														eventMap = {};
+													};
+
+													return this;
+												},
 
 					on					: function(type,src,handler){
 
 													var types = type ? type.split(' ') : [];
 													var n			= types.length;
 													var a 		= arguments.length;
+													var evt,guid;
 
 													if(a!==3){
 														if(a === 2){
 															handler = src;
-															src = window;
+															src = this._pub;
 														}else{
 															return;
 													}}
-													var guid = Octane.guid(src);
-													while(n--){
-														_octane.addHandler(types[n],guid,handler);
-													}
-													return Octane; // chainable
-											},
+													guid = Octane.guid(src);
 
-					unhandle     : function(){
-
-													var type,elem,handler;
-													var swatch = new __.Switch({
-
-														// targeted removal of a single event handler from an object
-														'3' :function(args){
-
-																handler = args[2];
-																		elem = args[1];
-																		type = args[0];
-																		try{
-																				_.pull(_octane.eventHandlerMap[elem._guid][type],handler);
-																		}catch(ex){ /* ignore */ }
-																},
-
-														// remove all handlers for a single event type from an object
-														'2' : function(args){
-
-																elem = args[1];
-																	type = args[0];
-																	try{
-																			_octane.eventHandlerMap[elem._guid][type] = null;
-																	}catch(ex){ /* ignore */ }
-																},
-
-														//
-														'1' : function(args){
-
-																var arg = args[0];
-																switch( true ){
-
-																	// remove all event handlers of a type from the global scope
-																	case (__.typeOf(arg) == 'string'):
-																		(function(){
-																			_octane.eventHandlerMap[window._guid][arg] = null;
-																		})();
-																		break;
-
-																	// remove all event handlers from an object
-																	case (arg._guid):
-																		(function(){
-																			_octane.eventHandlerMap[arg._guid] = null;
-																		})();
-																		break;
-																}
-															}
-													}).run(arguments.length,[arguments]);
-
+													while(n--){this._addHandler(types[n],guid,handler);}
 													return this; // chainable
 											},
 
-					fire 				: function(type,detail){
+					delegate 		: function(e){
 
-													if(_.isString(type)){
-														var e = detail ? __.customEvent(type,detail) : __.createEvent(type);
-														window.dispatchEvent(e);
+													var elem 			= e.target || e.srcElement;
+													var id 				= elem.octaneID;
+													var events		= this.Events;
+													var eType			= e.type;
+													var handlers 	= events[id] ? events[id][eType] : [];
+
+													var execute = function execute(handler,elem,e){
+														var h=__.typeOf(handler);
+														if(h==='function'){
+															try{ handler(e,elem);}
+															catch(ex){ Octane.log('Error calling handler ' + eType + ' during event delegation',ex) }
+														}else if(h==='object'){
+															try{ handler.handleEvent(e,elem);}
+															catch(ex){ Octane.log('Error calling handleEvent for ' + eType + ' during event delegation',ex) }
+														}
+													};
+													_.each(handlers,function(handler){
+															execute(handler,elem,e);
+													});
+											},
+
+					_addHandler 	: function (eType,guid,handler){
+													var events = this.Events;
+													((events[guid]||(events[guid]={}))[eType]||(events[guid][eType]=[])).push(handler);
+													this._sub.addEventListener(eType,this.delegate.bind(this),false);
+											},
+					unhandle    : function(eType,elem,handler){
+
+													var n = arguments.length;
+													var events = this.Events;
+													if(n === 3){																									// targeted removal of a single event handler from an object
+														try{
+															_.pull(events[elem.octaneID][eType],handler);
+														}catch(ex){
+															Octane.log('Error removing handler ' +handler+' for '+eType+' from element '+ elem,ex);
+														}
+													} else if (n === 2){																					// remove all handlers for a single event type from an object
+														try{
+															events[elem.octaneID][eType] = null;
+														}catch(ex){
+															Octane.log('Error removing handlers for '+eType+' from element '+ elem,ex);
+														}
+													} else if (n === 1){
+														switch( true ){
+															case (__.typeOf(eType) == 'string'):												// remove all event handlers of a type from the global scope
+																events[this._sub.octaneID][eType] = null;
+																break;
+
+															case (_.isObject(eType) && eType.octaneID):									// remove all event handlers from an object
+																events[eType.octaneID] = null;
+																break;
+														}
+													}
+													return this;
+											},
+
+					fire 				: function(eType,detail){
+
+													if(_.isString(eType)){
+														var e = detail ? __.customEvent(eType,detail) : __.createEvent(eType);
+														this._pub.dispatchEvent(e);
 													}
 											},
 
 					// programatically alert that user data has changed on a data-bound element
-					trip        : function(elem){
+					trip        : function(elem,eType){
 
-													var rand = Math.random(),
-															e = __.customEvent('input',{bubbles:true,detail:rand});
+													var rand = Math.random();
+													var	e = __.customEvent((eType || 'input'),{bubbles:true,detail:rand});
+													elem.dispatchEvent(e);
+											}
+				};
 
-													elem.dispatchEvent && elem.dispatchEvent(e);
-											},
-				});
-
+				Octane.extend(EventDelegation).init();
 
 
 
@@ -1007,6 +1111,11 @@
 						}
 					}
 				});
+
+
+
+
+
 
 
 
@@ -1120,7 +1229,7 @@
 									} else {
 											return null; 																				// no further nesting, value defined in key does not exist
 									}
-							},data); 																										// start with data object passed to template
+							},data) ||''; 																							// start with data object passed to template
 
 							if(!value && defaultValue.length >0){
 								value = defaultValue;
@@ -1175,34 +1284,25 @@
 							div.normalize();
 							nodes = div.childNodes;
 
-							swatch = new __.Switch({
-									prepend : function(elem,nodes){
-											var i=0,n=nodes.length,node;
-											for(;i<n;i++){
-													node = nodes[i];
-													if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
-															elem.insertBefore(node,firstChild);
-													}
-											}
-									},
-									append : function(elem,nodes){
-											var i=0,n=nodes.length,node;
-											for(;i<n;i++){
-													node = nodes[i];
-													if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
-															elem.appendChild(nodes[i]);
-													}
-											}
-									},
-									replace : function(elem,nodes,content){
-											elem.innerHTML = content;
-									},
-									default : function(elem,nodes,content){
-											elem.innerHTML = content;
-									}
-							});
-							swatch.run(method,[elem,nodes,content]);
-
+							if(method === 'prepend'){
+								var i=0,n=nodes.length,node;
+								for(;i<n;i++){
+										node = nodes[i];
+										if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+												elem.insertBefore(node,firstChild);
+										}
+								}
+							}else if(method === 'append'){
+								var i=0,n=nodes.length,node;
+								for(;i<n;i++){
+										node = nodes[i];
+										if(node && node.nodeType == (Node.ELEMENT_NODE || Node.TEXT_NODE)){
+												elem.appendChild(nodes[i]);
+										}
+								}
+							} else {
+								elem.innerHTML = content;
+							}
 							Octane.recompile(elem);
 					},
 
@@ -1351,10 +1451,12 @@
 												scope || (scope = document);
 												var $scope = scope.querySelectorAll('[o-model]');
 												var n = $scope.length;
+												var view;
 
 												while(n--){
 													 //this.watch($scope[n]);
-													new View($scope[n]);
+													view = new View($scope[n]);
+													this.registry[view.octaneID] = view;
 												}
 											},
 
@@ -1630,8 +1732,17 @@
 
 					// private
 					var _alias	= null;
-
+					var queue = [];
 					this.className = this.className || 'OctaneModel';
+
+					this.accessors('queue',{
+						set:function(pair){
+							queue.push(pair);
+						},
+						get:function(){
+							return queue.pop();
+						}
+					});
 					this.defineGetter('alias',
 						function(){
 							return _alias;
@@ -1757,87 +1868,87 @@
 
 				OctaneModel.prototype.defineProp({
 
-					_set	    	: function(){
+					_set	    	: function(key,val){
 
-													var alias = this.alias;
-													var setObject,keystrings,n,m,key,value;
+													if(this.processing){
+														this.queue = [key,val];
+													}else{
+														this.processing = true;
 
-													// handle key,value and {key:value}
-													if(_.isString(arguments[0])){
-															setObject = {};
-															setObject[arguments[0]] = arguments[1];
-													} else if(_.isObject(arguments[0])){
-															setObject = arguments[0];
-													} else {
-															return {};
-													}
 
-													// array for state properties changed
-													keystrings = Object.keys(setObject);
-													n = keystrings.length;
+														var alias = this.alias;
+														var tk = __.typeOf(key);
+														var fresh,n,keys;
 
-													// apply any hooks
-													if( alias ){
+														// handle key,value and {key:value}
+														if(tk === 'object'){
+															fresh = key;
+														}else if(tk === 'string'){
+															(fresh = {})[key] = val;
+														}else {
+															fresh = {};
+														}
+
+														// array for state properties changed
+														keys = Object.keys(fresh);
+														n = keys.length;
+
+														// apply any hooks
+														if( alias ){
 															while(n--){
-																	_octane.hooks[alias+'.'+keystrings[n]] && this._applyHooks(keystrings[n],setObject);
+																_octane.hooks[alias+'.'+keys[n]] && this._applyHooks(keys[n],fresh);
 															}
-													}
+														}
 
-													// re-measure in case there have been additional properties
-													// added to the setObject via hooks
-													keystrings = Object.keys(setObject);
-													m = keystrings.length;
-
-													// set each key in model state
-													while(m--){
-															key = keystrings[m]
-															value = setObject[key];
-															this._setState(key,value);
+														// re-measure in case there have been additional properties
+														// added to fresh via hooks
+														_.each(fresh,function(value,binding){
+																this._setState(binding,value);
+														},this);
+														this.processing = false;
+														this.queue && this._set.apply(this,this.queue);
 													}
 													// alert any subscribers
-													if( alias ){
-															Octane.fire('statechange:'+alias); // can't remember which is linked to tasks and ViewModel...
-													}
-
-													return setObject;
+													alias && Octane.fire('statechange:'+alias);
+													return fresh;
 											},
 
 					// use reduce to set a value using a nested key, ex "App.loading.message" would set {App:{loading:{message:value}}}
-					_setState   : function(keystring,value){
+					_setState   : function(binding,value){
 
 													var state = this.state;
 													var alias = this.alias;
-													var keyArray = keystring.split('.');
+													var keyArray = binding.split('.');
 													var k = keyArray.length;
 													var modelUpdated;
 
 													try{
-															keyArray.reduce(function(o,x,index){
-																	if(index == (k-1)){ // last iteration
-																			return o[x] = value;
-																	}else{
-																			return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create if object if not already
-																	}
-															},state);
-															modelUpdated = true;
+														keyArray.reduce(function(o,x,index){
+															if(index == (k-1)){ // last iteration
+																	return o[x] = value;
+															}else{
+																	return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create if object if not already
+															}
+														},state);
+														modelUpdated = true;
 													}catch(ex){
-															modelUpdated = false;
-															Octane.log('Unable to set model data "'+keystring+'"',ex);
+														modelUpdated = false;
+														Octane.log('Unable to set model data "'+binding+'"',ex);
 													}
 
-													modelUpdated && alias &&  Octane.fire('statechange:'+alias+'.'+keystring);
+													modelUpdated && alias &&  Octane.fire('statechange:'+alias+'.'+binding);
 
 											},
 
 					// helper, applies hooks on changed model state attributes before they get set
-					_applyHooks : function(keystring,setObject){
+					_applyHooks : function(binding,fresh){
 
 													if(this.alias){
-															var hooks = _octane.hooks[this.alias+'.'+keystring];
+															var hooks = _octane.hooks[this.alias+'.'+binding];
 															if(_.isArray(hooks)){
-																	_.each(hooks,function(hook){
-																			_.extend( setObject,hook(setObject));
-																	});
+																_.each(hooks,function(hook){
+																	_.extend(fresh,hook(fresh));
+																});
 															}
 													}
 											},
@@ -2001,44 +2112,23 @@
 													}
 											},
 					// access a bound model's set method from the application object
-					set         : function(){
+					set         : function(key,val){
 
-													var arg0 = arguments[0];
-													var arg1 = arguments[1];
-													var swatch,fresh,keys,i,n;
+													var fresh,keys,i,n;
+													var tk = __.typeOf(key);
 
-													swatch = new __.Switch({
-															'string' : function(arg0,arg1){
-																	fresh = {};
-																	fresh[arg0] = arg1;
-															},
-															'object' : function(arg0){
-																	fresh = arg0;
-															},
-															'default' : function(){
-																	fresh = {};
-															}
-													}).run(__.typeOf(arg0),[arg0,arg1]);
+													if(tk === 'object'){ fresh = key; }
+													else if(tk === 'string'){ (fresh = {})[key] = val; }
+													else { fresh = {}; }
 
-
-													keys = Object.keys(fresh);
-													n=keys.length;
-													i=0;
-													for(;i<n;i++){
-														 doSet( keys[i] );
-													}
-
-													// helper
-													function doSet(binding){
-
-															var name = OctaneModel._parseName(binding);
-															var key = OctaneModel._parseKey(binding);
-															var value = fresh[binding];
-															var model = _octane.models[name] || ( Octane.Model.create().become(name) );
-
-															model && model.set(key,value);
-													}
-
+													_.each(fresh,function(value,binding){
+														var name 	= OctaneModel._parseName(binding);
+														var key 	= OctaneModel._parseKey(binding);
+														var model = _octane.models[name] || ( Octane.Model.create().become(name) );
+														if(model){
+															 (key !=='') ? model.set(key,value) : model.reset(value);
+														}
+													});
 											},
 					// access a bound model's unset method from the application object
 					unset       : function(toUnset,timeout,throttle){
@@ -2216,87 +2306,7 @@
 
 
 
-		/* ------------------------------------------------------- */
-		/*                        FACTORIES                        */
-		/* ------------------------------------------------------- */
 
-
-
-
-
-
-
-
-
-
-				// prototype chaining Backbone.js style
-				var extend = function extend(){
-
-					var className,config,staticMethods,ParentFactory,parentDefaults,Factory,_Factory;
-
-					if(__.typeOf(arguments[0]) == 'string'){
-							className = arguments[0];
-							config = arguments[1] || {};
-							staticMethods = arguments[2] || {};
-					}else{
-							config = arguments[0] || {};
-							staticMethods = arguments[1] || {};
-					}
-
-					ParentFactory = this;
-					parentDefaults = ParentFactory.prototype.defaults || {};
-
-					if(config.constructor != Object && _.isFunction(config.constructor)){
-							Factory = config.constructor;
-					} else {
-							Factory = function(){
-									return ParentFactory.apply(this,arguments);
-							};
-					}
-
-					_.extend(Factory,ParentFactory,staticMethods);
-
-					_Factory = function(){ this.constructor = Factory; };
-					_Factory.prototype = ParentFactory.prototype;
-					Factory.prototype = new _Factory;
-
-					// ensure prototyp has a defaults object
-					Factory.prototype.defaults = {};
-					_.extend(Factory.prototype, config);
-					_.extend(Factory.prototype.defaults, parentDefaults, config.defaults);
-
-					Factory.__super__ = ParentFactory.prototype;
-
-					return Factory;
-				}
-
-
-
-
-				// a factory for creating constructor functions
-				// that can inherit from each other
-				// imbued with the static methods define and extend that cannot be overwritten
-				var Factory = function(){
-						this.initialize.apply(this,arguments);
-				};
-
-
-
-
-				Factory.prototype = new OctaneBase;
-				Factory.prototype.initialize = function(){};
-				Factory.prototype.defaults = {};
-				Octane.defineProp.apply(Factory,[{
-						defineProp : function(){
-							Octane.defineProp.apply(this,arguments);
-							return this;
-						}
-				}]);
-
-
-
-
-				Octane.defineProp({ Factory : Factory });
 
 
 
@@ -2564,31 +2574,31 @@
 															.bind(this)
 															.then(function(){
 
-																	var name = this.name;
-																	var config 	= _octane.moduleConfigs[name] || {};
+																var name = this.name;
+																var config 	= _octane.moduleConfigs[name] || {};
 
-																	bootlog('init',name);
-																	this._getImports(name);
-																	this.initialize(config);
+																bootlog('init',name);
+																this._getImports(name);
+																this.initialize(config);
 
-																	Octane.App.set({
-																			"loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
-																	});
-																	// hook-in for updating a loading screen
-																	Octane.fire('loaded:module',{
-																			detail:{moduleID: name }
-																	});
+																Octane.App.set({
+																		"loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
+																});
+																// hook-in for updating a loading screen
+																Octane.fire('loaded:module',{
+																		detail:{moduleID: name }
+																});
 
-																	this.defineProp('initialized',true);
+																this.defineProp('initialized',true);
 
-																	bootlog('done',name);
-																	return Promise.resolve(this);
+																bootlog('done',name);
+																return Promise.resolve(this);
 															})
 															.catch(function(err){
-																	bootlog('fail1',this.name);
-																	Octane.log(err);
-																	this.initialized = false;
-																	return Promise.reject();
+																bootlog('fail1',this.name);
+																Octane.log(err);
+																this.initialized = false;
+																return Promise.reject();
 															});
 													}
 											},
@@ -2997,38 +3007,36 @@
 						// load modules -> compile -> ready
 						// make sure core modules are loaded before 3rd party/app specific modules
 						return ( ( debug && debug._load()) || Promise.resolve())
-								.then(function(){
-										return modules['StartupUtilities']._load();
-								})
-								.then(function(){
-										return modules['AppLoading']._load();
-								})
-								.then(function(){
-										return modules['OctaneRouter']._load();
-								})
-								.then(function(){
-										return modules['OctaneModals']._load();
-								})
-								.then(function(){ // precompile
-										return Compiler.run();
-								})
-								.then(function(){
-
-										var loaded = _.map(modules,function(m){
-											return m._load();
-										});
-										return Promise.all(loaded);
-								})
-								.then(function(){
-										return Compiler.run();
-								})
-								.then(function(){
-										Octane.defineProp({initialized : true });
-										Octane.fire('octane:ready');
-								})
-								.catch(function(err){
-										Octane.log(err);
-								});
+							.then(function(){
+								return modules['StartupUtilities']._load();
+							})
+							.then(function(){
+								return modules['AppLoading']._load();
+							})
+							.then(function(){
+								return modules['OctaneRouter']._load();
+							})
+							.then(function(){
+								return modules['OctaneModals']._load();
+							})
+							.then(function(){ // precompile
+								return Compiler.run();
+							})
+							.then(function(){
+								return Promise.all(_.map(modules,function(m){
+									return m._load();
+								}));
+							})
+							.then(function(){
+								return Compiler.run();
+							})
+							.then(function(){
+								Octane.defineProp({initialized : true });
+								Octane.fire('octane:ready');
+							})
+							.catch(function(err){
+								Octane.log(err);
+							});
 					}
 				});
 
