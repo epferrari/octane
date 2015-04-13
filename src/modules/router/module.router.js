@@ -286,43 +286,43 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 
 
-				octane.engrave({
-						Router      : {},
-						route       : function(viewID,silent){
-														return route(viewID,silent).catch(function(ex){
-																octane.log(ex);
-														});
+				octane.defineProp({
+					Router: 			{},
+					route: 				function(viewID,silent){
+													return route(viewID,silent).catch(function(ex){
+														octane.log(ex);
+													});
 												},
-						routeIf     : routeIf,
-						beforeRoute : beforeRoute,
-						routeThen	: routeThen,
-						onroute     : routeThen
+					routeIf: 			routeIf,
+					beforeRoute: 	beforeRoute,
+					routeThen: 		routeThen,
+					onroute: 			routeThen
 				});
 
 
 
 				// Router Public API
-				octane.engrave.apply(octane.Router,[{
-						getUrlView      : getRequestedView,
-						pushState		: pushState,
-						lock            : blockRouting,
-						unlock          : unblockRouting,
-						before          : beforeRoute
+				octane.defineProp.apply(octane.Router,[{
+					getUrlView: 	getRequestedView,
+					pushState: 		pushState,
+					lock: 				blockRouting,
+					unlock: 			unblockRouting,
+					before: 			beforeRoute
 				}]);
 
 
 
 				// Router getters
 				octane.defineGetter.apply(octane.Router,['isLocked',function(){
-						return routingBlocked;
+					return routingBlocked;
 				}]);
 
 				octane.defineGetter.apply(octane.Router,['queue',function(){
-						return queuedRoute;
+					return queuedRoute;
 				}]);
 
 				octane.defineGetter.apply(octane.View,['current',function(){
-						return currentView;
+					return currentView;
 				}]);
 
 

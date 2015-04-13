@@ -29,8 +29,7 @@
 							type="text"
 							class="form-control"
 							placeholder="Username"
-							o-model="User"
-							o-bind="username"/>
+							o-bind="User.username"/>
 					</div>
 					<div class="col-sm-4" o-model="User">
 						{{username}}
@@ -45,8 +44,7 @@
 							class="form-control"
 							id="userpass"
 							placeholder="Password"
-							o-model="User"
-							o-bind="userpass">
+							o-bind="User.userpass">
 					</div>
 					<div class="col-sm-offset-2 col-sm-10" o-model="User">
 						{{userpass @filter:hidePassword(*)}}
@@ -57,7 +55,7 @@
 					<div class="col-sm-offset-2 col-sm-10">
 						<div class="checkbox">
 							<label>
-								<input type="checkbox" o-model="User" o-bind="showPassword"> Show Password
+								<input type="checkbox" o-bind="User.showPassword"> Show Password
 							</label>
 						</div>
 					</div>

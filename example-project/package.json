@@ -6,10 +6,14 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"keywords": ["octane","octane-mvc"],
+	"keywords": [
+		"octane",
+		"octane-mvc"
+	],
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
+		"bower": "^1.4.1",
 		"grunt": "^0.4.5",
 		"grunt-bower-concat": "sapegin/grunt-bower-concat",
 		"grunt-contrib-clean": "^0.6.0",
@@ -20,7 +24,7 @@
 		"grunt-contrib-sass": "^0.8.1",
 		"grunt-contrib-uglify": "^0.6.0",
 		"grunt-contrib-watch": "^0.6.0",
-		"grunt-html-dev": "0.4.1",
-		"ios-sim":"~3.1.1"
+		"grunt-html-build": "0.4.1",
+		"ios-sim": "~3.1.1"
 	}
 }
