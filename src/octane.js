@@ -1369,6 +1369,7 @@
 					var _alias	= null;
 					var queue = [];
 					this.className = this.className || 'OctaneModel';
+					Octane.guid(this);
 
 					this.accessors('queue',{
 						set:function(pair){
@@ -1384,7 +1385,6 @@
 						});
 
 					this.extend({
-							guid : 'model_'+Octane.GUID(),
 							state : {},
 							become : function(alias){
 								var models = _octane.models;
@@ -1810,39 +1810,125 @@
 
 
 
+/*
+				_octane.collections = {};
 
 
 
 
+				function OctaneCollection(models,options){
+					models = [];
 
+					Octane.defineGetter.apply(this,['models',function(){
+						return models;
+					}]);
 
-				function OctaneCollection(models){
+					var _alias	= null;
+					var queue = [];
+					Octane.guid(this);
 
-					this.models = [];
+					this.accessors('queue',{
+						set:function(pair){
+							queue.push(pair);
+						},
+						get:function(){
+							return queue.pop();
+						}
+					});
+					this.defineGetter('alias',
+						function(){
+							return _alias;
+					});
 
-					this.model = OctaneModel;
-					this.initialize(arguments);
+					this.extend({
+						become : function(alias){
+							var cols = _octane.collections;
+							cols[alias] && cols[alias].detach();
+							cols[alias] = this;
+							_alias = alias;
+							Octane.fire('collectionchange:'+alias);
+							return this;
+						},
+						detach : function(){
+							var alias = this.alias;
+							if( alias ){
+								_octane.collections[alias] = null;
+								_alias = null;
+								Octane.fire('collectionchange:'+alias);
+							}
+							return this;
+						});
+
+					this.reset = function(models){
+						models = [];
+						this.set(models,options);
+					};
+					this.template = options.template || null;
+					this.model = options.model || OctaneModel;
+					this.initialize.apply(this,arguments);
 					this.models.add(models);
 				}
 
 				OctaneCollection.prototype = new OctaneBase;
 
+				OctaneCollection.prototype.extend({
+					initialize: function(){},
+					constructor: OctaneCollection
+				});
+
+
 				OctaneCollection.prototype.defineProp({
 
-					initialize : function(){},
-					create 	: function(){},
-					get 		: function(){},
-					set 		: function (){},
-					remove 	: function(){},
-					where 	: function(){},
-					pluck 	: function(){},
-					fetch 	: function(){},
-					push		: function(){},
-					pop			: function(){},
-					shift 	: function(){},
-					unshift : function(){},
-					slice 	: function(){},
-					add 		: function (models){}
+					create: 		function(dataObj){
+						return this.models.push(new this.model(dataObj));
+					},
+					get: 				function(guid){
+						return this.models[guid];
+					},
+					set: 				function (models,options){
+
+						_.defaults((options||{}),{merge:true});
+						models = _.isArray(models)||[models];
+						this.each(function(model){
+
+							var guid,existing,isModel = this._isModel(model);
+							if(isModel) guid = Octane.guid(model);
+
+
+							if(existing = this.get(guid))) {
+								options.merge && existing.set(model.get());
+							} else {
+								isModel ? this.models.push(model) : this.create(model);
+							}
+
+						})
+
+
+
+					},
+					remove: 		function(){},
+					where: 			function(){},
+					pluck: 			function(){},
+					fetch: 			function(){},
+					push: 			function(){},
+					pop: 				function(){},
+					shift: 			function(){},
+					unshift: 		function(){},
+					slice: 			function(){},
+					add: 				function (models){
+
+						_.isArray(models)||(models = [models]);
+						_.each(models,function(model){
+							// is the model an octane model or
+
+							var props = model.state || model.attrs || model;
+
+						}
+
+					},
+					_isModel: function(model){
+						return model instanceof OctaneModel;
+					}
 
 				});
 
@@ -1863,7 +1949,7 @@
 					};
 				});
 
-
+*/
 
 
 
