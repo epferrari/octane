@@ -1572,7 +1572,7 @@
 													modelUpdated = false;
 													Octane.log('Unable to set model data "'+binding+'"',ex);
 												}
-												modelUpdated && alias &&  Octane.fire('statechange:'+alias+'.'+binding);
+												modelUpdated && alias && Octane.fire('statechange:'+alias+'.'+binding);
 											},
 
 					// helper, applies hooks on changed model state attributes before they get set
@@ -1644,13 +1644,24 @@
 																	return o[x];
 															},this.state);
 														}catch(ex){
-															data = '';
+															data = null;
 															Octane.log('Unable to get model data "'+binding+'"',ex);
 														}
 														return data;
 												} else {
 														return this.state;
 												}
+											},
+
+					_getAt: 		function(binding,index){
+
+												var data = this._get(binding);
+												if(__.isArray(data)){
+													return data[index];
+												}else{
+													return data;
+												}
+
 											},
 
 					_clear: 		function(){
@@ -1698,6 +1709,10 @@
 
 					clear: 			function(){
 												return this._clear();
+											},
+
+					getAt: 			function(){
+												return this._getAt.apply(this,arguments);
 											},
 
 					destroy: 		function(){
@@ -2128,6 +2143,35 @@
 
 
 
+				// param 1 : a model key to listen for change on
+				// add param 2 as function(data held in model[key])
+
+				Octane.defineProp({
+
+					watch: 			function(watching,fn,thisArg){
+
+												var cache ={};
+												var arr = watching.split('.');
+
+												arr.reduce(function(o,x,i,a){
+													var watch;
+													if(i === 0){
+															watch = x;
+													}else{
+															watch = o+'.'+x;
+													}
+													Octane.on('statechange:'+watch,function(e){
+														var currentVal = Octane.get(watching);
+														if(currentVal !== cache[watching]){
+															cache[watching] = currentVal;
+															fn.call((thisArg||Object.create(null)),currentVal,watching);
+														}
+													});
+													return watch;
+												},'');
+												return Octane;
+											}
+				});
 
 
 
