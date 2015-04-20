@@ -2048,7 +2048,7 @@
 
 
 
-				OctaneModel.extend = OctaneController.extend =  OctaneCollection.extend = Factory.extend = extend;
+				OctaneModel.extend = OctaneController.extend =  /*OctaneCollection.extend =*/ Factory.extend = extend;
 
 
 
@@ -2532,35 +2532,37 @@
 
 				Octane.designate('[o-control]',function(elem,attrVal){
 
-					// ex. <li (click) o-control="ListViewController.refresh(15)">..</li>
+					// ex. <li  o-control="(click) [ListViewController.refresh,15]">..</li>
 					// elem: <li>
-					// attrVal: 'ListViewController.refresh(15)
+					// attrVal: '(click)[ListViewController.refresh,15]
 
-					var matches						= elem.outerHTML.match(/^\<.*?\((.*)\).*?\>/)||[];
-					var event             = matches[1]||'click';
-					var params						= matches[2]||'';
-					var attrVal		        = attrVal.replace(/\(.*\)/,'').split(' ');
-					var controller  			= attrVal[0].split('.')[0];
-					var method					  = attrVal[0].split('.')[1];
-
-					// Now:
-					// matches: 1. "click" 2. "15"
-					// event = matches[1] = "click", if no event present then "click" is assumed
-					// params = matches[2] = "15"
-					// attrVal = ["ListViewController","refresh"]
-					// controller = attrVal[0] = "ListViewController"
-					// method = attrVal[1] = "refresh"
-
-					// set event handler on octane delegator
-					octane.on(event,elem,function(e,el){
-						var ctrl = _octane.controllers[controller];
-						try{
-							ctrl[method].apply(ctrl,[el].concat(params.split(',')));
-						}catch (ex){
-							Octane.log('o-control ' +controller+ '.' +method+ ' could not be applied',ex);
-						}
+					//var openTag = elem.outerHTML.match(/^<(.*?)>/)[1];
+					var events						= _.map((attrVal.match(/\((.*?)\)/g)||[]),function(match){
+						return (match ||'').replace(/[\(\)]/g,'');
+					});
+					var declarations			= _.map((attrVal.match(/\[([^\]]+)\]/g)||[]),function(match){
+						return (match ||'').replace(/[\[\]]/g,'');
 					});
 
+					var pairs = _.zip(events,declarations);
+
+					_.each(pairs,function(pair){
+						var event = pair[0]||'click';
+						var declaration = (pair[1]||'').split(',');
+						var action = (declaration.shift()||'').split('.');
+						var controller = action[0];
+						var method		 = action[1];
+
+						// set event handler on octane delegator
+						Octane.on(event,elem,function(e,el){
+							var ctrl = _octane.controllers[controller];
+							try{
+								ctrl[method].apply(ctrl,[el].concat(declaration));
+							}catch (ex){
+								Octane.log('o-control ' +controller+ '.' +method+ ' could not be applied',ex);
+							}
+						});
+					});
 					elem = null;
 				});
 
