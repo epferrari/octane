@@ -2,7 +2,7 @@
 npm-debug.log
 .sass-cache
 
-/dev/**
+/build/**
 
 /dist/**
 
@@ -14,7 +14,7 @@ npm-debug.log
 
 /example-project/bower_components/**
 
-/example-project/dev/**
+/example-project/build/**
 
 /example-project/dist/**
 

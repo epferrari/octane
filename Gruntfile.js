@@ -59,23 +59,23 @@ module.exports = function(grunt) {
 		}
 	};
 
-	var dev = {
+	var build = {
 		js :{
-			dir		: "dev/assets/js/",
-			bower	: "dev/assets/js/_bower.js",
-			main	: "dev/assets/js/<%= pkg.name %>.js",
-			debug   : "dev/assets/js/debug.js"
+			dir		: "build/assets/js/",
+			bower	: "build/assets/js/_bower.js",
+			main	: "build/assets/js/<%= pkg.name %>.js",
+			debug : "build/assets/js/debug.js"
 		},
 		css	:{
-			dir		: "dev/assets/css/",
-			bower	: "dev/assets/css/_bower.css",
-			main	: "dev/assets/css/<%= pkg.name %>.css"
+			dir		: "build/assets/css/",
+			bower	: "build/assets/css/_bower.css",
+			main	: "build/assets/css/<%= pkg.name %>.css"
 		},
 		img	:{
-			dir:"dev/assets/img/"
+			dir:"build/assets/img/"
 		},
 		fonts :{
-			dir:"dev/assets/fonts/"
+			dir:"build/assets/fonts/"
 		}
 	};
 
@@ -123,7 +123,7 @@ module.exports = function(grunt) {
 					},
 
 		clean:      {
-						dev		:	['dev','example-project/dev'],
+						build		:	['build','example-project/build'],
 						dist		:	['dist','example-project/dist'],
 						example : ['example-project/src/octane_core']
 					},
@@ -142,9 +142,9 @@ module.exports = function(grunt) {
 		// staged for minification
 		concat:     {
 						options:{
-														separator:';'
-												},
-												js:{
+							separator:';'
+						},
+						js:{
 							src		: src.js.concatMe,
 							dest	: dist.js.main
 						},
@@ -156,18 +156,18 @@ module.exports = function(grunt) {
 
 		autoprefixer : {
 
-												options : {
-														browsers:['last 2 versions','ie 9','ie 10']
-												},
-												dist:{
-														src : dist.css.main,
-														dest: dist.css.main
-												},
-												dev:{
-														src:dev.css.main,
-														dest:dev.css.main
-												}
-										},
+							options : {
+									browsers:['last 2 versions','ie 9','ie 10']
+							},
+							dist:{
+									src : dist.css.main,
+									dest: dist.css.main
+							},
+							build:{
+									src:build.css.main,
+									dest:build.css.main
+							}
+					},
 
 		uglify:		{
 						dist:{
@@ -186,7 +186,7 @@ module.exports = function(grunt) {
 									dest: dist.js.mini
 								}],
 						},
-						dev:{
+						build:{
 							options:{
 								drop_console:true,
 								mangle:true,
@@ -196,7 +196,7 @@ module.exports = function(grunt) {
 							files:[
 								{
 									src: src.js.bower,
-									dest: dev.js.bower
+									dest: build.js.bower
 								}]
 						}
 					},
@@ -231,16 +231,16 @@ module.exports = function(grunt) {
 							}]
 						},
 
-						dev:{
+						build:{
 							files:[{
 																// copy unconcatenated js files
-								expand	:true,
+								expand	: true,
 								flatten	: true,
 								src		: [
 													src.js.concatMe,
 													src.js.debug
 												],
-								dest	: dev.js.dir
+								dest	: build.js.dir
 							},{
 																// copy unconcatenated css files
 								flatten	:true,
@@ -249,17 +249,17 @@ module.exports = function(grunt) {
 									src.css.bower,
 									src.css.concatMe
 								],
-								dest	: dev.css.dir
+								dest	: build.css.dir
 							},{
 								expand	: true,
 								cwd		: src.fonts.dir,
 								src		: ['*'],
-								dest	: dev.fonts.dir
+								dest	: build.fonts.dir
 							},{
 								expand	: true,
 								cwd		: src.img.dir,
 								src		: src.img.glob,
-								dest	: dev.img.dir
+								dest	: build.img.dir
 							}]
 						},
 
@@ -267,9 +267,9 @@ module.exports = function(grunt) {
 							files:[{
 									expand 	: true,
 									flatten : false,
-									cwd			: 'dev/',
+									cwd			: 'build/',
 									src			: ['**/*'],
-									dest		: 'example-project/src/octane_core/dev/'
+									dest		: 'example-project/src/octane_core/build/'
 							},{
 									expand 	: true,
 									flatten : false,
@@ -284,18 +284,18 @@ module.exports = function(grunt) {
 						options:{livereload:true},
 						js:{
 							files:[ src.js.watchMe ],
-							tasks:['dev']
+							tasks:['build']
 						},
 						sass:{
 							files:[ src.sass.watchMe ],
-							tasks:['dev']
+							tasks:['build']
 						},
 						copy:{
 							files:[
 								src.img,
 								src.fonts
 								],
-							tasks:["dev"]
+							tasks:["build"]
 						}
 					},
 
@@ -307,7 +307,7 @@ module.exports = function(grunt) {
 								browser: true,
 								globals: {
 								jQuery: true
-								}
+							}
 						},
 						 files:{
 							 src: dist.js.mini
@@ -316,7 +316,7 @@ module.exports = function(grunt) {
 	});
 
 	// Default task(s).
-	grunt.registerTask('default',['dev']);
+	grunt.registerTask('default',['build']);
 
 	// other task(s)
 	grunt.registerTask('dist',[
@@ -344,19 +344,19 @@ module.exports = function(grunt) {
 
 	]);
 
-	grunt.registerTask('dev',[
-		//clean dev directory
-			'clean:dev',
+	grunt.registerTask('build',[
+		//clean build directory
+			'clean:build',
 		// compile css
 			'sass',
 		// concat dependencies
 			'bower_concat',
 		// minify the _bower.js
-			'uglify:dev',
+			'uglify:build',
 		// copy files to dev dir
-			'copy:dev',
+			'copy:build',
 		// post process css with auto prefixer
-			'autoprefixer:dev',
+			'autoprefixer:build',
 		// copy core files to example project
 			'clean:example',
 			'copy:example'

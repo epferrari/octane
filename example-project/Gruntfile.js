@@ -27,7 +27,7 @@ module.exports = function(grunt) {
 
 		var core = "src/octane_core";
 		var dist = core+"/dist/assets";
-		var dev = core+"/dev/assets";
+		var build = core+"/build/assets";
 		return {
 
 			dist : {
@@ -36,12 +36,12 @@ module.exports = function(grunt) {
 				img 		: {	dir : dist+"/img/" }
 			},
 
-			dev : {
+			build : {
 				js 			: [
-										dev+"/js/doubleUnder.js",
-										dev+"/js/octane.js",
-										dev+"/js/**/*.js",
-										"!"+dev+"/js/_bower.js"
+					build+"/js/doubleUnder.js",
+					build+"/js/octane.js",
+					build+"/js/**/*.js",
+					"!"+build+"/js/_bower.js"
 									],
 				css 		: [ dist+"/css/octane.css" ],
 				img 		: { dir : dist+"/img/" }
@@ -74,14 +74,12 @@ module.exports = function(grunt) {
 			},
 
 			js : {
-				watchMe	:
-									[
+				watchMe	: [
 										[ modules+"/**/*.js" ],
 										"!"+assets+"/js/_bower.js"
 									],
 				bower		: assets+"/js/_bower.js",
-				concatMe:
-									[
+				concatMe: [
 										octane.dist.js,
 										[modules+"/**/*.js"],
 										octane.init
@@ -92,8 +90,7 @@ module.exports = function(grunt) {
 				dir			: assets+"/css/",
 				main		: assets+"/css/app.css",
 				bower		: assets+"/css/_bower.css",
-				concatMe:
-									[
+				concatMe: [
 										octane.dist.css,
 										[ assets+"/**/*.css" ]
 									]
@@ -118,28 +115,27 @@ module.exports = function(grunt) {
 		};
 	})();
 
-	var dev = (function(){
+	var build = (function(){
 
-		var assets = "dev/assets";
+		var assets = "build/assets";
 		return {
 
 			html :{
-				index		: "dev/index.html"
+				index		: "build/index.html"
 			},
 
 			js :{
 				bower		: assets+"/js/_bower.js",
 				main		: assets+"/js/<%= pkg.name %>.js",
 				dir 		: assets+"/js/",
-				bundle	:
-									[
+				bundle	: [
 										assets+"/js/_bower.js",
 										assets+"/js/octane/doubleUnder.js",
 										assets+"/js/octane/octane.js",
 										assets+"/js/octane/*.js",
 										assets+"/js/modules/**/*.js",
 										assets+"/js/widgets/**/*.js",
-										"dev/octane-initialize.js"
+										"build/octane-initialize.js"
 									]
 			},
 
@@ -209,7 +205,7 @@ module.exports = function(grunt) {
 							options:{
 								separator: ';'
 							},
-							dest	:	src.js.bower,
+							dest		:	src.js.bower,
 							cssDest	:	src.css.bower,
 							dependencies:{
 								"lodash"		:	"jquery",
@@ -224,7 +220,7 @@ module.exports = function(grunt) {
 					},
 
 		clean:      {
-						dev				: ['dev'],
+						build			: ['build'],
 						dist			: ['dist'],
 						staging 	: ['staging'],
 						cordova		: ['cordova/www']
@@ -276,8 +272,8 @@ module.exports = function(grunt) {
 								dest: dist.js.mini
 							}],
 						},
-						// only uglify bower for testing dev
-						dev:{
+						// only uglify bower during development
+						build:{
 							options:{
 								mangle:true,
 								beautify:false,
@@ -285,7 +281,7 @@ module.exports = function(grunt) {
 							},
 							files:[{
 								src: 	src.js.bower,
-								dest: dev.js.bower
+								dest: build.js.bower
 							}]
 						}
 					},
@@ -359,47 +355,47 @@ module.exports = function(grunt) {
 						},
 
 
-						dev:{
+						build:{
 							files:[
 							// copy unconcatenated js files
 							{
-								expand	:true,
+								expand	: true,
 								flatten	: true,
 								src			: src.js.bower,
-								dest		: dev.js.dir
+								dest		: build.js.dir
 							},
 							{
-								expand	:true,
+								expand	: true,
 								flatten	: true,
-								src			: octane.dev.js,
-								dest		: dev.js.dir+"/octane/"
+								src			: octane.build.js,
+								dest		: build.js.dir+"/octane/"
 							},
 							// modules
 							{
-															expand	:true,
+								expand	: true,
 								flatten	: false,
 								cwd			: 'src/octane_modules/',
-								src			:  ["**/*.js" ],
-								dest		: dev.js.dir+"/octane_modules/"
+								src			: ["**/*.js" ],
+								dest		: build.js.dir+"/octane_modules/"
 							},
 							// octane initialize.js
 							{
 								flatten	: true,
 								expand	: true,
 								src			: octane.init,
-								dest		: 'dev'
+								dest		: 'build'
 							},
 							 // copy unconcatenated css files
 							{
-								flatten	:true,
-								expand	:true,
+								flatten	: true,
+								expand	: true,
 								src			: [src.css.concatMe],
-								dest		: dev.css.dir
+								dest		: build.css.dir
 							},{
 								expand	:true,
 								cwd			: src.fonts.dir,
 								src			: ['*'],
-								dest		: dev.fonts.dir
+								dest		: build.fonts.dir
 							},{
 								expand	: true,
 								cwd			: "bower_components/fontawesome/fonts/",
@@ -416,27 +412,27 @@ module.exports = function(grunt) {
 								flatten : true,
 								cwd			: src.img.dir,
 								src			: imageGlob,
-								dest		: dev.img.dir
+								dest		: build.img.dir
 							},
 							{
 								expand	: true,
 								flatten : true,
-								cwd			: octane.dev.img.dir,
+								cwd			: octane.build.img.dir,
 								src			: imageGlob,
-								dest		: dev.img.dir
+								dest		: build.img.dir
 							},{
-								expand	:true,
+								expand	: true,
 								flatten : true,
 								cwd			: src.img.modules,
 								src			: imageGlob,
-								dest		: dev.img.dir
+								dest		: build.img.dir
 							}]
 						},
 						cordovaDev : {
 							files:[{
 								expand 	: true,
 								flatten : false,
-								cwd			: 'dev/',
+								cwd			: 'build/',
 								src			: ['**/*'],
 								dest		: 'cordova/www/'
 							}]
@@ -459,28 +455,28 @@ module.exports = function(grunt) {
 							options	: {
 								beautify	: true,
 								relative	: true,
-								prefix		:"",
-								scripts		:{
-									bundle		: [ dist.js.mini ]
+								prefix		: "",
+								scripts		: {
+									bundle	: [ dist.js.mini ]
 								},
 								styles:{
-									bundle		: [ dist.css.mini ]
+									bundle 	: [ dist.css.mini ]
 								},
 								sections	: src.html.sections
 							}
 						},
-						dev : {
+						build : {
 							src			: src.html.index,
-							dest		: dev.html.index,
+							dest		: build.html.index,
 							options	: {
 								beautify	: true,
 								relative	: true,
 								prefix		:"",
 								scripts		:{
-									bundle		: dev.js.bundle
+									bundle		: build.js.bundle
 								},
-								styles		:{
-									bundle		: [ dev.css.dir+"/*" ]
+								styles:{
+									bundle	: [ build.css.dir+"/*" ]
 								},
 								sections : src.html.sections
 							}
@@ -508,11 +504,11 @@ module.exports = function(grunt) {
 						},
 						js:{
 							files:[ src.js.watchMe ],
-							tasks:['dev']
+							tasks:['build']
 						},
 						sass:{
 							files:[ src.scss.watchMe ],
-							tasks:['dev']
+							tasks:['build']
 						},
 						html:{
 							files: [
@@ -520,13 +516,13 @@ module.exports = function(grunt) {
 								src.html.views,
 								src.html.layout
 							],
-							tasks:["dev"]
+							tasks:["build"]
 						}
 					}
 	});
 
 	// Default task(s).
-	grunt.registerTask('default',['dev']);
+	grunt.registerTask('default',['build']);
 
 	// other task(s)
 	grunt.registerTask('dist', [
@@ -544,7 +540,7 @@ module.exports = function(grunt) {
 			'uglify:dist',
 		// copy assets to release directory
 			'copy:dist',
-		// dev and minify html
+		// build and minify html
 			'htmlbuild:dist',
 		// copy all files to cordova
 			'clean:cordova',
@@ -553,19 +549,19 @@ module.exports = function(grunt) {
 			'clean:staging'
 	]);
 
-	grunt.registerTask('dev', [
+	grunt.registerTask('build', [
 		// clean staging directory
-			'clean:dev',
+			'clean:build',
 		// compile css
 			'sass',
 		// concat dependencies
 			'bower_concat',
 		// minify the _bower.js
-			'uglify:dev',
-		// copy files to dev dir
-			'copy:dev',
-		// dev and minify html
-			'htmlbuild:dev',
+			'uglify:build',
+		// copy files to build dir
+			'copy:build',
+		// build and minify html
+			'htmlbuild:build',
 		// copy all files to cordova
 			'clean:cordova',
 			'copy:cordovaDev',
