@@ -28,14 +28,14 @@
 										// update progress bar and message as modules load
 										.on('loaded:module',function(e) {
 												octane.set({
-														'appLoading.message' : 'Loading module '+__.titleize(e.detail.moduleID),
-														'appLoading.progress' : octane.get('App.loadingProgress')
+													'appLoading.message' : 'Loading module '+__.titleize(e.detail.moduleID),
+													'appLoading.progress' : octane.get('App.loadingProgress')
 												});
 										})
 										.on('loading:utility',function(e){
-												octane.set({
-														'appLoading.message' : 'Initializting startup utility '+titleize(e.detail)
-												})
+											octane.set({
+												'appLoading.message' : 'Initializting startup utility '+__.titleize(e.detail)
+											});
 										})
 										.on('octane:ready',this.controllers.LoadingController.removeLoadingScreen);
 						}
@@ -50,14 +50,13 @@
 								 octane.appContainer.classList.remove('hidden');
 
 								 setTimeout(function(){
-										 octane.route(view)
-
-										 .then(function(){
-												 return $.Velocity(loadingContainer,'fadeOut',{duration:500})
-										 })
-										 .then(function(){
-												 document.body.removeChild(loadingContainer);
-										 });
+										octane.route(view)
+										.then(function(){
+												return $.Velocity(loadingContainer,'fadeOut',{duration:500})
+										})
+										.then(function(){
+												document.body.removeChild(loadingContainer);
+										});
 
 								 },500);
 						 }

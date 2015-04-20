@@ -1150,8 +1150,8 @@
 
 
 
-				var View = Object.create(OctaneBase.prototype);
-				View.extend({
+				var ViewModel = Object.create(OctaneBase.prototype);
+				ViewModel.extend({
 
 					init: 			function(elem){
 												this.elem = elem;
@@ -1197,10 +1197,10 @@
 
 
 
-				var ViewModel = Object.create(OctaneBase.prototype);
+				var Conduit = Object.create(OctaneBase.prototype);
 
 
-				ViewModel.defineProp({
+				Conduit.defineProp({
 
 					init: 			function(){
 												this.registry = {};
@@ -1213,18 +1213,18 @@
 
 												scope = (scope || document).querySelectorAll('[o-model]');
 												var n = scope.length;
-												var view;
+												var vm;
 
 												while(n--){
-													view = Object.create(View);
-													view.init(scope[n]);
-													this.registry[view.octaneID] = view;
+													vm = Object.create(ViewModel);
+													vm.init(scope[n]);
+													this.registry[vm.octaneID] = vm;
 												}
 											},
 
 
 					// fire statechange on all bound models, updating the entire DOM
-					// fired once ViewModel at initialization
+					// fired once at Conduit initialization
 					// expensive, should be avoided unless absolutely necessary
 					rescope: 		function(scope){
 												this.parse(scope);
@@ -1235,8 +1235,7 @@
 											},
 
 					// integrate a Backbone compatible Model into Octane's view binding circuit
-					assume: 		function(model,alias){
-
+					link: 			function(model,alias){
 
 												// protected via closure
 												var _alias = null;
@@ -1251,16 +1250,18 @@
 
 
 												// getter
-												model.defineGetter('alias',
-													function(){
-														return _alias;
-												});
+												if(!model.alias){
+													Octane.defineGetter.apply(model,['alias',
+														function(){
+															return _alias;
+														}]);
+												}
 
 
 												// attach to an alias for data-binding to views
 												_.extend(model,{
 														become : function(alias){
-																this.detach();  // make sure we're detached from one ViewModel reference before binding to another
+																this.detach();  // make sure we're detached from one Conduit reference before binding to another
 																_octane.models[alias] && _octane.models[alias].detach();
 																_octane.models[alias] = this;
 																_alias = alias;
@@ -1307,6 +1308,9 @@
 												if(alias) model.become(alias);
 												return model;
 											},
+					unlink: 		function(){
+												this.discard.apply(this,arguments);
+											},
 
 					// remove an assumed Backbone-type Model
 					discard: 		function(binding){
@@ -1321,7 +1325,7 @@
 													model.alias && model.detach();
 
 													// remove all traces of the intregration
-													delete model.attach;
+													delete model.become;
 													delete model.detach;
 													delete model.__legacy__;
 
@@ -1333,6 +1337,21 @@
 												return _octane.models[binding];
 											}
 
+				});
+
+
+
+
+
+
+				Octane.defineProp({
+					Conduit: 		Conduit,
+					link: 			function(){
+												Octane.Conduit.link.apply(Octane.Conduit,arguments);
+											},
+					unlink: 		function(){
+												Octane.Conduit.unlink.apply(Octane.Conduit,arguments);
+											}
 				});
 
 
@@ -1422,7 +1441,7 @@
 												return new this(data);
 											},
 
-					// set method for Backbone models bound with Octane.ViewModel
+					// set method for Backbone models bound with Octane.Conduit
 					// very similar to OctaneModel.prototype._set, begging for a DRY refactor
 					set: 				function(key,val,options){
 
@@ -1677,10 +1696,8 @@
 														alias && Octane.fire('statechange:'+alias+'.'+prop);
 												}
 												// alert any subscribers
-												if(alias){
-														//Octane.fire(this.registeredTo()+':statechange');
-														Octane.fire( 'statechange:'+alias ); // can't remember which is linked to tasks and ViewModel...
-												}
+												if(alias) Octane.fire( 'statechange:'+alias );
+
 												return this;
 											},
 
@@ -1733,11 +1750,11 @@
 
 												if(_.isString(data)){
 													var alias = data;
-													// only an alias was passed and it's currently occupied on the ViewModel
+													// only an alias was passed and it's currently occupied on the Conduit
 													// return the model occupying that alias
 													if(_octane.models[alias]){
 														return _octane.models[alias];
-													// only an alias was passed and it's vacant on the ViewModel
+													// only an alias was passed and it's vacant on the Conduit
 													// create new model, assign it to the alias, and return it
 													} else {
 														return new OctaneModel().become(alias);
@@ -2686,10 +2703,18 @@
 												// establish module configuration
 												// configs passed at init are used over those passed earlier
 												// by individual calls to octane.configureModule
-												_.isPlainObject(moduleConfigs) || (moduleConfigs = {});
-												_.forOwn(_octane.moduleConfigs,function(config,key){
-														_.defaults(moduleConfigs[key],config);
+												_.isObject(moduleConfigs) || (moduleConfigs = {});
+												_.each(_octane.modules,function(m,name){
+													if(!_octane.moduleConfigs[name]) _octane.moduleConfigs[name] = {};
+
+													_.assign(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
 												});
+
+
+
+
+												Octane.Conduit.init();
+
 
 
 
@@ -2697,7 +2722,6 @@
 												// parse the DOM initially to create virtual DOM model
 												Octane.defineProp({
 														// default application models
-														ViewModel   : Object.create(ViewModel).init(),
 														App         : new OctaneModel().become('App'),
 														uiMessages  : new UiMessages().become('uiMessages'),
 														uiStyles    : new OctaneModel().become('uiStyles')

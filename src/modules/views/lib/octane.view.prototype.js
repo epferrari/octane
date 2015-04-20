@@ -111,8 +111,8 @@ octane.module('ViewController').extend({
 											},
 
 				_execute:      function(){
-												var callback = Array.prototype.shift.apply(arguments);
-												return callback.apply(this,arguments);
+												var callback = [].shift.apply(arguments);
+												return _.isFunction(callback) && callback.apply(this,arguments);
 											}
 			});
 
