@@ -1,7 +1,7 @@
 octane.module('ViewController').extend({
 
 		initialize : function(cfg){
-
+			var Velocity = Velocity || $.Velocity;
 			var ViewController = octane.Factory.extend({
 
 				configure:    function(elem){
