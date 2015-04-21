@@ -174,7 +174,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 				})
 				.compiler('[o-modal]',function(elem){
 					octane.on('click',elem,function(e,el){
-						var m = el.getAttribute('oct-modal');
+						var m = el.getAttribute('o-modal');
 						OctaneModal.load(m);
 					});
 				})

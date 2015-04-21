@@ -100,7 +100,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 
 								var $view           = octane.View.get(viewID);
-								var viewOnScreen    = ( $view == currentView   );
+								var viewOnScreen    = ( $view == currentView );
 								var modalOnScreen   = octane.Modal.current;
 
 								if(!$view) return resolve();
@@ -177,7 +177,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 						octane.fire('view:loading');                            // event for any hooked listeners
 
-						return $view._load()                                     // load the view
+						return $view._load()                                    // load the view
 								.then(function(){
 
 										octane.fire('view:loaded');                     // event for any hooked listeners

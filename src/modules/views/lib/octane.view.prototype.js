@@ -110,9 +110,10 @@ octane.module('ViewController').extend({
 												return Promise.all(completed);
 											},
 
-				_execute:      function(){
+				_execute:     function(){
 												var callback = [].shift.apply(arguments);
-												return _.isFunction(callback) && callback.apply(this,arguments);
+												if(_.isFunction(callback)) callback.apply(this,arguments);
+												return Promise.resolve();
 											}
 			});
 
