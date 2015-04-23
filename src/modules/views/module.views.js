@@ -45,7 +45,11 @@ octane.module('OctaneViews',['ViewController']).extend({
 
 				octane.compiler('o-view',OctaneView.create.bind(OctaneView));
 
+				octane.defineGetter.apply(OctaneView,['list',function(){
+					return Object.keys(views);
+				}]);
 
 				octane.defineProp({ View : OctaneView });
+
 		}
 });

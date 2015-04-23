@@ -38,9 +38,9 @@ octane.module('ViewController').extend({
 
 											},
 
-				beforeLoad:   function(promise,args){
+				beforeLoad:   function(deferred){
 												try{
-													this.beforeLoadTasks.push([promise,args]);
+													this.beforeLoadTasks.push(deferred);
 												} catch(ex){
 													octane.log('cannot push "beforeLoad" promise to view '+this.id+', reason: '+ex.message);
 												}
@@ -64,56 +64,56 @@ octane.module('ViewController').extend({
 
 				_load:        function(){
 												this.setCanvasHeight();
-
-												return this._runBeforeLoad()
+												this.elem.classList.add('view-active');
+												Velocity(this.elem,'scroll',{duration:100});
+												return Promise.delay(405)
 												.bind(this)
-												.finally(function(){
-														this.elem.classList.add('view-active');
-														Velocity(this.elem,'scroll',{duration:100});
-														return Promise.delay(405);
-												})
-												.then( this.setCanvasHeight )
-												.then( this._runOnload );
+												.then( this.setCanvasHeight );
 											},
 
-				_queueExit:   function(){
+				_queue:   		function(){
 
-												this.elem.classList.add('view-dismissed');
+												this.elem.classList.add('view-queued');
 												this.elem.classList.remove('view-active');
 												return Promise.delay(405);
 											},
 
 				_exit:        function (){
-
-												this.elem.classList.remove('view-dismissed');
+												this.elem.classList.remove('view-active');
+												this.elem.classList.remove('view-queued');
 												return this._runOnExit().delay(805);
 											},
 
 				_runBeforeLoad:function(){
 
 												var todos = this.beforeLoadTasks;
-												var completed = _.map(todos,this._execute);
-												return Promise.settle(completed);
+												var completed = _.map(todos,function(deferred){
+													if(_.isFunction(deferred)) return new Promise(deferred);
+												});
+												return Promise.all(completed);
 											},
 
 				_runOnload:   function(){
 
 												var todos = this.onloadTasks;
 												var completed = _.map(todos,this._execute);
-												return Promise.all(completed);
+												return Promise.settle(completed);
 											},
 
 				_runOnExit:   function(){
 
 												var todos = this.onExitTasks;
 												var completed = _.map(todos,this._execute);
-												return Promise.all(completed);
+												return Promise.settle(completed);
 											},
 
-				_execute:     function(){
-												var callback = [].shift.apply(arguments);
-												if(_.isFunction(callback)) callback.apply(this,arguments);
-												return Promise.resolve();
+				_execute:     function(task){
+												return new Promise(function(resolve,reject){
+													var callback = task[0];
+													var args = task[1];
+													if(_.isFunction(callback)) callback(args);
+													resolve();
+												});
 											}
 			});
 
