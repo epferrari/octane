@@ -252,10 +252,23 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 													return this.onroute.apply(this,arguments);
 												},
 					// add a callback to be executed when the specified view finishes its loading animation
-					onroute: 			function (viewID,callback,argsArray){
-
-													var view = octane.View.get(viewID);
-													view && view.onload(callback,argsArray);
+					onroute: 			function (routes,callback,argsArray){
+													_.isArray(routes)||(routes=routes.split(','));
+													_.each(routes,function(route){
+														route = route.trim();
+														var view = octane.View.get(route);
+														view && view.onload(callback,argsArray);
+													});
+													return octane;
+												},
+					// add a callback to be executed when the specified view finishes its exit animation
+					onRouteDismissed: function(routes,callback,argsArray){
+													_.isArray(routes)||(routes=routes.split(','));
+													_.each(routes,function(route){
+														route = route.trim();
+														var view = octane.View.get(route);
+														view && view.onExit(callback,argsArray);
+													});
 													return octane;
 												}
 				});
