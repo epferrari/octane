@@ -1,5 +1,5 @@
 /*!
- * jQuery JavaScript Library v2.1.1
+ * jQuery JavaScript Library v2.1.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -9,19 +9,19 @@
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-05-01T17:11Z
+ * Date: 2014-12-18T15:11Z
  */
 
 (function( global, factory ) {
 
 	if ( typeof module === "object" && typeof module.exports === "object" ) {
-		// For CommonJS and CommonJS-like environments where a proper window is present,
-		// execute the factory and get jQuery
-		// For environments that do not inherently posses a window with a document
-		// (such as Node.js), expose a jQuery-making factory as module.exports
-		// This accentuates the need for the creation of a real window
+		// For CommonJS and CommonJS-like environments where a proper `window`
+		// is present, execute the factory and get jQuery.
+		// For environments that do not have a `window` with a `document`
+		// (such as Node.js), expose a factory as module.exports.
+		// This accentuates the need for the creation of a real `window`.
 		// e.g. var jQuery = require("jquery")(window);
-		// See ticket #14549 for more info
+		// See ticket #14549 for more info.
 		module.exports = global.document ?
 			factory( global, true ) :
 			function( w ) {
@@ -37,10 +37,10 @@
 // Pass this if window is not defined yet
 }(typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
 
-// Can't do this because several apps including ASP.NET trace
+// Support: Firefox 18+
+// Can't be in strict mode, several libs including ASP.NET trace
 // the stack via arguments.caller.callee and Firefox dies if
 // you try to trace through "use strict" call chains. (#13335)
-// Support: Firefox 18+
 //
 
 var arr = [];
@@ -67,7 +67,7 @@ var
 	// Use the correct document accordingly with window argument (sandbox)
 	document = window.document,
 
-	version = "2.1.1",
+	version = "2.1.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -185,7 +185,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	if ( typeof target === "boolean" ) {
 		deep = target;
 
-		// skip the boolean and the target
+		// Skip the boolean and the target
 		target = arguments[ i ] || {};
 		i++;
 	}
@@ -195,7 +195,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 		target = {};
 	}
 
-	// extend jQuery itself if only one argument is passed
+	// Extend jQuery itself if only one argument is passed
 	if ( i === length ) {
 		target = this;
 		i--;
@@ -252,9 +252,6 @@ jQuery.extend({
 
 	noop: function() {},
 
-	// See test/unit/core.js for details concerning isFunction.
-	// Since version 1.3, DOM methods and functions like alert
-	// aren't supported. They return false on IE (#2968).
 	isFunction: function( obj ) {
 		return jQuery.type(obj) === "function";
 	},
@@ -269,7 +266,8 @@ jQuery.extend({
 		// parseFloat NaNs numeric-cast false positives (null|true|false|"")
 		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
 		// subtraction forces infinities to NaN
-		return !jQuery.isArray( obj ) && obj - parseFloat( obj ) >= 0;
+		// adding 1 corrects loss of precision from parseFloat (#15100)
+		return !jQuery.isArray( obj ) && (obj - parseFloat( obj ) + 1) >= 0;
 	},
 
 	isPlainObject: function( obj ) {
@@ -303,7 +301,7 @@ jQuery.extend({
 		if ( obj == null ) {
 			return obj + "";
 		}
-		// Support: Android < 4.0, iOS < 6 (functionish RegExp)
+		// Support: Android<4.0, iOS<6 (functionish RegExp)
 		return typeof obj === "object" || typeof obj === "function" ?
 			class2type[ toString.call(obj) ] || "object" :
 			typeof obj;
@@ -333,6 +331,7 @@ jQuery.extend({
 	},
 
 	// Convert dashed to camelCase; used by the css and data modules
+	// Support: IE9-11+
 	// Microsoft forgot to hump their vendor prefix (#9572)
 	camelCase: function( string ) {
 		return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
@@ -548,14 +547,14 @@ function isArraylike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v1.10.19
+ * Sizzle CSS Selector Engine v2.2.0-pre
  * http://sizzlejs.com/
  *
- * Copyright 2013 jQuery Foundation, Inc. and other contributors
+ * Copyright 2008, 2014 jQuery Foundation, Inc. and other contributors
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-04-18
+ * Date: 2014-12-16
  */
 (function( window ) {
 
@@ -582,7 +581,7 @@ var i,
 	contains,
 
 	// Instance-specific data
-	expando = "sizzle" + -(new Date()),
+	expando = "sizzle" + 1 * new Date(),
 	preferredDoc = window.document,
 	dirruns = 0,
 	done = 0,
@@ -597,7 +596,6 @@ var i,
 	},
 
 	// General-purpose constants
-	strundefined = typeof undefined,
 	MAX_NEGATIVE = 1 << 31,
 
 	// Instance methods
@@ -607,12 +605,13 @@ var i,
 	push_native = arr.push,
 	push = arr.push,
 	slice = arr.slice,
-	// Use a stripped-down indexOf if we can't use a native one
-	indexOf = arr.indexOf || function( elem ) {
+	// Use a stripped-down indexOf as it's faster than native
+	// http://jsperf.com/thor-indexof-vs-for/5
+	indexOf = function( list, elem ) {
 		var i = 0,
-			len = this.length;
+			len = list.length;
 		for ( ; i < len; i++ ) {
-			if ( this[i] === elem ) {
+			if ( list[i] === elem ) {
 				return i;
 			}
 		}
@@ -652,6 +651,7 @@ var i,
 		")\\)|)",
 
 	// Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
+	rwhitespace = new RegExp( whitespace + "+", "g" ),
 	rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
@@ -703,6 +703,14 @@ var i,
 				String.fromCharCode( high + 0x10000 ) :
 				// Supplemental Plane codepoint (surrogate pair)
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );
+	},
+
+	// Used for iframes
+	// See setDocument()
+	// Removing the function wrapper causes a "Permission Denied"
+	// error in IE
+	unloadHandler = function() {
+		setDocument();
 	};
 
 // Optimize for push.apply( _, NodeList )
@@ -745,19 +753,18 @@ function Sizzle( selector, context, results, seed ) {
 
 	context = context || document;
 	results = results || [];
+	nodeType = context.nodeType;
 
-	if ( !selector || typeof selector !== "string" ) {
+	if ( typeof selector !== "string" || !selector ||
+		nodeType !== 1 && nodeType !== 9 && nodeType !== 11 ) {
+
 		return results;
 	}
 
-	if ( (nodeType = context.nodeType) !== 1 && nodeType !== 9 ) {
-		return [];
-	}
+	if ( !seed && documentIsHTML ) {
 
-	if ( documentIsHTML && !seed ) {
-
-		// Shortcuts
-		if ( (match = rquickExpr.exec( selector )) ) {
+		// Try to shortcut find operations when possible (e.g., not under DocumentFragment)
+		if ( nodeType !== 11 && (match = rquickExpr.exec( selector )) ) {
 			// Speed-up: Sizzle("#ID")
 			if ( (m = match[1]) ) {
 				if ( nodeType === 9 ) {
@@ -789,7 +796,7 @@ function Sizzle( selector, context, results, seed ) {
 				return results;
 
 			// Speed-up: Sizzle(".CLASS")
-			} else if ( (m = match[3]) && support.getElementsByClassName && context.getElementsByClassName ) {
+			} else if ( (m = match[3]) && support.getElementsByClassName ) {
 				push.apply( results, context.getElementsByClassName( m ) );
 				return results;
 			}
@@ -799,7 +806,7 @@ function Sizzle( selector, context, results, seed ) {
 		if ( support.qsa && (!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
 			nid = old = expando;
 			newContext = context;
-			newSelector = nodeType === 9 && selector;
+			newSelector = nodeType !== 1 && selector;
 
 			// qSA works strangely on Element-rooted queries
 			// We can work around this by specifying an extra ID on the root
@@ -986,7 +993,7 @@ function createPositionalPseudo( fn ) {
  * @returns {Element|Object|Boolean} The input node if acceptable, otherwise a falsy value
  */
 function testContext( context ) {
-	return context && typeof context.getElementsByTagName !== strundefined && context;
+	return context && typeof context.getElementsByTagName !== "undefined" && context;
 }
 
 // Expose support vars for convenience
@@ -1010,9 +1017,8 @@ isXML = Sizzle.isXML = function( elem ) {
  * @returns {Object} Returns the current document
  */
 setDocument = Sizzle.setDocument = function( node ) {
-	var hasCompare,
-		doc = node ? node.ownerDocument || node : preferredDoc,
-		parent = doc.defaultView;
+	var hasCompare, parent,
+		doc = node ? node.ownerDocument || node : preferredDoc;
 
 	// If no document and documentElement is available, return
 	if ( doc === document || doc.nodeType !== 9 || !doc.documentElement ) {
@@ -1022,9 +1028,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Set our document
 	document = doc;
 	docElem = doc.documentElement;
-
-	// Support tests
-	documentIsHTML = !isXML( doc );
+	parent = doc.defaultView;
 
 	// Support: IE>8
 	// If iframe document is assigned to "document" variable and if iframe has been reloaded,
@@ -1033,21 +1037,22 @@ setDocument = Sizzle.setDocument = function( node ) {
 	if ( parent && parent !== parent.top ) {
 		// IE11 does not have attachEvent, so all must suffer
 		if ( parent.addEventListener ) {
-			parent.addEventListener( "unload", function() {
-				setDocument();
-			}, false );
+			parent.addEventListener( "unload", unloadHandler, false );
 		} else if ( parent.attachEvent ) {
-			parent.attachEvent( "onunload", function() {
-				setDocument();
-			});
+			parent.attachEvent( "onunload", unloadHandler );
 		}
 	}
+
+	/* Support tests
+	---------------------------------------------------------------------- */
+	documentIsHTML = !isXML( doc );
 
 	/* Attributes
 	---------------------------------------------------------------------- */
 
 	// Support: IE<8
-	// Verify that getAttribute really returns attributes and not properties (excepting IE8 booleans)
+	// Verify that getAttribute really returns attributes and not properties
+	// (excepting IE8 booleans)
 	support.attributes = assert(function( div ) {
 		div.className = "i";
 		return !div.getAttribute("className");
@@ -1062,17 +1067,8 @@ setDocument = Sizzle.setDocument = function( node ) {
 		return !div.getElementsByTagName("*").length;
 	});
 
-	// Check if getElementsByClassName can be trusted
-	support.getElementsByClassName = rnative.test( doc.getElementsByClassName ) && assert(function( div ) {
-		div.innerHTML = "<div class='a'></div><div class='a i'></div>";
-
-		// Support: Safari<4
-		// Catch class over-caching
-		div.firstChild.className = "i";
-		// Support: Opera<10
-		// Catch gEBCN failure to find non-leading classes
-		return div.getElementsByClassName("i").length === 2;
-	});
+	// Support: IE<9
+	support.getElementsByClassName = rnative.test( doc.getElementsByClassName );
 
 	// Support: IE<10
 	// Check if getElementById returns elements by name
@@ -1086,7 +1082,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// ID find and filter
 	if ( support.getById ) {
 		Expr.find["ID"] = function( id, context ) {
-			if ( typeof context.getElementById !== strundefined && documentIsHTML ) {
+			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
 				var m = context.getElementById( id );
 				// Check parentNode to catch when Blackberry 4.6 returns
 				// nodes that are no longer in the document #6963
@@ -1107,7 +1103,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 		Expr.filter["ID"] =  function( id ) {
 			var attrId = id.replace( runescape, funescape );
 			return function( elem ) {
-				var node = typeof elem.getAttributeNode !== strundefined && elem.getAttributeNode("id");
+				var node = typeof elem.getAttributeNode !== "undefined" && elem.getAttributeNode("id");
 				return node && node.value === attrId;
 			};
 		};
@@ -1116,14 +1112,20 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Tag
 	Expr.find["TAG"] = support.getElementsByTagName ?
 		function( tag, context ) {
-			if ( typeof context.getElementsByTagName !== strundefined ) {
+			if ( typeof context.getElementsByTagName !== "undefined" ) {
 				return context.getElementsByTagName( tag );
+
+			// DocumentFragment nodes don't have gEBTN
+			} else if ( support.qsa ) {
+				return context.querySelectorAll( tag );
 			}
 		} :
+
 		function( tag, context ) {
 			var elem,
 				tmp = [],
 				i = 0,
+				// By happy coincidence, a (broken) gEBTN appears on DocumentFragment nodes too
 				results = context.getElementsByTagName( tag );
 
 			// Filter out possible comments
@@ -1141,7 +1143,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 	// Class
 	Expr.find["CLASS"] = support.getElementsByClassName && function( className, context ) {
-		if ( typeof context.getElementsByClassName !== strundefined && documentIsHTML ) {
+		if ( documentIsHTML ) {
 			return context.getElementsByClassName( className );
 		}
 	};
@@ -1170,13 +1172,15 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// setting a boolean content attribute,
 			// since its presence should be enough
 			// http://bugs.jquery.com/ticket/12359
-			div.innerHTML = "<select msallowclip=''><option selected=''></option></select>";
+			docElem.appendChild( div ).innerHTML = "<a id='" + expando + "'></a>" +
+				"<select id='" + expando + "-\f]' msallowcapture=''>" +
+				"<option selected=''></option></select>";
 
 			// Support: IE8, Opera 11-12.16
 			// Nothing should be selected when empty strings follow ^= or $= or *=
 			// The test attribute must be unknown in Opera but "safe" for WinRT
 			// http://msdn.microsoft.com/en-us/library/ie/hh465388.aspx#attribute_section
-			if ( div.querySelectorAll("[msallowclip^='']").length ) {
+			if ( div.querySelectorAll("[msallowcapture^='']").length ) {
 				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
 			}
 
@@ -1186,11 +1190,23 @@ setDocument = Sizzle.setDocument = function( node ) {
 				rbuggyQSA.push( "\\[" + whitespace + "*(?:value|" + booleans + ")" );
 			}
 
+			// Support: Chrome<29, Android<4.2+, Safari<7.0+, iOS<7.0+, PhantomJS<1.9.7+
+			if ( !div.querySelectorAll( "[id~=" + expando + "-]" ).length ) {
+				rbuggyQSA.push("~=");
+			}
+
 			// Webkit/Opera - :checked should return selected option elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			// IE8 throws error here and will not see later tests
 			if ( !div.querySelectorAll(":checked").length ) {
 				rbuggyQSA.push(":checked");
+			}
+
+			// Support: Safari 8+, iOS 8+
+			// https://bugs.webkit.org/show_bug.cgi?id=136851
+			// In-page `selector#id sibing-combinator selector` fails
+			if ( !div.querySelectorAll( "a#" + expando + "+*" ).length ) {
+				rbuggyQSA.push(".#.+[+~]");
 			}
 		});
 
@@ -1308,7 +1324,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 			// Maintain original order
 			return sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 		}
 
@@ -1335,7 +1351,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 				aup ? -1 :
 				bup ? 1 :
 				sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 
 		// If the nodes are siblings, we can do a quick check
@@ -1398,7 +1414,7 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch(e) {}
+		} catch (e) {}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -1617,7 +1633,7 @@ Expr = Sizzle.selectors = {
 			return pattern ||
 				(pattern = new RegExp( "(^|" + whitespace + ")" + className + "(" + whitespace + "|$)" )) &&
 				classCache( className, function( elem ) {
-					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== strundefined && elem.getAttribute("class") || "" );
+					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== "undefined" && elem.getAttribute("class") || "" );
 				});
 		},
 
@@ -1639,7 +1655,7 @@ Expr = Sizzle.selectors = {
 					operator === "^=" ? check && result.indexOf( check ) === 0 :
 					operator === "*=" ? check && result.indexOf( check ) > -1 :
 					operator === "$=" ? check && result.slice( -check.length ) === check :
-					operator === "~=" ? ( " " + result + " " ).indexOf( check ) > -1 :
+					operator === "~=" ? ( " " + result.replace( rwhitespace, " " ) + " " ).indexOf( check ) > -1 :
 					operator === "|=" ? result === check || result.slice( 0, check.length + 1 ) === check + "-" :
 					false;
 			};
@@ -1759,7 +1775,7 @@ Expr = Sizzle.selectors = {
 							matched = fn( seed, argument ),
 							i = matched.length;
 						while ( i-- ) {
-							idx = indexOf.call( seed, matched[i] );
+							idx = indexOf( seed, matched[i] );
 							seed[ idx ] = !( matches[ idx ] = matched[i] );
 						}
 					}) :
@@ -1798,6 +1814,8 @@ Expr = Sizzle.selectors = {
 				function( elem, context, xml ) {
 					input[0] = elem;
 					matcher( input, null, xml, results );
+					// Don't keep the element (issue #299)
+					input[0] = null;
 					return !results.pop();
 				};
 		}),
@@ -1809,6 +1827,7 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"contains": markFunction(function( text ) {
+			text = text.replace( runescape, funescape );
 			return function( elem ) {
 				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
 			};
@@ -2230,7 +2249,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				i = matcherOut.length;
 				while ( i-- ) {
 					if ( (elem = matcherOut[i]) &&
-						(temp = postFinder ? indexOf.call( seed, elem ) : preMap[i]) > -1 ) {
+						(temp = postFinder ? indexOf( seed, elem ) : preMap[i]) > -1 ) {
 
 						seed[temp] = !(results[temp] = elem);
 					}
@@ -2265,13 +2284,16 @@ function matcherFromTokens( tokens ) {
 			return elem === checkContext;
 		}, implicitRelative, true ),
 		matchAnyContext = addCombinator( function( elem ) {
-			return indexOf.call( checkContext, elem ) > -1;
+			return indexOf( checkContext, elem ) > -1;
 		}, implicitRelative, true ),
 		matchers = [ function( elem, context, xml ) {
-			return ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
+			var ret = ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
 				(checkContext = context).nodeType ?
 					matchContext( elem, context, xml ) :
 					matchAnyContext( elem, context, xml ) );
+			// Avoid hanging onto element (issue #299)
+			checkContext = null;
+			return ret;
 		} ];
 
 	for ( ; i < len; i++ ) {
@@ -2521,7 +2543,7 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 // Sort stability
 support.sortStable = expando.split("").sort( sortOrder ).join("") === expando;
 
-// Support: Chrome<14
+// Support: Chrome 14-35+
 // Always assume duplicates if they aren't passed to the comparison function
 support.detectDuplicates = !!hasDuplicate;
 
@@ -2730,7 +2752,7 @@ var rootjQuery,
 				if ( match[1] ) {
 					context = context instanceof jQuery ? context[0] : context;
 
-					// scripts is true for back-compat
+					// Option to run scripts is true for back-compat
 					// Intentionally let the error be thrown if parseHTML is not present
 					jQuery.merge( this, jQuery.parseHTML(
 						match[1],
@@ -2758,8 +2780,8 @@ var rootjQuery,
 				} else {
 					elem = document.getElementById( match[2] );
 
-					// Check parentNode to catch when Blackberry 4.6 returns
-					// nodes that are no longer in the document #6963
+					// Support: Blackberry 4.6
+					// gEBID returns nodes no longer in the document (#6963)
 					if ( elem && elem.parentNode ) {
 						// Inject the element directly into the jQuery object
 						this.length = 1;
@@ -2812,7 +2834,7 @@ rootjQuery = jQuery( document );
 
 
 var rparentsprev = /^(?:parents|prev(?:Until|All))/,
-	// methods guaranteed to produce a unique set when starting from a unique set
+	// Methods guaranteed to produce a unique set when starting from a unique set
 	guaranteedUnique = {
 		children: true,
 		contents: true,
@@ -2892,8 +2914,7 @@ jQuery.fn.extend({
 		return this.pushStack( matched.length > 1 ? jQuery.unique( matched ) : matched );
 	},
 
-	// Determine the position of an element within
-	// the matched set of elements
+	// Determine the position of an element within the set
 	index: function( elem ) {
 
 		// No argument, return index in parent
@@ -2901,7 +2922,7 @@ jQuery.fn.extend({
 			return ( this[ 0 ] && this[ 0 ].parentNode ) ? this.first().prevAll().length : -1;
 		}
 
-		// index in selector
+		// Index in selector
 		if ( typeof elem === "string" ) {
 			return indexOf.call( jQuery( elem ), this[ 0 ] );
 		}
@@ -3317,7 +3338,7 @@ jQuery.extend({
 
 			progressValues, progressContexts, resolveContexts;
 
-		// add listeners to Deferred subordinates; treat others as resolved
+		// Add listeners to Deferred subordinates; treat others as resolved
 		if ( length > 1 ) {
 			progressValues = new Array( length );
 			progressContexts = new Array( length );
@@ -3334,7 +3355,7 @@ jQuery.extend({
 			}
 		}
 
-		// if we're not waiting on anything, resolve the master
+		// If we're not waiting on anything, resolve the master
 		if ( !remaining ) {
 			deferred.resolveWith( resolveContexts, resolveValues );
 		}
@@ -3413,7 +3434,7 @@ jQuery.ready.promise = function( obj ) {
 		readyList = jQuery.Deferred();
 
 		// Catch cases where $(document).ready() is called after the browser event has already occurred.
-		// we once tried to use readyState "interactive" here, but it caused issues like the one
+		// We once tried to use readyState "interactive" here, but it caused issues like the one
 		// discovered by ChrisS here: http://bugs.jquery.com/ticket/12282#comment:15
 		if ( document.readyState === "complete" ) {
 			// Handle it asynchronously to allow scripts the opportunity to delay ready
@@ -3507,7 +3528,7 @@ jQuery.acceptData = function( owner ) {
 
 
 function Data() {
-	// Support: Android < 4,
+	// Support: Android<4,
 	// Old WebKit does not have Object.preventExtensions/freeze method,
 	// return new empty object instead with no [[set]] accessor
 	Object.defineProperty( this.cache = {}, 0, {
@@ -3516,7 +3537,7 @@ function Data() {
 		}
 	});
 
-	this.expando = jQuery.expando + Math.random();
+	this.expando = jQuery.expando + Data.uid++;
 }
 
 Data.uid = 1;
@@ -3544,7 +3565,7 @@ Data.prototype = {
 				descriptor[ this.expando ] = { value: unlock };
 				Object.defineProperties( owner, descriptor );
 
-			// Support: Android < 4
+			// Support: Android<4
 			// Fallback to a less secure definition
 			} catch ( e ) {
 				descriptor[ this.expando ] = unlock;
@@ -3684,17 +3705,16 @@ var data_user = new Data();
 
 
 
-/*
-	Implementation Summary
+//	Implementation Summary
+//
+//	1. Enforce API surface and semantic compatibility with 1.9.x branch
+//	2. Improve the module's maintainability by reducing the storage
+//		paths to a single mechanism.
+//	3. Use the same single mechanism to support "private" and "user" data.
+//	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
+//	5. Avoid exposing implementation details on user objects (eg. expando properties)
+//	6. Provide a clear path for implementation upgrade to WeakMap in 2014
 
-	1. Enforce API surface and semantic compatibility with 1.9.x branch
-	2. Improve the module's maintainability by reducing the storage
-		paths to a single mechanism.
-	3. Use the same single mechanism to support "private" and "user" data.
-	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
-	5. Avoid exposing implementation details on user objects (eg. expando properties)
-	6. Provide a clear path for implementation upgrade to WeakMap in 2014
-*/
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /([A-Z])/g;
 
@@ -3899,7 +3919,7 @@ jQuery.extend({
 				queue.unshift( "inprogress" );
 			}
 
-			// clear up the last queue stop function
+			// Clear up the last queue stop function
 			delete hooks.stop;
 			fn.call( elem, next, hooks );
 		}
@@ -3909,7 +3929,7 @@ jQuery.extend({
 		}
 	},
 
-	// not intended for public consumption - generates a queueHooks object, or returns the current one
+	// Not public - generate a queueHooks object, or return the current one
 	_queueHooks: function( elem, type ) {
 		var key = type + "queueHooks";
 		return data_priv.get( elem, key ) || data_priv.access( elem, key, {
@@ -3939,7 +3959,7 @@ jQuery.fn.extend({
 			this.each(function() {
 				var queue = jQuery.queue( this, type, data );
 
-				// ensure a hooks for this queue
+				// Ensure a hooks for this queue
 				jQuery._queueHooks( this, type );
 
 				if ( type === "fx" && queue[0] !== "inprogress" ) {
@@ -4006,21 +4026,22 @@ var rcheckableType = (/^(?:checkbox|radio)$/i);
 		div = fragment.appendChild( document.createElement( "div" ) ),
 		input = document.createElement( "input" );
 
-	// #11217 - WebKit loses check when the name is after the checked attribute
+	// Support: Safari<=5.1
+	// Check state lost if the name is set (#11217)
 	// Support: Windows Web Apps (WWA)
-	// `name` and `type` need .setAttribute for WWA
+	// `name` and `type` must use .setAttribute for WWA (#14901)
 	input.setAttribute( "type", "radio" );
 	input.setAttribute( "checked", "checked" );
 	input.setAttribute( "name", "t" );
 
 	div.appendChild( input );
 
-	// Support: Safari 5.1, iOS 5.1, Android 4.x, Android 2.3
-	// old WebKit doesn't clone checked state correctly in fragments
+	// Support: Safari<=5.1, Android<4.2
+	// Older WebKit doesn't clone checked state correctly in fragments
 	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
 
+	// Support: IE<=11+
 	// Make sure textarea (and checkbox) defaultValue is properly cloned
-	// Support: IE9-IE11+
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 })();
@@ -4398,8 +4419,8 @@ jQuery.event = {
 			j = 0;
 			while ( (handleObj = matched.handlers[ j++ ]) && !event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or
-				// 2) have namespace(s) a subset or equal to those in the bound event (both can have no namespace).
+				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
+				// a subset or equal to those in the bound event (both can have no namespace).
 				if ( !event.namespace_re || event.namespace_re.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
@@ -4549,7 +4570,7 @@ jQuery.event = {
 			event.target = document;
 		}
 
-		// Support: Safari 6.0+, Chrome < 28
+		// Support: Safari 6.0+, Chrome<28
 		// Target should not be a text node (#504, #13143)
 		if ( event.target.nodeType === 3 ) {
 			event.target = event.target.parentNode;
@@ -4654,7 +4675,7 @@ jQuery.Event = function( src, props ) {
 		// by a handler lower down the tree; reflect the correct value.
 		this.isDefaultPrevented = src.defaultPrevented ||
 				src.defaultPrevented === undefined &&
-				// Support: Android < 4.0
+				// Support: Android<4.0
 				src.returnValue === false ?
 			returnTrue :
 			returnFalse;
@@ -4744,8 +4765,8 @@ jQuery.each({
 	};
 });
 
-// Create "bubbling" focus and blur events
 // Support: Firefox, Chrome, Safari
+// Create "bubbling" focus and blur events
 if ( !support.focusinBubbles ) {
 	jQuery.each({ focus: "focusin", blur: "focusout" }, function( orig, fix ) {
 
@@ -4898,7 +4919,7 @@ var
 	// We have to close these tags to support XHTML (#13200)
 	wrapMap = {
 
-		// Support: IE 9
+		// Support: IE9
 		option: [ 1, "<select multiple='multiple'>", "</select>" ],
 
 		thead: [ 1, "<table>", "</table>" ],
@@ -4909,7 +4930,7 @@ var
 		_default: [ 0, "", "" ]
 	};
 
-// Support: IE 9
+// Support: IE9
 wrapMap.optgroup = wrapMap.option;
 
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
@@ -4999,7 +5020,7 @@ function getAll( context, tag ) {
 		ret;
 }
 
-// Support: IE >= 9
+// Fix IE bugs, see support tests
 function fixInput( src, dest ) {
 	var nodeName = dest.nodeName.toLowerCase();
 
@@ -5019,8 +5040,7 @@ jQuery.extend({
 			clone = elem.cloneNode( true ),
 			inPage = jQuery.contains( elem.ownerDocument, elem );
 
-		// Support: IE >= 9
-		// Fix Cloning issues
+		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
 				!jQuery.isXMLDoc( elem ) ) {
 
@@ -5071,8 +5091,8 @@ jQuery.extend({
 
 				// Add nodes directly
 				if ( jQuery.type( elem ) === "object" ) {
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, elem.nodeType ? [ elem ] : elem );
 
 				// Convert non-html into a text node
@@ -5094,15 +5114,14 @@ jQuery.extend({
 						tmp = tmp.lastChild;
 					}
 
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, tmp.childNodes );
 
 					// Remember the top-level container
 					tmp = fragment.firstChild;
 
-					// Fixes #12346
-					// Support: Webkit, IE
+					// Ensure the created nodes are orphaned (#12392)
 					tmp.textContent = "";
 				}
 			}
@@ -5464,7 +5483,7 @@ function actualDisplay( name, doc ) {
 		// getDefaultComputedStyle might be reliably used only on attached element
 		display = window.getDefaultComputedStyle && ( style = window.getDefaultComputedStyle( elem[ 0 ] ) ) ?
 
-			// Use of this method is a temporary fix (more like optmization) until something better comes along,
+			// Use of this method is a temporary fix (more like optimization) until something better comes along,
 			// since it was removed from specification and supported only in FF
 			style.display : jQuery.css( elem[ 0 ], "display" );
 
@@ -5514,7 +5533,14 @@ var rmargin = (/^margin/);
 var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
 
 var getStyles = function( elem ) {
-		return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		// Support: IE<=11+, Firefox<=30+ (#15098, #14150)
+		// IE throws on elements created in popups
+		// FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
+		if ( elem.ownerDocument.defaultView.opener ) {
+			return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		}
+
+		return window.getComputedStyle( elem, null );
 	};
 
 
@@ -5526,7 +5552,7 @@ function curCSS( elem, name, computed ) {
 	computed = computed || getStyles( elem );
 
 	// Support: IE9
-	// getPropertyValue is only needed for .css('filter') in IE9, see #12537
+	// getPropertyValue is only needed for .css('filter') (#12537)
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 	}
@@ -5572,15 +5598,13 @@ function addGetHookIf( conditionFn, hookFn ) {
 	return {
 		get: function() {
 			if ( conditionFn() ) {
-				// Hook not needed (or it's not possible to use it due to missing dependency),
-				// remove it.
-				// Since there are no other hooks for marginRight, remove the whole object.
+				// Hook not needed (or it's not possible to use it due
+				// to missing dependency), remove it.
 				delete this.get;
 				return;
 			}
 
 			// Hook needed; redefine it so that the support test is not executed again.
-
 			return (this.get = hookFn).apply( this, arguments );
 		}
 	};
@@ -5597,6 +5621,8 @@ function addGetHookIf( conditionFn, hookFn ) {
 		return;
 	}
 
+	// Support: IE9-11+
+	// Style of cloned element affects source element cloned (#8908)
 	div.style.backgroundClip = "content-box";
 	div.cloneNode( true ).style.backgroundClip = "";
 	support.clearCloneStyle = div.style.backgroundClip === "content-box";
@@ -5629,6 +5655,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 	if ( window.getComputedStyle ) {
 		jQuery.extend( support, {
 			pixelPosition: function() {
+
 				// This test is executed only once but we still do memoizing
 				// since we can use the boxSizingReliable pre-computing.
 				// No need to check if the test was already performed, though.
@@ -5642,6 +5669,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				return boxSizingReliableVal;
 			},
 			reliableMarginRight: function() {
+
 				// Support: Android 2.3
 				// Check if div with explicit width and no margin-right incorrectly
 				// gets computed margin-right based on width of container. (#3333)
@@ -5663,6 +5691,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				ret = !parseFloat( window.getComputedStyle( marginDiv, null ).marginRight );
 
 				docElem.removeChild( container );
+				div.removeChild( marginDiv );
 
 				return ret;
 			}
@@ -5694,8 +5723,8 @@ jQuery.swap = function( elem, options, callback, args ) {
 
 
 var
-	// swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
-	// see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	// Swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
 	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
 	rnumsplit = new RegExp( "^(" + pnum + ")(.*)$", "i" ),
 	rrelNum = new RegExp( "^([+-])=(" + pnum + ")", "i" ),
@@ -5708,15 +5737,15 @@ var
 
 	cssPrefixes = [ "Webkit", "O", "Moz", "ms" ];
 
-// return a css property mapped to a potentially vendor prefixed property
+// Return a css property mapped to a potentially vendor prefixed property
 function vendorPropName( style, name ) {
 
-	// shortcut for names that are not vendor prefixed
+	// Shortcut for names that are not vendor prefixed
 	if ( name in style ) {
 		return name;
 	}
 
-	// check for vendor prefixed names
+	// Check for vendor prefixed names
 	var capName = name[0].toUpperCase() + name.slice(1),
 		origName = name,
 		i = cssPrefixes.length;
@@ -5749,7 +5778,7 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 		val = 0;
 
 	for ( ; i < 4; i += 2 ) {
-		// both box models exclude margin, so add it if we want it
+		// Both box models exclude margin, so add it if we want it
 		if ( extra === "margin" ) {
 			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
 		}
@@ -5760,15 +5789,15 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 			}
 
-			// at this point, extra isn't border nor margin, so remove border
+			// At this point, extra isn't border nor margin, so remove border
 			if ( extra !== "margin" ) {
 				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 		} else {
-			// at this point, extra isn't content, so add padding
+			// At this point, extra isn't content, so add padding
 			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 
-			// at this point, extra isn't content nor padding, so add border
+			// At this point, extra isn't content nor padding, so add border
 			if ( extra !== "padding" ) {
 				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
@@ -5786,7 +5815,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		styles = getStyles( elem ),
 		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 
-	// some non-html elements return undefined for offsetWidth, so check for null/undefined
+	// Some non-html elements return undefined for offsetWidth, so check for null/undefined
 	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
 	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
 	if ( val <= 0 || val == null ) {
@@ -5801,7 +5830,7 @@ function getWidthOrHeight( elem, name, extra ) {
 			return val;
 		}
 
-		// we need the check for style in case a browser which returns unreliable values
+		// Check for style in case a browser which returns unreliable values
 		// for getComputedStyle silently falls back to the reliable elem.style
 		valueIsBorderBox = isBorderBox &&
 			( support.boxSizingReliable() || val === elem.style[ name ] );
@@ -5810,7 +5839,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		val = parseFloat( val ) || 0;
 	}
 
-	// use the active box-sizing model to add/subtract irrelevant styles
+	// Use the active box-sizing model to add/subtract irrelevant styles
 	return ( val +
 		augmentWidthOrHeight(
 			elem,
@@ -5874,12 +5903,14 @@ function showHide( elements, show ) {
 }
 
 jQuery.extend({
+
 	// Add in style property hooks for overriding the default
 	// behavior of getting and setting a style property
 	cssHooks: {
 		opacity: {
 			get: function( elem, computed ) {
 				if ( computed ) {
+
 					// We should always get a number back from opacity
 					var ret = curCSS( elem, "opacity" );
 					return ret === "" ? "1" : ret;
@@ -5907,12 +5938,12 @@ jQuery.extend({
 	// Add in properties whose names you wish to fix before
 	// setting or getting the value
 	cssProps: {
-		// normalize float css property
 		"float": "cssFloat"
 	},
 
 	// Get and set the style property on a DOM Node
 	style: function( elem, name, value, extra ) {
+
 		// Don't set styles on text and comment nodes
 		if ( !elem || elem.nodeType === 3 || elem.nodeType === 8 || !elem.style ) {
 			return;
@@ -5925,33 +5956,32 @@ jQuery.extend({
 
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Gets hook for the prefixed version, then unprefixed version
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// Check if we're setting a value
 		if ( value !== undefined ) {
 			type = typeof value;
 
-			// convert relative number strings (+= or -=) to relative numbers. #7345
+			// Convert "+=" or "-=" to relative numbers (#7345)
 			if ( type === "string" && (ret = rrelNum.exec( value )) ) {
 				value = ( ret[1] + 1 ) * ret[2] + parseFloat( jQuery.css( elem, name ) );
 				// Fixes bug #9237
 				type = "number";
 			}
 
-			// Make sure that null and NaN values aren't set. See: #7116
+			// Make sure that null and NaN values aren't set (#7116)
 			if ( value == null || value !== value ) {
 				return;
 			}
 
-			// If a number was passed in, add 'px' to the (except for certain CSS properties)
+			// If a number, add 'px' to the (except for certain CSS properties)
 			if ( type === "number" && !jQuery.cssNumber[ origName ] ) {
 				value += "px";
 			}
 
-			// Fixes #8908, it can be done more correctly by specifying setters in cssHooks,
-			// but it would mean to define eight (for every problematic property) identical functions
+			// Support: IE9-11+
+			// background-* props affect original clone's values
 			if ( !support.clearCloneStyle && value === "" && name.indexOf( "background" ) === 0 ) {
 				style[ name ] = "inherit";
 			}
@@ -5979,8 +6009,7 @@ jQuery.extend({
 		// Make sure that we're working with the right name
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( elem.style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Try prefixed name followed by the unprefixed name
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// If a hook was provided get the computed value from there
@@ -5993,12 +6022,12 @@ jQuery.extend({
 			val = curCSS( elem, name, styles );
 		}
 
-		//convert "normal" to computed value
+		// Convert "normal" to computed value
 		if ( val === "normal" && name in cssNormalTransform ) {
 			val = cssNormalTransform[ name ];
 		}
 
-		// Return, converting to number if forced or a qualifier was provided and val looks numeric
+		// Make numeric if forced or a qualifier was provided and val looks numeric
 		if ( extra === "" || extra ) {
 			num = parseFloat( val );
 			return extra === true || jQuery.isNumeric( num ) ? num || 0 : val;
@@ -6011,8 +6040,9 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 	jQuery.cssHooks[ name ] = {
 		get: function( elem, computed, extra ) {
 			if ( computed ) {
-				// certain elements can have dimension info if we invisibly show them
-				// however, it must have a current display style that would benefit from this
+
+				// Certain elements can have dimension info if we invisibly show them
+				// but it must have a current display style that would benefit
 				return rdisplayswap.test( jQuery.css( elem, "display" ) ) && elem.offsetWidth === 0 ?
 					jQuery.swap( elem, cssShow, function() {
 						return getWidthOrHeight( elem, name, extra );
@@ -6040,8 +6070,6 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 jQuery.cssHooks.marginRight = addGetHookIf( support.reliableMarginRight,
 	function( elem, computed ) {
 		if ( computed ) {
-			// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
-			// Work around by temporarily setting element display to inline-block
 			return jQuery.swap( elem, { "display": "inline-block" },
 				curCSS, [ elem, "marginRight" ] );
 		}
@@ -6059,7 +6087,7 @@ jQuery.each({
 			var i = 0,
 				expanded = {},
 
-				// assumes a single number if not a string
+				// Assumes a single number if not a string
 				parts = typeof value === "string" ? value.split(" ") : [ value ];
 
 			for ( ; i < 4; i++ ) {
@@ -6182,17 +6210,18 @@ Tween.propHooks = {
 				return tween.elem[ tween.prop ];
 			}
 
-			// passing an empty string as a 3rd parameter to .css will automatically
-			// attempt a parseFloat and fallback to a string if the parse fails
-			// so, simple values such as "10px" are parsed to Float.
-			// complex values such as "rotate(1rad)" are returned as is.
+			// Passing an empty string as a 3rd parameter to .css will automatically
+			// attempt a parseFloat and fallback to a string if the parse fails.
+			// Simple values such as "10px" are parsed to Float;
+			// complex values such as "rotate(1rad)" are returned as-is.
 			result = jQuery.css( tween.elem, tween.prop, "" );
 			// Empty strings, null, undefined and "auto" are converted to 0.
 			return !result || result === "auto" ? 0 : result;
 		},
 		set: function( tween ) {
-			// use step hook for back compat - use cssHook if its there - use .style if its
-			// available and use plain properties where available
+			// Use step hook for back compat.
+			// Use cssHook if its there.
+			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
 			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
@@ -6206,7 +6235,6 @@ Tween.propHooks = {
 
 // Support: IE9
 // Panic based approach to setting things on disconnected nodes
-
 Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
 	set: function( tween ) {
 		if ( tween.elem.nodeType && tween.elem.parentNode ) {
@@ -6262,16 +6290,16 @@ var
 				start = +target || 1;
 
 				do {
-					// If previous iteration zeroed out, double until we get *something*
-					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
+					// If previous iteration zeroed out, double until we get *something*.
+					// Use string for doubling so we don't accidentally see scale as unchanged below
 					scale = scale || ".5";
 
 					// Adjust and apply
 					start = start / scale;
 					jQuery.style( tween.elem, prop, start + unit );
 
-				// Update scale, tolerating zero or NaN from tween.cur()
-				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
+				// Update scale, tolerating zero or NaN from tween.cur(),
+				// break the loop if scale is unchanged or perfect, or if we've just had enough
 				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
 			}
 
@@ -6303,8 +6331,8 @@ function genFx( type, includeWidth ) {
 		i = 0,
 		attrs = { height: type };
 
-	// if we include width, step value is 1 to do all cssExpand values,
-	// if we don't include width, step value is 2 to skip over Left and Right
+	// If we include width, step value is 1 to do all cssExpand values,
+	// otherwise step value is 2 to skip over Left and Right
 	includeWidth = includeWidth ? 1 : 0;
 	for ( ; i < 4 ; i += 2 - includeWidth ) {
 		which = cssExpand[ i ];
@@ -6326,7 +6354,7 @@ function createTween( value, prop, animation ) {
 	for ( ; index < length; index++ ) {
 		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
 
-			// we're done with this property
+			// We're done with this property
 			return tween;
 		}
 	}
@@ -6341,7 +6369,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hidden = elem.nodeType && isHidden( elem ),
 		dataShow = data_priv.get( elem, "fxshow" );
 
-	// handle queue: false promises
+	// Handle queue: false promises
 	if ( !opts.queue ) {
 		hooks = jQuery._queueHooks( elem, "fx" );
 		if ( hooks.unqueued == null ) {
@@ -6356,8 +6384,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hooks.unqueued++;
 
 		anim.always(function() {
-			// doing this makes sure that the complete handler will be called
-			// before this completes
+			// Ensure the complete handler is called before this completes
 			anim.always(function() {
 				hooks.unqueued--;
 				if ( !jQuery.queue( elem, "fx" ).length ) {
@@ -6367,7 +6394,7 @@ function defaultPrefilter( elem, props, opts ) {
 		});
 	}
 
-	// height/width overflow pass
+	// Height/width overflow pass
 	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
 		// Make sure that nothing sneaks out
 		// Record all 3 overflow attributes because IE9-10 do not
@@ -6429,7 +6456,7 @@ function defaultPrefilter( elem, props, opts ) {
 			dataShow = data_priv.access( elem, "fxshow", {} );
 		}
 
-		// store state if its toggle - enables .stop().toggle() to "reverse"
+		// Store state if its toggle - enables .stop().toggle() to "reverse"
 		if ( toggle ) {
 			dataShow.hidden = !hidden;
 		}
@@ -6489,8 +6516,8 @@ function propFilter( props, specialEasing ) {
 			value = hooks.expand( value );
 			delete props[ name ];
 
-			// not quite $.extend, this wont overwrite keys already present.
-			// also - reusing 'index' from above because we have the correct "name"
+			// Not quite $.extend, this won't overwrite existing keys.
+			// Reusing 'index' because we have the correct "name"
 			for ( index in value ) {
 				if ( !( index in props ) ) {
 					props[ index ] = value[ index ];
@@ -6509,7 +6536,7 @@ function Animation( elem, properties, options ) {
 		index = 0,
 		length = animationPrefilters.length,
 		deferred = jQuery.Deferred().always( function() {
-			// don't match elem in the :animated selector
+			// Don't match elem in the :animated selector
 			delete tick.elem;
 		}),
 		tick = function() {
@@ -6518,7 +6545,8 @@ function Animation( elem, properties, options ) {
 			}
 			var currentTime = fxNow || createFxNow(),
 				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
+				// Support: Android 2.3
+				// Archaic crash bug won't allow us to use `1 - ( 0.5 || 0 )` (#12497)
 				temp = remaining / animation.duration || 0,
 				percent = 1 - temp,
 				index = 0,
@@ -6554,7 +6582,7 @@ function Animation( elem, properties, options ) {
 			},
 			stop: function( gotoEnd ) {
 				var index = 0,
-					// if we are going to the end, we want to run all the tweens
+					// If we are going to the end, we want to run all the tweens
 					// otherwise we skip this part
 					length = gotoEnd ? animation.tweens.length : 0;
 				if ( stopped ) {
@@ -6565,8 +6593,7 @@ function Animation( elem, properties, options ) {
 					animation.tweens[ index ].run( 1 );
 				}
 
-				// resolve when we played the last frame
-				// otherwise, reject
+				// Resolve when we played the last frame; otherwise, reject
 				if ( gotoEnd ) {
 					deferred.resolveWith( elem, [ animation, gotoEnd ] );
 				} else {
@@ -6648,7 +6675,7 @@ jQuery.speed = function( speed, easing, fn ) {
 	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
 		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
 
-	// normalize opt.queue - true/undefined/null -> "fx"
+	// Normalize opt.queue - true/undefined/null -> "fx"
 	if ( opt.queue == null || opt.queue === true ) {
 		opt.queue = "fx";
 	}
@@ -6672,10 +6699,10 @@ jQuery.speed = function( speed, easing, fn ) {
 jQuery.fn.extend({
 	fadeTo: function( speed, to, easing, callback ) {
 
-		// show any hidden elements after setting opacity to 0
+		// Show any hidden elements after setting opacity to 0
 		return this.filter( isHidden ).css( "opacity", 0 ).show()
 
-			// animate to the value specified
+			// Animate to the value specified
 			.end().animate({ opacity: to }, speed, easing, callback );
 	},
 	animate: function( prop, speed, easing, callback ) {
@@ -6738,9 +6765,9 @@ jQuery.fn.extend({
 				}
 			}
 
-			// start the next in the queue if the last step wasn't forced
-			// timers currently will call their complete callbacks, which will dequeue
-			// but only if they were gotoEnd
+			// Start the next in the queue if the last step wasn't forced.
+			// Timers currently will call their complete callbacks, which
+			// will dequeue but only if they were gotoEnd.
 			if ( dequeue || !gotoEnd ) {
 				jQuery.dequeue( this, type );
 			}
@@ -6758,17 +6785,17 @@ jQuery.fn.extend({
 				timers = jQuery.timers,
 				length = queue ? queue.length : 0;
 
-			// enable finishing flag on private data
+			// Enable finishing flag on private data
 			data.finish = true;
 
-			// empty the queue first
+			// Empty the queue first
 			jQuery.queue( this, type, [] );
 
 			if ( hooks && hooks.stop ) {
 				hooks.stop.call( this, true );
 			}
 
-			// look for any active animations, and finish them
+			// Look for any active animations, and finish them
 			for ( index = timers.length; index--; ) {
 				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
 					timers[ index ].anim.stop( true );
@@ -6776,14 +6803,14 @@ jQuery.fn.extend({
 				}
 			}
 
-			// look for any animations in the old queue and finish them
+			// Look for any animations in the old queue and finish them
 			for ( index = 0; index < length; index++ ) {
 				if ( queue[ index ] && queue[ index ].finish ) {
 					queue[ index ].finish.call( this );
 				}
 			}
 
-			// turn off finishing flag
+			// Turn off finishing flag
 			delete data.finish;
 		});
 	}
@@ -6886,21 +6913,21 @@ jQuery.fn.delay = function( time, type ) {
 
 	input.type = "checkbox";
 
-	// Support: iOS 5.1, Android 4.x, Android 2.3
-	// Check the default checkbox/radio value ("" on old WebKit; "on" elsewhere)
+	// Support: iOS<=5.1, Android<=4.2+
+	// Default value for a checkbox should be "on"
 	support.checkOn = input.value !== "";
 
-	// Must access the parent to make an option select properly
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// Must access selectedIndex to make default options select
 	support.optSelected = opt.selected;
 
-	// Make sure that the options inside disabled selects aren't marked as disabled
-	// (WebKit marks them as disabled)
+	// Support: Android<=2.3
+	// Options inside disabled selects are incorrectly marked as disabled
 	select.disabled = true;
 	support.optDisabled = !opt.disabled;
 
-	// Check if an input maintains its value after becoming a radio
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// An input loses its value after becoming a radio
 	input = document.createElement( "input" );
 	input.value = "t";
 	input.type = "radio";
@@ -6997,8 +7024,6 @@ jQuery.extend({
 			set: function( elem, value ) {
 				if ( !support.radioValue && value === "radio" &&
 					jQuery.nodeName( elem, "input" ) ) {
-					// Setting the type on a radio button after the value resets the value in IE6-9
-					// Reset value to default in case type is set after value during creation
 					var val = elem.value;
 					elem.setAttribute( "type", value );
 					if ( val ) {
@@ -7068,7 +7093,7 @@ jQuery.extend({
 		var ret, hooks, notxml,
 			nType = elem.nodeType;
 
-		// don't get/set properties on text, comment and attribute nodes
+		// Don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
 			return;
 		}
@@ -7104,8 +7129,6 @@ jQuery.extend({
 	}
 });
 
-// Support: IE9+
-// Selectedness for an option in an optgroup can be inaccurate
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -7213,7 +7236,7 @@ jQuery.fn.extend({
 						}
 					}
 
-					// only assign if different to avoid unneeded rendering.
+					// Only assign if different to avoid unneeded rendering.
 					finalValue = value ? jQuery.trim( cur ) : "";
 					if ( elem.className !== finalValue ) {
 						elem.className = finalValue;
@@ -7240,14 +7263,14 @@ jQuery.fn.extend({
 
 		return this.each(function() {
 			if ( type === "string" ) {
-				// toggle individual class names
+				// Toggle individual class names
 				var className,
 					i = 0,
 					self = jQuery( this ),
 					classNames = value.match( rnotwhite ) || [];
 
 				while ( (className = classNames[ i++ ]) ) {
-					// check each className given, space separated list
+					// Check each className given, space separated list
 					if ( self.hasClass( className ) ) {
 						self.removeClass( className );
 					} else {
@@ -7262,7 +7285,7 @@ jQuery.fn.extend({
 					data_priv.set( this, "__className__", this.className );
 				}
 
-				// If the element has a class name or if we're passed "false",
+				// If the element has a class name or if we're passed `false`,
 				// then remove the whole classname (if there was one, the above saved it).
 				// Otherwise bring back whatever was previously saved (if anything),
 				// falling back to the empty string if nothing was stored.
@@ -7306,9 +7329,9 @@ jQuery.fn.extend({
 				ret = elem.value;
 
 				return typeof ret === "string" ?
-					// handle most common string cases
+					// Handle most common string cases
 					ret.replace(rreturn, "") :
-					// handle cases where value is null/undef or number
+					// Handle cases where value is null/undef or number
 					ret == null ? "" : ret;
 			}
 
@@ -7416,7 +7439,7 @@ jQuery.extend({
 					}
 				}
 
-				// force browsers to behave consistently when non-matching value is set
+				// Force browsers to behave consistently when non-matching value is set
 				if ( !optionSet ) {
 					elem.selectedIndex = -1;
 				}
@@ -7437,8 +7460,6 @@ jQuery.each([ "radio", "checkbox" ], function() {
 	};
 	if ( !support.checkOn ) {
 		jQuery.valHooks[ this ].get = function( elem ) {
-			// Support: Webkit
-			// "" is returned instead of "on" if a value isn't specified
 			return elem.getAttribute("value") === null ? "on" : elem.value;
 		};
 	}
@@ -7520,10 +7541,6 @@ jQuery.parseXML = function( data ) {
 
 
 var
-	// Document location
-	ajaxLocParts,
-	ajaxLocation,
-
 	rhash = /#.*$/,
 	rts = /([?&])_=[^&]*/,
 	rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg,
@@ -7552,22 +7569,13 @@ var
 	transports = {},
 
 	// Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
-	allTypes = "*/".concat("*");
+	allTypes = "*/".concat( "*" ),
 
-// #8138, IE may throw an exception when accessing
-// a field from window.location if document.domain has been set
-try {
-	ajaxLocation = location.href;
-} catch( e ) {
-	// Use the href attribute of an A element
-	// since IE will modify it given document.location
-	ajaxLocation = document.createElement( "a" );
-	ajaxLocation.href = "";
-	ajaxLocation = ajaxLocation.href;
-}
+	// Document location
+	ajaxLocation = window.location.href,
 
-// Segment location into parts
-ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
+	// Segment location into parts
+	ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
 
 // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
 function addToPrefiltersOrTransports( structure ) {
@@ -8046,7 +8054,8 @@ jQuery.extend({
 		}
 
 		// We can fire global events as of now if asked to
-		fireGlobals = s.global;
+		// Don't fire events if jQuery.event is undefined in an AMD-usage scenario (#15118)
+		fireGlobals = jQuery.event && s.global;
 
 		// Watch for a new set of requests
 		if ( fireGlobals && jQuery.active++ === 0 ) {
@@ -8119,7 +8128,7 @@ jQuery.extend({
 			return jqXHR.abort();
 		}
 
-		// aborting is no longer a cancellation
+		// Aborting is no longer a cancellation
 		strAbort = "abort";
 
 		// Install callbacks on deferreds
@@ -8231,8 +8240,7 @@ jQuery.extend({
 					isSuccess = !error;
 				}
 			} else {
-				// We extract error from statusText
-				// then normalize statusText and status for non-aborts
+				// Extract error from statusText and normalize for non-aborts
 				error = statusText;
 				if ( status || !statusText ) {
 					statusText = "error";
@@ -8288,7 +8296,7 @@ jQuery.extend({
 
 jQuery.each( [ "get", "post" ], function( i, method ) {
 	jQuery[ method ] = function( url, data, callback, type ) {
-		// shift arguments if data argument was omitted
+		// Shift arguments if data argument was omitted
 		if ( jQuery.isFunction( data ) ) {
 			type = type || callback;
 			callback = data;
@@ -8302,13 +8310,6 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 			data: data,
 			success: callback
 		});
-	};
-});
-
-// Attach a bunch of functions for handling common AJAX events
-jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
-	jQuery.fn[ type ] = function( fn ) {
-		return this.on( type, fn );
 	};
 });
 
@@ -8529,8 +8530,9 @@ var xhrId = 0,
 
 // Support: IE9
 // Open requests must be manually aborted on unload (#5280)
-if ( window.ActiveXObject ) {
-	jQuery( window ).on( "unload", function() {
+// See https://support.microsoft.com/kb/2856746 for more info
+if ( window.attachEvent ) {
+	window.attachEvent( "onunload", function() {
 		for ( var key in xhrCallbacks ) {
 			xhrCallbacks[ key ]();
 		}
@@ -8883,6 +8885,16 @@ jQuery.fn.load = function( url, params, callback ) {
 
 
 
+// Attach a bunch of functions for handling common AJAX events
+jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
+	jQuery.fn[ type ] = function( fn ) {
+		return this.on( type, fn );
+	};
+});
+
+
+
+
 jQuery.expr.filters.animated = function( elem ) {
 	return jQuery.grep(jQuery.timers, function( fn ) {
 		return elem === fn.elem;
@@ -8919,7 +8931,8 @@ jQuery.offset = {
 		calculatePosition = ( position === "absolute" || position === "fixed" ) &&
 			( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
 
-		// Need to be able to calculate position if either top or left is auto and position is either absolute or fixed
+		// Need to be able to calculate position if either
+		// top or left is auto and position is either absolute or fixed
 		if ( calculatePosition ) {
 			curPosition = curElem.position();
 			curTop = curPosition.top;
@@ -8976,8 +8989,8 @@ jQuery.fn.extend({
 			return box;
 		}
 
+		// Support: BlackBerry 5, iOS 3 (original iPhone)
 		// If we don't have gBCR, just use 0,0 rather than error
-		// BlackBerry 5, iOS 3 (original iPhone)
 		if ( typeof elem.getBoundingClientRect !== strundefined ) {
 			box = elem.getBoundingClientRect();
 		}
@@ -8999,7 +9012,7 @@ jQuery.fn.extend({
 
 		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is its only offset parent
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
-			// We assume that getBoundingClientRect is available when computed position is fixed
+			// Assume getBoundingClientRect is there when computed position is fixed
 			offset = elem.getBoundingClientRect();
 
 		} else {
@@ -9062,16 +9075,18 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 	};
 });
 
+// Support: Safari<7+, Chrome<37+
 // Add the top/left cssHooks using jQuery.fn.position
 // Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084
-// getComputedStyle returns percent when specified for top/left/bottom/right
-// rather than make the css module depend on the offset module, we just check for it here
+// Blink bug: https://code.google.com/p/chromium/issues/detail?id=229280
+// getComputedStyle returns percent when specified for top/left/bottom/right;
+// rather than make the css module depend on the offset module, just check for it here
 jQuery.each( [ "top", "left" ], function( i, prop ) {
 	jQuery.cssHooks[ prop ] = addGetHookIf( support.pixelPosition,
 		function( elem, computed ) {
 			if ( computed ) {
 				computed = curCSS( elem, prop );
-				// if curCSS returns percentage, fallback to offset
+				// If curCSS returns percentage, fallback to offset
 				return rnumnonpx.test( computed ) ?
 					jQuery( elem ).position()[ prop ] + "px" :
 					computed;
@@ -9084,7 +9099,7 @@ jQuery.each( [ "top", "left" ], function( i, prop ) {
 // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
 jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name }, function( defaultExtra, funcName ) {
-		// margin is only for outerHeight, outerWidth
+		// Margin is only for outerHeight, outerWidth
 		jQuery.fn[ funcName ] = function( margin, value ) {
 			var chainable = arguments.length && ( defaultExtra || typeof margin !== "boolean" ),
 				extra = defaultExtra || ( margin === true || value === true ? "margin" : "border" );
@@ -9175,8 +9190,8 @@ jQuery.noConflict = function( deep ) {
 	return jQuery;
 };
 
-// Expose jQuery and $ identifiers, even in
-// AMD (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
+// Expose jQuery and $ identifiers, even in AMD
+// (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
 // and CommonJS for browser emulators (#13566)
 if ( typeof noGlobal === strundefined ) {
 	window.jQuery = window.$ = jQuery;
@@ -20179,8 +20194,8 @@ return function (global, window, document, undefined) {
 Velocity, however, doesn't make this distinction. Thus, converting to or from the % unit with these subproperties
 will produce an inaccurate conversion value. The same issue exists with the cx/cy attributes of SVG circles and ellipses. */
 /*!
- * Bootstrap v3.3.1 (http://getbootstrap.com)
- * Copyright 2011-2014 Twitter, Inc.
+ * Bootstrap v3.3.4 (http://getbootstrap.com)
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
@@ -20189,6 +20204,7 @@ if (typeof jQuery === 'undefined') {
 }
 
 +function ($) {
+  'use strict';
   var version = $.fn.jquery.split(' ')[0].split('.')
   if ((version[0] < 2 && version[1] < 9) || (version[0] == 1 && version[1] == 9 && version[2] < 1)) {
     throw new Error('Bootstrap\'s JavaScript requires jQuery version 1.9.1 or higher')
@@ -20196,10 +20212,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: transition.js v3.3.1
+ * Bootstrap: transition.js v3.3.4
  * http://getbootstrap.com/javascript/#transitions
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20256,10 +20272,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: alert.js v3.3.1
+ * Bootstrap: alert.js v3.3.4
  * http://getbootstrap.com/javascript/#alerts
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20275,7 +20291,7 @@ if (typeof jQuery === 'undefined') {
     $(el).on('click', dismiss, this.close)
   }
 
-  Alert.VERSION = '3.3.1'
+  Alert.VERSION = '3.3.4'
 
   Alert.TRANSITION_DURATION = 150
 
@@ -20351,10 +20367,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: button.js v3.3.1
+ * Bootstrap: button.js v3.3.4
  * http://getbootstrap.com/javascript/#buttons
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20371,7 +20387,7 @@ if (typeof jQuery === 'undefined') {
     this.isLoading = false
   }
 
-  Button.VERSION  = '3.3.1'
+  Button.VERSION  = '3.3.4'
 
   Button.DEFAULTS = {
     loadingText: 'loading...'
@@ -20468,10 +20484,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: carousel.js v3.3.1
+ * Bootstrap: carousel.js v3.3.4
  * http://getbootstrap.com/javascript/#carousel
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20486,10 +20502,10 @@ if (typeof jQuery === 'undefined') {
     this.$element    = $(element)
     this.$indicators = this.$element.find('.carousel-indicators')
     this.options     = options
-    this.paused      =
-    this.sliding     =
-    this.interval    =
-    this.$active     =
+    this.paused      = null
+    this.sliding     = null
+    this.interval    = null
+    this.$active     = null
     this.$items      = null
 
     this.options.keyboard && this.$element.on('keydown.bs.carousel', $.proxy(this.keydown, this))
@@ -20499,7 +20515,7 @@ if (typeof jQuery === 'undefined') {
       .on('mouseleave.bs.carousel', $.proxy(this.cycle, this))
   }
 
-  Carousel.VERSION  = '3.3.1'
+  Carousel.VERSION  = '3.3.4'
 
   Carousel.TRANSITION_DURATION = 600
 
@@ -20539,8 +20555,11 @@ if (typeof jQuery === 'undefined') {
   }
 
   Carousel.prototype.getItemForDirection = function (direction, active) {
-    var delta = direction == 'prev' ? -1 : 1
     var activeIndex = this.getItemIndex(active)
+    var willWrap = (direction == 'prev' && activeIndex === 0)
+                || (direction == 'next' && activeIndex == (this.$items.length - 1))
+    if (willWrap && !this.options.wrap) return active
+    var delta = direction == 'prev' ? -1 : 1
     var itemIndex = (activeIndex + delta) % this.$items.length
     return this.$items.eq(itemIndex)
   }
@@ -20585,13 +20604,7 @@ if (typeof jQuery === 'undefined') {
     var $next     = next || this.getItemForDirection(type, $active)
     var isCycling = this.interval
     var direction = type == 'next' ? 'left' : 'right'
-    var fallback  = type == 'next' ? 'first' : 'last'
     var that      = this
-
-    if (!$next.length) {
-      if (!this.options.wrap) return
-      $next = this.$element.find('.item')[fallback]()
-    }
 
     if ($next.hasClass('active')) return (this.sliding = false)
 
@@ -20709,10 +20722,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: collapse.js v3.3.1
+ * Bootstrap: collapse.js v3.3.4
  * http://getbootstrap.com/javascript/#collapse
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20726,7 +20739,8 @@ if (typeof jQuery === 'undefined') {
   var Collapse = function (element, options) {
     this.$element      = $(element)
     this.options       = $.extend({}, Collapse.DEFAULTS, options)
-    this.$trigger      = $(this.options.trigger).filter('[href="#' + element.id + '"], [data-target="#' + element.id + '"]')
+    this.$trigger      = $('[data-toggle="collapse"][href="#' + element.id + '"],' +
+                           '[data-toggle="collapse"][data-target="#' + element.id + '"]')
     this.transitioning = null
 
     if (this.options.parent) {
@@ -20738,13 +20752,12 @@ if (typeof jQuery === 'undefined') {
     if (this.options.toggle) this.toggle()
   }
 
-  Collapse.VERSION  = '3.3.1'
+  Collapse.VERSION  = '3.3.4'
 
   Collapse.TRANSITION_DURATION = 350
 
   Collapse.DEFAULTS = {
-    toggle: true,
-    trigger: '[data-toggle="collapse"]'
+    toggle: true
   }
 
   Collapse.prototype.dimension = function () {
@@ -20756,7 +20769,7 @@ if (typeof jQuery === 'undefined') {
     if (this.transitioning || this.$element.hasClass('in')) return
 
     var activesData
-    var actives = this.$parent && this.$parent.find('> .panel').children('.in, .collapsing')
+    var actives = this.$parent && this.$parent.children('.panel').children('.in, .collapsing')
 
     if (actives && actives.length) {
       activesData = actives.data('bs.collapse')
@@ -20882,7 +20895,7 @@ if (typeof jQuery === 'undefined') {
       var data    = $this.data('bs.collapse')
       var options = $.extend({}, Collapse.DEFAULTS, $this.data(), typeof option == 'object' && option)
 
-      if (!data && options.toggle && option == 'show') options.toggle = false
+      if (!data && options.toggle && /show|hide/.test(option)) options.toggle = false
       if (!data) $this.data('bs.collapse', (data = new Collapse(this, options)))
       if (typeof option == 'string') data[option]()
     })
@@ -20913,7 +20926,7 @@ if (typeof jQuery === 'undefined') {
 
     var $target = getTargetFromTrigger($this)
     var data    = $target.data('bs.collapse')
-    var option  = data ? 'toggle' : $.extend({}, $this.data(), { trigger: this })
+    var option  = data ? 'toggle' : $this.data()
 
     Plugin.call($target, option)
   })
@@ -20921,10 +20934,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: dropdown.js v3.3.1
+ * Bootstrap: dropdown.js v3.3.4
  * http://getbootstrap.com/javascript/#dropdowns
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -20941,7 +20954,7 @@ if (typeof jQuery === 'undefined') {
     $(element).on('click.bs.dropdown', this.toggle)
   }
 
-  Dropdown.VERSION = '3.3.1'
+  Dropdown.VERSION = '3.3.4'
 
   Dropdown.prototype.toggle = function (e) {
     var $this = $(this)
@@ -20994,7 +21007,7 @@ if (typeof jQuery === 'undefined') {
       return $this.trigger('click')
     }
 
-    var desc = ' li:not(.divider):visible a'
+    var desc = ' li:not(.disabled):visible a'
     var $items = $parent.find('[role="menu"]' + desc + ', [role="listbox"]' + desc)
 
     if (!$items.length) return
@@ -21083,10 +21096,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: modal.js v3.3.1
+ * Bootstrap: modal.js v3.3.4
  * http://getbootstrap.com/javascript/#modals
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -21098,12 +21111,15 @@ if (typeof jQuery === 'undefined') {
   // ======================
 
   var Modal = function (element, options) {
-    this.options        = options
-    this.$body          = $(document.body)
-    this.$element       = $(element)
-    this.$backdrop      =
-    this.isShown        = null
-    this.scrollbarWidth = 0
+    this.options             = options
+    this.$body               = $(document.body)
+    this.$element            = $(element)
+    this.$dialog             = this.$element.find('.modal-dialog')
+    this.$backdrop           = null
+    this.isShown             = null
+    this.originalBodyPad     = null
+    this.scrollbarWidth      = 0
+    this.ignoreBackdropClick = false
 
     if (this.options.remote) {
       this.$element
@@ -21114,7 +21130,7 @@ if (typeof jQuery === 'undefined') {
     }
   }
 
-  Modal.VERSION  = '3.3.1'
+  Modal.VERSION  = '3.3.4'
 
   Modal.TRANSITION_DURATION = 300
   Modal.BACKDROP_TRANSITION_DURATION = 150
@@ -21148,6 +21164,12 @@ if (typeof jQuery === 'undefined') {
 
     this.$element.on('click.dismiss.bs.modal', '[data-dismiss="modal"]', $.proxy(this.hide, this))
 
+    this.$dialog.on('mousedown.dismiss.bs.modal', function () {
+      that.$element.one('mouseup.dismiss.bs.modal', function (e) {
+        if ($(e.target).is(that.$element)) that.ignoreBackdropClick = true
+      })
+    })
+
     this.backdrop(function () {
       var transition = $.support.transition && that.$element.hasClass('fade')
 
@@ -21159,7 +21181,6 @@ if (typeof jQuery === 'undefined') {
         .show()
         .scrollTop(0)
 
-      if (that.options.backdrop) that.adjustBackdrop()
       that.adjustDialog()
 
       if (transition) {
@@ -21175,7 +21196,7 @@ if (typeof jQuery === 'undefined') {
       var e = $.Event('shown.bs.modal', { relatedTarget: _relatedTarget })
 
       transition ?
-        that.$element.find('.modal-dialog') // wait for modal to slide in
+        that.$dialog // wait for modal to slide in
           .one('bsTransitionEnd', function () {
             that.$element.trigger('focus').trigger(e)
           })
@@ -21204,6 +21225,9 @@ if (typeof jQuery === 'undefined') {
       .removeClass('in')
       .attr('aria-hidden', true)
       .off('click.dismiss.bs.modal')
+      .off('mouseup.dismiss.bs.modal')
+
+    this.$dialog.off('mousedown.dismiss.bs.modal')
 
     $.support.transition && this.$element.hasClass('fade') ?
       this.$element
@@ -21264,13 +21288,18 @@ if (typeof jQuery === 'undefined') {
       var doAnimate = $.support.transition && animate
 
       this.$backdrop = $('<div class="modal-backdrop ' + animate + '" />')
-        .prependTo(this.$element)
-        .on('click.dismiss.bs.modal', $.proxy(function (e) {
-          if (e.target !== e.currentTarget) return
-          this.options.backdrop == 'static'
-            ? this.$element[0].focus.call(this.$element[0])
-            : this.hide.call(this)
-        }, this))
+        .appendTo(this.$body)
+
+      this.$element.on('click.dismiss.bs.modal', $.proxy(function (e) {
+        if (this.ignoreBackdropClick) {
+          this.ignoreBackdropClick = false
+          return
+        }
+        if (e.target !== e.currentTarget) return
+        this.options.backdrop == 'static'
+          ? this.$element[0].focus()
+          : this.hide()
+      }, this))
 
       if (doAnimate) this.$backdrop[0].offsetWidth // force reflow
 
@@ -21305,14 +21334,7 @@ if (typeof jQuery === 'undefined') {
   // these following methods are used to handle overflowing modals
 
   Modal.prototype.handleUpdate = function () {
-    if (this.options.backdrop) this.adjustBackdrop()
     this.adjustDialog()
-  }
-
-  Modal.prototype.adjustBackdrop = function () {
-    this.$backdrop
-      .css('height', 0)
-      .css('height', this.$element[0].scrollHeight)
   }
 
   Modal.prototype.adjustDialog = function () {
@@ -21332,17 +21354,23 @@ if (typeof jQuery === 'undefined') {
   }
 
   Modal.prototype.checkScrollbar = function () {
-    this.bodyIsOverflowing = document.body.scrollHeight > document.documentElement.clientHeight
+    var fullWindowWidth = window.innerWidth
+    if (!fullWindowWidth) { // workaround for missing window.innerWidth in IE8
+      var documentElementRect = document.documentElement.getBoundingClientRect()
+      fullWindowWidth = documentElementRect.right - Math.abs(documentElementRect.left)
+    }
+    this.bodyIsOverflowing = document.body.clientWidth < fullWindowWidth
     this.scrollbarWidth = this.measureScrollbar()
   }
 
   Modal.prototype.setScrollbar = function () {
     var bodyPad = parseInt((this.$body.css('padding-right') || 0), 10)
+    this.originalBodyPad = document.body.style.paddingRight || ''
     if (this.bodyIsOverflowing) this.$body.css('padding-right', bodyPad + this.scrollbarWidth)
   }
 
   Modal.prototype.resetScrollbar = function () {
-    this.$body.css('padding-right', '')
+    this.$body.css('padding-right', this.originalBodyPad)
   }
 
   Modal.prototype.measureScrollbar = function () { // thx walsh
@@ -21408,11 +21436,11 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: tooltip.js v3.3.1
+ * Bootstrap: tooltip.js v3.3.4
  * http://getbootstrap.com/javascript/#tooltip
  * Inspired by the original jQuery.tipsy by Jason Frame
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -21424,17 +21452,17 @@ if (typeof jQuery === 'undefined') {
   // ===============================
 
   var Tooltip = function (element, options) {
-    this.type       =
-    this.options    =
-    this.enabled    =
-    this.timeout    =
-    this.hoverState =
+    this.type       = null
+    this.options    = null
+    this.enabled    = null
+    this.timeout    = null
+    this.hoverState = null
     this.$element   = null
 
     this.init('tooltip', element, options)
   }
 
-  Tooltip.VERSION  = '3.3.1'
+  Tooltip.VERSION  = '3.3.4'
 
   Tooltip.TRANSITION_DURATION = 150
 
@@ -21460,6 +21488,10 @@ if (typeof jQuery === 'undefined') {
     this.$element  = $(element)
     this.options   = this.getOptions(options)
     this.$viewport = this.options.viewport && $(this.options.viewport.selector || this.options.viewport)
+
+    if (this.$element[0] instanceof document.constructor && !this.options.selector) {
+      throw new Error('`selector` option must be specified when initializing ' + this.type + ' on the window.document object!')
+    }
 
     var triggers = this.options.trigger.split(' ')
 
@@ -21681,10 +21713,10 @@ if (typeof jQuery === 'undefined') {
     this.replaceArrow(arrowDelta, $tip[0][arrowOffsetPosition], isVertical)
   }
 
-  Tooltip.prototype.replaceArrow = function (delta, dimension, isHorizontal) {
+  Tooltip.prototype.replaceArrow = function (delta, dimension, isVertical) {
     this.arrow()
-      .css(isHorizontal ? 'left' : 'top', 50 * (1 - delta / dimension) + '%')
-      .css(isHorizontal ? 'top' : 'left', '')
+      .css(isVertical ? 'left' : 'top', 50 * (1 - delta / dimension) + '%')
+      .css(isVertical ? 'top' : 'left', '')
   }
 
   Tooltip.prototype.setContent = function () {
@@ -21697,7 +21729,7 @@ if (typeof jQuery === 'undefined') {
 
   Tooltip.prototype.hide = function (callback) {
     var that = this
-    var $tip = this.tip()
+    var $tip = $(this.$tip)
     var e    = $.Event('hide.bs.' + this.type)
 
     function complete() {
@@ -21714,7 +21746,7 @@ if (typeof jQuery === 'undefined') {
 
     $tip.removeClass('in')
 
-    $.support.transition && this.$tip.hasClass('fade') ?
+    $.support.transition && $tip.hasClass('fade') ?
       $tip
         .one('bsTransitionEnd', complete)
         .emulateTransitionEnd(Tooltip.TRANSITION_DURATION) :
@@ -21755,10 +21787,10 @@ if (typeof jQuery === 'undefined') {
   }
 
   Tooltip.prototype.getCalculatedOffset = function (placement, pos, actualWidth, actualHeight) {
-    return placement == 'bottom' ? { top: pos.top + pos.height,   left: pos.left + pos.width / 2 - actualWidth / 2  } :
-           placement == 'top'    ? { top: pos.top - actualHeight, left: pos.left + pos.width / 2 - actualWidth / 2  } :
+    return placement == 'bottom' ? { top: pos.top + pos.height,   left: pos.left + pos.width / 2 - actualWidth / 2 } :
+           placement == 'top'    ? { top: pos.top - actualHeight, left: pos.left + pos.width / 2 - actualWidth / 2 } :
            placement == 'left'   ? { top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth } :
-        /* placement == 'right' */ { top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width   }
+        /* placement == 'right' */ { top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width }
 
   }
 
@@ -21854,18 +21886,12 @@ if (typeof jQuery === 'undefined') {
 
   function Plugin(option) {
     return this.each(function () {
-      var $this    = $(this)
-      var data     = $this.data('bs.tooltip')
-      var options  = typeof option == 'object' && option
-      var selector = options && options.selector
+      var $this   = $(this)
+      var data    = $this.data('bs.tooltip')
+      var options = typeof option == 'object' && option
 
-      if (!data && option == 'destroy') return
-      if (selector) {
-        if (!data) $this.data('bs.tooltip', (data = {}))
-        if (!data[selector]) data[selector] = new Tooltip(this, options)
-      } else {
-        if (!data) $this.data('bs.tooltip', (data = new Tooltip(this, options)))
-      }
+      if (!data && /destroy|hide/.test(option)) return
+      if (!data) $this.data('bs.tooltip', (data = new Tooltip(this, options)))
       if (typeof option == 'string') data[option]()
     })
   }
@@ -21887,10 +21913,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: popover.js v3.3.1
+ * Bootstrap: popover.js v3.3.4
  * http://getbootstrap.com/javascript/#popovers
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -21907,7 +21933,7 @@ if (typeof jQuery === 'undefined') {
 
   if (!$.fn.tooltip) throw new Error('Popover requires tooltip.js')
 
-  Popover.VERSION  = '3.3.1'
+  Popover.VERSION  = '3.3.4'
 
   Popover.DEFAULTS = $.extend({}, $.fn.tooltip.Constructor.DEFAULTS, {
     placement: 'right',
@@ -21963,29 +21989,18 @@ if (typeof jQuery === 'undefined') {
     return (this.$arrow = this.$arrow || this.tip().find('.arrow'))
   }
 
-  Popover.prototype.tip = function () {
-    if (!this.$tip) this.$tip = $(this.options.template)
-    return this.$tip
-  }
-
 
   // POPOVER PLUGIN DEFINITION
   // =========================
 
   function Plugin(option) {
     return this.each(function () {
-      var $this    = $(this)
-      var data     = $this.data('bs.popover')
-      var options  = typeof option == 'object' && option
-      var selector = options && options.selector
+      var $this   = $(this)
+      var data    = $this.data('bs.popover')
+      var options = typeof option == 'object' && option
 
-      if (!data && option == 'destroy') return
-      if (selector) {
-        if (!data) $this.data('bs.popover', (data = {}))
-        if (!data[selector]) data[selector] = new Popover(this, options)
-      } else {
-        if (!data) $this.data('bs.popover', (data = new Popover(this, options)))
-      }
+      if (!data && /destroy|hide/.test(option)) return
+      if (!data) $this.data('bs.popover', (data = new Popover(this, options)))
       if (typeof option == 'string') data[option]()
     })
   }
@@ -22007,10 +22022,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: scrollspy.js v3.3.1
+ * Bootstrap: scrollspy.js v3.3.4
  * http://getbootstrap.com/javascript/#scrollspy
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -22022,10 +22037,8 @@ if (typeof jQuery === 'undefined') {
   // ==========================
 
   function ScrollSpy(element, options) {
-    var process  = $.proxy(this.process, this)
-
-    this.$body          = $('body')
-    this.$scrollElement = $(element).is('body') ? $(window) : $(element)
+    this.$body          = $(document.body)
+    this.$scrollElement = $(element).is(document.body) ? $(window) : $(element)
     this.options        = $.extend({}, ScrollSpy.DEFAULTS, options)
     this.selector       = (this.options.target || '') + ' .nav li > a'
     this.offsets        = []
@@ -22033,12 +22046,12 @@ if (typeof jQuery === 'undefined') {
     this.activeTarget   = null
     this.scrollHeight   = 0
 
-    this.$scrollElement.on('scroll.bs.scrollspy', process)
+    this.$scrollElement.on('scroll.bs.scrollspy', $.proxy(this.process, this))
     this.refresh()
     this.process()
   }
 
-  ScrollSpy.VERSION  = '3.3.1'
+  ScrollSpy.VERSION  = '3.3.4'
 
   ScrollSpy.DEFAULTS = {
     offset: 10
@@ -22049,19 +22062,18 @@ if (typeof jQuery === 'undefined') {
   }
 
   ScrollSpy.prototype.refresh = function () {
-    var offsetMethod = 'offset'
-    var offsetBase   = 0
+    var that          = this
+    var offsetMethod  = 'offset'
+    var offsetBase    = 0
+
+    this.offsets      = []
+    this.targets      = []
+    this.scrollHeight = this.getScrollHeight()
 
     if (!$.isWindow(this.$scrollElement[0])) {
       offsetMethod = 'position'
       offsetBase   = this.$scrollElement.scrollTop()
     }
-
-    this.offsets = []
-    this.targets = []
-    this.scrollHeight = this.getScrollHeight()
-
-    var self     = this
 
     this.$body
       .find(this.selector)
@@ -22077,8 +22089,8 @@ if (typeof jQuery === 'undefined') {
       })
       .sort(function (a, b) { return a[0] - b[0] })
       .each(function () {
-        self.offsets.push(this[0])
-        self.targets.push(this[1])
+        that.offsets.push(this[0])
+        that.targets.push(this[1])
       })
   }
 
@@ -22107,7 +22119,7 @@ if (typeof jQuery === 'undefined') {
     for (i = offsets.length; i--;) {
       activeTarget != targets[i]
         && scrollTop >= offsets[i]
-        && (!offsets[i + 1] || scrollTop <= offsets[i + 1])
+        && (offsets[i + 1] === undefined || scrollTop < offsets[i + 1])
         && this.activate(targets[i])
     }
   }
@@ -22118,8 +22130,8 @@ if (typeof jQuery === 'undefined') {
     this.clear()
 
     var selector = this.selector +
-        '[data-target="' + target + '"],' +
-        this.selector + '[href="' + target + '"]'
+      '[data-target="' + target + '"],' +
+      this.selector + '[href="' + target + '"]'
 
     var active = $(selector)
       .parents('li')
@@ -22183,10 +22195,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: tab.js v3.3.1
+ * Bootstrap: tab.js v3.3.4
  * http://getbootstrap.com/javascript/#tabs
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -22201,7 +22213,7 @@ if (typeof jQuery === 'undefined') {
     this.element = $(element)
   }
 
-  Tab.VERSION = '3.3.1'
+  Tab.VERSION = '3.3.4'
 
   Tab.TRANSITION_DURATION = 150
 
@@ -22272,7 +22284,7 @@ if (typeof jQuery === 'undefined') {
         element.removeClass('fade')
       }
 
-      if (element.parent('.dropdown-menu')) {
+      if (element.parent('.dropdown-menu').length) {
         element
           .closest('li.dropdown')
             .addClass('active')
@@ -22337,10 +22349,10 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 /* ========================================================================
- * Bootstrap: affix.js v3.3.1
+ * Bootstrap: affix.js v3.3.4
  * http://getbootstrap.com/javascript/#affix
  * ========================================================================
- * Copyright 2011-2014 Twitter, Inc.
+ * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  * ======================================================================== */
 
@@ -22359,14 +22371,14 @@ if (typeof jQuery === 'undefined') {
       .on('click.bs.affix.data-api',  $.proxy(this.checkPositionWithEventLoop, this))
 
     this.$element     = $(element)
-    this.affixed      =
-    this.unpin        =
+    this.affixed      = null
+    this.unpin        = null
     this.pinnedOffset = null
 
     this.checkPosition()
   }
 
-  Affix.VERSION  = '3.3.1'
+  Affix.VERSION  = '3.3.4'
 
   Affix.RESET    = 'affix affix-top affix-bottom'
 
@@ -22391,7 +22403,7 @@ if (typeof jQuery === 'undefined') {
     var colliderTop    = initializing ? scrollTop : position.top
     var colliderHeight = initializing ? targetHeight : height
 
-    if (offsetTop != null && colliderTop <= offsetTop) return 'top'
+    if (offsetTop != null && scrollTop <= offsetTop) return 'top'
     if (offsetBottom != null && (colliderTop + colliderHeight >= scrollHeight - offsetBottom)) return 'bottom'
 
     return false
@@ -22416,7 +22428,7 @@ if (typeof jQuery === 'undefined') {
     var offset       = this.options.offset
     var offsetTop    = offset.top
     var offsetBottom = offset.bottom
-    var scrollHeight = $('body').height()
+    var scrollHeight = $(document.body).height()
 
     if (typeof offset != 'object')         offsetBottom = offsetTop = offset
     if (typeof offsetTop == 'function')    offsetTop    = offset.top(this.$element)
@@ -22499,36 +22511,7 @@ if (typeof jQuery === 'undefined') {
 
 }(jQuery);
 
-/**
- * bluebird build version 2.5.1
- * Features enabled: core, race, call_get, generators, map, nodeify, promisify, props, reduce, settle, some, progress, cancel, using, filter, any, each, timers
-*/
-/**
- * @preserve The MIT License (MIT)
- *
- * Copyright (c) 2014 Petka Antonov
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- */
-!function(e){"object"==typeof exports?module.exports=e():"function"==typeof define&&define.amd?define(e):"undefined"!=typeof window?window.Promise=e():"undefined"!=typeof global?global.Promise=e():"undefined"!=typeof self&&(self.Promise=e())}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
+/* @preserve
  * The MIT License (MIT)
  * 
  * Copyright (c) 2014 Petka Antonov
@@ -22552,15 +22535,17 @@ if (typeof jQuery === 'undefined') {
  * THE SOFTWARE.
  * 
  */
+/**
+ * bluebird build version 2.9.24
+ * Features enabled: core, race, call_get, generators, map, nodeify, promisify, props, reduce, settle, some, cancel, using, filter, any, each, timers
+*/
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Promise=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise) {
 var SomePromiseArray = Promise._SomePromiseArray;
 function any(promises) {
     var ret = new SomePromiseArray(promises);
     var promise = ret.promise();
-    if (promise.isRejected()) {
-        return promise;
-    }
     ret.setHowMany(1);
     ret.setUnwrap();
     ret.init();
@@ -22577,41 +22562,19 @@ Promise.prototype.any = function () {
 
 };
 
-},{}],2:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],2:[function(_dereq_,module,exports){
 "use strict";
-var firstLineError = new Error();
-var schedule = require("./schedule.js");
-var Queue = require("./queue.js");
-var _process = typeof process !== "undefined" ? process : undefined;
+var firstLineError;
+try {throw new Error(); } catch (e) {firstLineError = e;}
+var schedule = _dereq_("./schedule.js");
+var Queue = _dereq_("./queue.js");
+var util = _dereq_("./util.js");
 
 function Async() {
     this._isTickUsed = false;
     this._lateQueue = new Queue(16);
-    this._normalQueue = new Queue(65536);
+    this._normalQueue = new Queue(16);
+    this._trampolineEnabled = true;
     var self = this;
     this.drainQueues = function () {
         self._drainQueues();
@@ -22620,17 +22583,23 @@ function Async() {
         schedule.isStatic ? schedule(this.drainQueues) : schedule;
 }
 
-Async.prototype.haveItemsQueued = function () {
-    return this._normalQueue.length() > 0;
+Async.prototype.disableTrampolineIfNecessary = function() {
+    if (util.hasDevTools) {
+        this._trampolineEnabled = false;
+    }
 };
 
-Async.prototype._withDomain = function(fn) {
-    if (_process !== undefined &&
-        _process.domain != null &&
-        !fn.domain) {
-        fn = _process.domain.bind(fn);
+Async.prototype.enableTrampoline = function() {
+    if (!this._trampolineEnabled) {
+        this._trampolineEnabled = true;
+        this._schedule = function(fn) {
+            setTimeout(fn, 0);
+        };
     }
-    return fn;
+};
+
+Async.prototype.haveItemsQueued = function () {
+    return this._normalQueue.length() > 0;
 };
 
 Async.prototype.throwLater = function(fn, arg) {
@@ -22638,7 +22607,8 @@ Async.prototype.throwLater = function(fn, arg) {
         arg = fn;
         fn = function () { throw arg; };
     }
-    fn = this._withDomain(fn);
+    var domain = this._getDomain();
+    if (domain !== undefined) fn = domain.bind(fn);
     if (typeof setTimeout !== "undefined") {
         setTimeout(function() {
             fn(arg);
@@ -22652,27 +22622,124 @@ Async.prototype.throwLater = function(fn, arg) {
     }
 };
 
-Async.prototype.invokeLater = function (fn, receiver, arg) {
-    fn = this._withDomain(fn);
+Async.prototype._getDomain = function() {};
+
+if (util.isNode) {
+    var EventsModule = _dereq_("events");
+
+    var domainGetter = function() {
+        var domain = process.domain;
+        if (domain === null) return undefined;
+        return domain;
+    };
+
+    if (EventsModule.usingDomains) {
+        Async.prototype._getDomain = domainGetter;
+    } else {
+        var descriptor =
+            Object.getOwnPropertyDescriptor(EventsModule, "usingDomains");
+
+        if (!descriptor.configurable) {
+            process.on("domainsActivated", function() {
+                Async.prototype._getDomain = domainGetter;
+            });
+        } else {
+            var usingDomains = false;
+            Object.defineProperty(EventsModule, "usingDomains", {
+                configurable: false,
+                enumerable: true,
+                get: function() {
+                    return usingDomains;
+                },
+                set: function(value) {
+                    if (usingDomains || !value) return;
+                    usingDomains = true;
+                    Async.prototype._getDomain = domainGetter;
+                    util.toFastProperties(process);
+                    process.emit("domainsActivated");
+                }
+            });
+        }
+
+
+    }
+}
+
+function AsyncInvokeLater(fn, receiver, arg) {
+    var domain = this._getDomain();
+    if (domain !== undefined) fn = domain.bind(fn);
     this._lateQueue.push(fn, receiver, arg);
     this._queueTick();
-};
+}
+
+function AsyncInvoke(fn, receiver, arg) {
+    var domain = this._getDomain();
+    if (domain !== undefined) fn = domain.bind(fn);
+    this._normalQueue.push(fn, receiver, arg);
+    this._queueTick();
+}
+
+function AsyncSettlePromises(promise) {
+    var domain = this._getDomain();
+    if (domain !== undefined) {
+        var fn = domain.bind(promise._settlePromises);
+        this._normalQueue.push(fn, promise, undefined);
+    } else {
+        this._normalQueue._pushOne(promise);
+    }
+    this._queueTick();
+}
+
+if (!util.hasDevTools) {
+    Async.prototype.invokeLater = AsyncInvokeLater;
+    Async.prototype.invoke = AsyncInvoke;
+    Async.prototype.settlePromises = AsyncSettlePromises;
+} else {
+    Async.prototype.invokeLater = function (fn, receiver, arg) {
+        if (this._trampolineEnabled) {
+            AsyncInvokeLater.call(this, fn, receiver, arg);
+        } else {
+            setTimeout(function() {
+                fn.call(receiver, arg);
+            }, 100);
+        }
+    };
+
+    Async.prototype.invoke = function (fn, receiver, arg) {
+        if (this._trampolineEnabled) {
+            AsyncInvoke.call(this, fn, receiver, arg);
+        } else {
+            setTimeout(function() {
+                fn.call(receiver, arg);
+            }, 0);
+        }
+    };
+
+    Async.prototype.settlePromises = function(promise) {
+        if (this._trampolineEnabled) {
+            AsyncSettlePromises.call(this, promise);
+        } else {
+            setTimeout(function() {
+                promise._settlePromises();
+            }, 0);
+        }
+    };
+}
 
 Async.prototype.invokeFirst = function (fn, receiver, arg) {
-    fn = this._withDomain(fn);
+    var domain = this._getDomain();
+    if (domain !== undefined) fn = domain.bind(fn);
     this._normalQueue.unshift(fn, receiver, arg);
-    this._queueTick();
-};
-
-Async.prototype.invoke = function (fn, receiver, arg) {
-    fn = this._withDomain(fn);
-    this._normalQueue.push(fn, receiver, arg);
     this._queueTick();
 };
 
 Async.prototype._drainQueue = function(queue) {
     while (queue.length() > 0) {
         var fn = queue.shift();
+        if (typeof fn !== "function") {
+            fn._settlePromises();
+            continue;
+        }
         var receiver = queue.shift();
         var arg = queue.shift();
         fn.call(receiver, arg);
@@ -22699,67 +22766,95 @@ Async.prototype._reset = function () {
 module.exports = new Async();
 module.exports.firstLineError = firstLineError;
 
-},{"./queue.js":25,"./schedule.js":28}],3:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./queue.js":28,"./schedule.js":31,"./util.js":38,"events":39}],3:[function(_dereq_,module,exports){
+"use strict";
+module.exports = function(Promise, INTERNAL, tryConvertToPromise) {
+var rejectThis = function(_, e) {
+    this._reject(e);
+};
+
+var targetRejected = function(e, context) {
+    context.promiseRejectionQueued = true;
+    context.bindingPromise._then(rejectThis, rejectThis, null, this, e);
+};
+
+var bindingResolved = function(thisArg, context) {
+    this._setBoundTo(thisArg);
+    if (this._isPending()) {
+        this._resolveCallback(context.target);
+    }
+};
+
+var bindingRejected = function(e, context) {
+    if (!context.promiseRejectionQueued) this._reject(e);
+};
+
+Promise.prototype.bind = function (thisArg) {
+    var maybePromise = tryConvertToPromise(thisArg);
+    var ret = new Promise(INTERNAL);
+    ret._propagateFrom(this, 1);
+    var target = this._target();
+    if (maybePromise instanceof Promise) {
+        var context = {
+            promiseRejectionQueued: false,
+            promise: ret,
+            target: target,
+            bindingPromise: maybePromise
+        };
+        target._then(INTERNAL, targetRejected, ret._progress, ret, context);
+        maybePromise._then(
+            bindingResolved, bindingRejected, ret._progress, ret, context);
+    } else {
+        ret._setBoundTo(thisArg);
+        ret._resolveCallback(target);
+    }
+    return ret;
+};
+
+Promise.prototype._setBoundTo = function (obj) {
+    if (obj !== undefined) {
+        this._bitField = this._bitField | 131072;
+        this._boundTo = obj;
+    } else {
+        this._bitField = this._bitField & (~131072);
+    }
+};
+
+Promise.prototype._isBound = function () {
+    return (this._bitField & 131072) === 131072;
+};
+
+Promise.bind = function (thisArg, value) {
+    var maybePromise = tryConvertToPromise(thisArg);
+    var ret = new Promise(INTERNAL);
+
+    if (maybePromise instanceof Promise) {
+        maybePromise._then(function(thisArg) {
+            ret._setBoundTo(thisArg);
+            ret._resolveCallback(value);
+        }, ret._reject, ret._progress, ret, null);
+    } else {
+        ret._setBoundTo(thisArg);
+        ret._resolveCallback(value);
+    }
+    return ret;
+};
+};
+
+},{}],4:[function(_dereq_,module,exports){
 "use strict";
 var old;
 if (typeof Promise !== "undefined") old = Promise;
-function noConflict(bluebird) {
+function noConflict() {
     try { if (Promise === bluebird) Promise = old; }
     catch (e) {}
     return bluebird;
 }
-module.exports = require("./promise.js")();
-module.exports.noConflict = noConflict;
+var bluebird = _dereq_("./promise.js")();
+bluebird.noConflict = noConflict;
+module.exports = bluebird;
 
-},{"./promise.js":20}],4:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./promise.js":23}],5:[function(_dereq_,module,exports){
 "use strict";
 var cr = Object.create;
 if (cr) {
@@ -22769,32 +22864,39 @@ if (cr) {
 }
 
 module.exports = function(Promise) {
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 var canEvaluate = util.canEvaluate;
 var isIdentifier = util.isIdentifier;
 
-function makeMethodCaller (methodName) {
-    return new Function("obj", "                                             \n\
-        'use strict'                                                         \n\
-        var len = this.length;                                               \n\
-        switch(len) {                                                        \n\
-            case 1: return obj.methodName(this[0]);                          \n\
-            case 2: return obj.methodName(this[0], this[1]);                 \n\
-            case 3: return obj.methodName(this[0], this[1], this[2]);        \n\
-            case 0: return obj.methodName();                                 \n\
-            default: return obj.methodName.apply(obj, this);                 \n\
-        }                                                                    \n\
-        ".replace(/methodName/g, methodName));
-}
+var getMethodCaller;
+var getGetter;
+if (!true) {
+var makeMethodCaller = function (methodName) {
+    return new Function("ensureMethod", "                                    \n\
+        return function(obj) {                                               \n\
+            'use strict'                                                     \n\
+            var len = this.length;                                           \n\
+            ensureMethod(obj, 'methodName');                                 \n\
+            switch(len) {                                                    \n\
+                case 1: return obj.methodName(this[0]);                      \n\
+                case 2: return obj.methodName(this[0], this[1]);             \n\
+                case 3: return obj.methodName(this[0], this[1], this[2]);    \n\
+                case 0: return obj.methodName();                             \n\
+                default:                                                     \n\
+                    return obj.methodName.apply(obj, this);                  \n\
+            }                                                                \n\
+        };                                                                   \n\
+        ".replace(/methodName/g, methodName))(ensureMethod);
+};
 
-function makeGetter (propertyName) {
+var makeGetter = function (propertyName) {
     return new Function("obj", "                                             \n\
         'use strict';                                                        \n\
         return obj.propertyName;                                             \n\
         ".replace("propertyName", propertyName));
-}
+};
 
-function getCompiled(name, compiler, cache) {
+var getCompiled = function(name, compiler, cache) {
     var ret = cache[name];
     if (typeof ret !== "function") {
         if (!isIdentifier(name)) {
@@ -22810,26 +22912,42 @@ function getCompiled(name, compiler, cache) {
         }
     }
     return ret;
-}
+};
 
-function getMethodCaller(name) {
+getMethodCaller = function(name) {
     return getCompiled(name, makeMethodCaller, callerCache);
+};
+
+getGetter = function(name) {
+    return getCompiled(name, makeGetter, getterCache);
+};
 }
 
-function getGetter(name) {
-    return getCompiled(name, makeGetter, getterCache);
+function ensureMethod(obj, methodName) {
+    var fn;
+    if (obj != null) fn = obj[methodName];
+    if (typeof fn !== "function") {
+        var message = "Object " + util.classString(obj) + " has no method '" +
+            util.toString(methodName) + "'";
+        throw new Promise.TypeError(message);
+    }
+    return fn;
 }
 
 function caller(obj) {
-    return obj[this.pop()].apply(obj, this);
+    var methodName = this.pop();
+    var fn = ensureMethod(obj, methodName);
+    return fn.apply(obj, this);
 }
 Promise.prototype.call = function (methodName) {
     var $_len = arguments.length;var args = new Array($_len - 1); for(var $_i = 1; $_i < $_len; ++$_i) {args[$_i - 1] = arguments[$_i];}
-    if (canEvaluate) {
-        var maybeCaller = getMethodCaller(methodName);
-        if (maybeCaller !== null) {
-            return this._then(
-                maybeCaller, undefined, undefined, args, undefined);
+    if (!true) {
+        if (canEvaluate) {
+            var maybeCaller = getMethodCaller(methodName);
+            if (maybeCaller !== null) {
+                return this._then(
+                    maybeCaller, undefined, undefined, args, undefined);
+            }
         }
     }
     args.push(methodName);
@@ -22861,37 +22979,11 @@ Promise.prototype.get = function (propertyName) {
 };
 };
 
-},{"./util.js":35}],5:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],6:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function(Promise, INTERNAL) {
-var errors = require("./errors.js");
-var canAttachTrace = errors.canAttachTrace;
-var async = require("./async.js");
-var util = require("./util.js");
+module.exports = function(Promise) {
+var errors = _dereq_("./errors.js");
+var async = _dereq_("./async.js");
 var CancellationError = errors.CancellationError;
 
 Promise.prototype._cancel = function (reason) {
@@ -22903,10 +22995,7 @@ Promise.prototype._cancel = function (reason) {
         promiseToReject = parent;
     }
     this._unsetCancellable();
-    var trace = canAttachTrace(reason) ? reason
-                                       : new Error(util.toString(reason));
-    promiseToReject._attachExtraTrace(trace);
-    promiseToReject._target()._rejectUnchecked(reason, trace);
+    promiseToReject._target()._rejectCallback(reason, false, true);
 };
 
 Promise.prototype.cancel = function (reason) {
@@ -22918,15 +23007,14 @@ Promise.prototype.cancel = function (reason) {
 
 Promise.prototype.cancellable = function () {
     if (this._cancellable()) return this;
+    async.enableTrampoline();
     this._setCancellable();
     this._cancellationParent = undefined;
     return this;
 };
 
 Promise.prototype.uncancellable = function () {
-    var ret = new Promise(INTERNAL);
-    ret._propagateFrom(this, 2 | 4);
-    ret._follow(this);
+    var ret = this.then();
     ret._unsetCancellable();
     return ret;
 };
@@ -22941,52 +23029,76 @@ Promise.prototype.fork = function (didFulfill, didReject, didProgress) {
 };
 };
 
-},{"./async.js":2,"./errors.js":10,"./util.js":35}],6:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./errors.js":13}],7:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function() {
-var inherits = require("./util.js").inherits;
-var defineProperty = require("./es5.js").defineProperty;
-var rtraceline = null;
+var async = _dereq_("./async.js");
+var util = _dereq_("./util.js");
+var bluebirdFramePattern =
+    /[\\\/]bluebird[\\\/]js[\\\/](main|debug|zalgo|instrumented)/;
+var stackFramePattern = null;
 var formatStack = null;
+var indentStackFrames = false;
+var warn;
 
 function CapturedTrace(parent) {
     this._parent = parent;
+    var length = this._length = 1 + (parent === undefined ? 0 : parent._length);
     captureStackTrace(this, CapturedTrace);
-
+    if (length > 32) this.uncycle();
 }
-inherits(CapturedTrace, Error);
+util.inherits(CapturedTrace, Error);
+
+CapturedTrace.prototype.uncycle = function() {
+    var length = this._length;
+    if (length < 2) return;
+    var nodes = [];
+    var stackToIndex = {};
+
+    for (var i = 0, node = this; node !== undefined; ++i) {
+        nodes.push(node);
+        node = node._parent;
+    }
+    length = this._length = i;
+    for (var i = length - 1; i >= 0; --i) {
+        var stack = nodes[i].stack;
+        if (stackToIndex[stack] === undefined) {
+            stackToIndex[stack] = i;
+        }
+    }
+    for (var i = 0; i < length; ++i) {
+        var currentStack = nodes[i].stack;
+        var index = stackToIndex[currentStack];
+        if (index !== undefined && index !== i) {
+            if (index > 0) {
+                nodes[index - 1]._parent = undefined;
+                nodes[index - 1]._length = 1;
+            }
+            nodes[i]._parent = undefined;
+            nodes[i]._length = 1;
+            var cycleEdgeNode = i > 0 ? nodes[i - 1] : this;
+
+            if (index < length - 1) {
+                cycleEdgeNode._parent = nodes[index + 1];
+                cycleEdgeNode._parent.uncycle();
+                cycleEdgeNode._length =
+                    cycleEdgeNode._parent._length + 1;
+            } else {
+                cycleEdgeNode._parent = undefined;
+                cycleEdgeNode._length = 1;
+            }
+            var currentChildLength = cycleEdgeNode._length + 1;
+            for (var j = i - 2; j >= 0; --j) {
+                nodes[j]._length = currentChildLength;
+                currentChildLength++;
+            }
+            return;
+        }
+    }
+};
 
 CapturedTrace.prototype.parent = function() {
     return this._parent;
-};
-
-CapturedTrace.prototype.setParent = function(parent) {
-    if (parent === this) return;
-    this._parent = parent;
 };
 
 CapturedTrace.prototype.hasParent = function() {
@@ -22994,92 +23106,116 @@ CapturedTrace.prototype.hasParent = function() {
 };
 
 CapturedTrace.prototype.attachExtraTrace = function(error) {
+    if (error.__stackCleaned__) return;
+    this.uncycle();
+    var parsed = CapturedTrace.parseStackAndMessage(error);
+    var message = parsed.message;
+    var stacks = [parsed.stack];
+
     var trace = this;
-    var stack = error.stack;
-    stack = typeof stack === "string" ? stack.split("\n") : [];
-    this.protectErrorMessageNewlines(stack);
-    var headerLineCount = 1;
-    var combinedTraces = 1;
-
-    do {
-        stack = trace.combine(stack);
-        combinedTraces++;
-    } while ((trace = trace.parent()) != null);
-
-    var stackTraceLimit = Error.stackTraceLimit || 10;
-    var max = (stackTraceLimit + headerLineCount) * combinedTraces;
-    var len = stack.length;
-    if (len > max) {
-        stack.length = max;
+    while (trace !== undefined) {
+        stacks.push(cleanStack(trace.stack.split("\n")));
+        trace = trace._parent;
     }
-
-    if (len > 0)
-        stack[0] = stack[0].split("\u0002\u0000\u0001").join("\n");
-
-    if (stack.length <= headerLineCount) {
-        error.stack = "(No stack trace)";
-    } else {
-        error.stack = stack.join("\n");
-    }
+    removeCommonRoots(stacks);
+    removeDuplicateOrEmptyJumps(stacks);
+    util.notEnumerableProp(error, "stack", reconstructStack(message, stacks));
+    util.notEnumerableProp(error, "__stackCleaned__", true);
 };
 
-CapturedTrace.prototype.combine = function(current) {
-    var prev = this.stack.split("\n");
-    var currentLastIndex = current.length - 1;
-    var currentLastLine = current[currentLastIndex];
-    var commonRootMeetPoint = -1;
-    for (var i = prev.length - 1; i >= 0; --i) {
-        if (prev[i] === currentLastLine) {
-            commonRootMeetPoint = i;
-            break;
+function reconstructStack(message, stacks) {
+    for (var i = 0; i < stacks.length - 1; ++i) {
+        stacks[i].push("From previous event:");
+        stacks[i] = stacks[i].join("\n");
+    }
+    if (i < stacks.length) {
+        stacks[i] = stacks[i].join("\n");
+    }
+    return message + "\n" + stacks.join("\n");
+}
+
+function removeDuplicateOrEmptyJumps(stacks) {
+    for (var i = 0; i < stacks.length; ++i) {
+        if (stacks[i].length === 0 ||
+            ((i + 1 < stacks.length) && stacks[i][0] === stacks[i+1][0])) {
+            stacks.splice(i, 1);
+            i--;
         }
     }
+}
 
-    for (var i = commonRootMeetPoint; i >= 0; --i) {
-        var line = prev[i];
-        if (current[currentLastIndex] === line) {
-            current.pop();
-            currentLastIndex--;
-        } else {
-            break;
+function removeCommonRoots(stacks) {
+    var current = stacks[0];
+    for (var i = 1; i < stacks.length; ++i) {
+        var prev = stacks[i];
+        var currentLastIndex = current.length - 1;
+        var currentLastLine = current[currentLastIndex];
+        var commonRootMeetPoint = -1;
+
+        for (var j = prev.length - 1; j >= 0; --j) {
+            if (prev[j] === currentLastLine) {
+                commonRootMeetPoint = j;
+                break;
+            }
         }
+
+        for (var j = commonRootMeetPoint; j >= 0; --j) {
+            var line = prev[j];
+            if (current[currentLastIndex] === line) {
+                current.pop();
+                currentLastIndex--;
+            } else {
+                break;
+            }
+        }
+        current = prev;
     }
+}
 
-    current.push("From previous event:");
-    var lines = current.concat(prev);
-
+function cleanStack(stack) {
     var ret = [];
-
-    for (var i = 0, len = lines.length; i < len; ++i) {
-        if (((rtraceline.test(lines[i]) && shouldIgnore(lines[i])) ||
-            (i > 0 && !rtraceline.test(lines[i])) &&
-            lines[i] !== "From previous event:")
-       ) {
-            continue;
+    for (var i = 0; i < stack.length; ++i) {
+        var line = stack[i];
+        var isTraceLine = stackFramePattern.test(line) ||
+            "    (No stack trace)" === line;
+        var isInternalFrame = isTraceLine && shouldIgnore(line);
+        if (isTraceLine && !isInternalFrame) {
+            if (indentStackFrames && line.charAt(0) !== " ") {
+                line = "    " + line;
+            }
+            ret.push(line);
         }
-        ret.push(lines[i]);
     }
     return ret;
-};
+}
 
-CapturedTrace.prototype.protectErrorMessageNewlines = function(stack) {
+function stackFramesAsArray(error) {
+    var stack = error.stack.replace(/\s+$/g, "").split("\n");
     for (var i = 0; i < stack.length; ++i) {
-        if (rtraceline.test(stack[i])) {
+        var line = stack[i];
+        if ("    (No stack trace)" === line || stackFramePattern.test(line)) {
             break;
         }
     }
-
-    if (i <= 1) return;
-
-    var errorMessageLines = [];
-    for (var j = 0; j < i; ++j) {
-        errorMessageLines.push(stack.shift());
+    if (i > 0) {
+        stack = stack.slice(i);
     }
-    stack.unshift(errorMessageLines.join("\u0002\u0000\u0001"));
+    return stack;
+}
+
+CapturedTrace.parseStackAndMessage = function(error) {
+    var stack = error.stack;
+    var message = error.toString();
+    stack = typeof stack === "string" && stack.length > 0
+                ? stackFramesAsArray(error) : ["    (No stack trace)"];
+    return {
+        message: message,
+        stack: cleanStack(stack)
+    };
 };
 
 CapturedTrace.formatAndLogError = function(error, title) {
-    if (typeof console === "object") {
+    if (typeof console !== "undefined") {
         var message;
         if (typeof error === "object" || typeof error === "function") {
             var stack = error.stack;
@@ -23087,9 +23223,8 @@ CapturedTrace.formatAndLogError = function(error, title) {
         } else {
             message = title + String(error);
         }
-        if (typeof console.warn === "function" ||
-            typeof console.warn === "object") {
-            console.warn(message);
+        if (typeof warn === "function") {
+            warn(message);
         } else if (typeof console.log === "function" ||
             typeof console.log === "object") {
             console.log(message);
@@ -23098,17 +23233,54 @@ CapturedTrace.formatAndLogError = function(error, title) {
 };
 
 CapturedTrace.unhandledRejection = function (reason) {
-    CapturedTrace.formatAndLogError(
-        reason, "^--- With additional stack trace: ");
-};
-
-CapturedTrace.possiblyUnhandledRejection = function (reason) {
-    CapturedTrace.formatAndLogError(
-        reason, "Possibly unhandled ");
+    CapturedTrace.formatAndLogError(reason, "^--- With additional stack trace: ");
 };
 
 CapturedTrace.isSupported = function () {
     return typeof captureStackTrace === "function";
+};
+
+CapturedTrace.fireRejectionEvent =
+function(name, localHandler, reason, promise) {
+    var localEventFired = false;
+    try {
+        if (typeof localHandler === "function") {
+            localEventFired = true;
+            if (name === "rejectionHandled") {
+                localHandler(promise);
+            } else {
+                localHandler(reason, promise);
+            }
+        }
+    } catch (e) {
+        async.throwLater(e);
+    }
+
+    var globalEventFired = false;
+    try {
+        globalEventFired = fireGlobalEvent(name, reason, promise);
+    } catch (e) {
+        globalEventFired = true;
+        async.throwLater(e);
+    }
+
+    var domEventFired = false;
+    if (fireDomEvent) {
+        try {
+            domEventFired = fireDomEvent(name.toLowerCase(), {
+                reason: reason,
+                promise: promise
+            });
+        } catch (e) {
+            domEventFired = true;
+            async.throwLater(e);
+        }
+    }
+
+    if (!globalEventFired && !localEventFired && !domEventFired &&
+        name === "unhandledRejection") {
+        CapturedTrace.formatAndLogError(reason, "Unhandled rejection ");
+    }
 };
 
 function formatNonError(obj) {
@@ -23185,6 +23357,7 @@ CapturedTrace.setBounds = function(firstLineError, lastLineError) {
     }
 
     shouldIgnore = function(line) {
+        if (bluebirdFramePattern.test(line)) return true;
         var info = parseLineInfo(line);
         if (info) {
             if (info.fileName === firstFileName &&
@@ -23197,122 +23370,167 @@ CapturedTrace.setBounds = function(firstLineError, lastLineError) {
 };
 
 var captureStackTrace = (function stackDetection() {
+    var v8stackFramePattern = /^\s*at\s*/;
+    var v8stackFormatter = function(stack, error) {
+        if (typeof stack === "string") return stack;
+
+        if (error.name !== undefined &&
+            error.message !== undefined) {
+            return error.toString();
+        }
+        return formatNonError(error);
+    };
+
     if (typeof Error.stackTraceLimit === "number" &&
         typeof Error.captureStackTrace === "function") {
-        rtraceline = /^\s*at\s*/;
-        formatStack = function(stack, error) {
-            if (typeof stack === "string") return stack;
-
-            if (error.name !== undefined &&
-                error.message !== undefined) {
-                return error.name + ". " + error.message;
-            }
-            return formatNonError(error);
-
-
-        };
+        Error.stackTraceLimit = Error.stackTraceLimit + 6;
+        stackFramePattern = v8stackFramePattern;
+        formatStack = v8stackFormatter;
         var captureStackTrace = Error.captureStackTrace;
-        var bluebirdRegexp = /[\\\/]bluebird[\\\/]js[\\\/](main|debug|zalgo)/;
+
         shouldIgnore = function(line) {
-            return bluebirdRegexp.test(line);
+            return bluebirdFramePattern.test(line);
         };
         return function(receiver, ignoreUntil) {
+            Error.stackTraceLimit = Error.stackTraceLimit + 6;
             captureStackTrace(receiver, ignoreUntil);
+            Error.stackTraceLimit = Error.stackTraceLimit - 6;
         };
     }
     var err = new Error();
 
     if (typeof err.stack === "string" &&
-        typeof "".startsWith === "function" &&
-        (err.stack.startsWith("stackDetection@")) &&
-        stackDetection.name === "stackDetection") {
-
-        defineProperty(Error, "stackTraceLimit", {
-            writable: true,
-            enumerable: false,
-            configurable: false,
-            value: 25
-        });
-        rtraceline = /@/;
-        var rline = /[@\n]/;
-
-        formatStack = function(stack, error) {
-            if (typeof stack === "string") {
-                return (error.name + ". " + error.message + "\n" + stack);
-            }
-
-            if (error.name !== undefined &&
-                error.message !== undefined) {
-                return error.name + ". " + error.message;
-            }
-            return formatNonError(error);
-        };
-
+        err.stack.split("\n")[0].indexOf("stackDetection@") >= 0) {
+        stackFramePattern = /@/;
+        formatStack = v8stackFormatter;
+        indentStackFrames = true;
         return function captureStackTrace(o) {
-            var stack = new Error().stack;
-            var split = stack.split(rline);
-            var len = split.length;
-            var ret = "";
-            for (var i = 0; i < len; i += 2) {
-                ret += split[i];
-                ret += "@";
-                ret += split[i + 1];
-                ret += "\n";
+            o.stack = new Error().stack;
+        };
+    }
+
+    var hasStackAfterThrow;
+    try { throw new Error(); }
+    catch(e) {
+        hasStackAfterThrow = ("stack" in e);
+    }
+    if (!("stack" in err) && hasStackAfterThrow) {
+        stackFramePattern = v8stackFramePattern;
+        formatStack = v8stackFormatter;
+        return function captureStackTrace(o) {
+            Error.stackTraceLimit = Error.stackTraceLimit + 6;
+            try { throw new Error(); }
+            catch(e) { o.stack = e.stack; }
+            Error.stackTraceLimit = Error.stackTraceLimit - 6;
+        };
+    }
+
+    formatStack = function(stack, error) {
+        if (typeof stack === "string") return stack;
+
+        if ((typeof error === "object" ||
+            typeof error === "function") &&
+            error.name !== undefined &&
+            error.message !== undefined) {
+            return error.toString();
+        }
+        return formatNonError(error);
+    };
+
+    return null;
+
+})([]);
+
+var fireDomEvent;
+var fireGlobalEvent = (function() {
+    if (util.isNode) {
+        return function(name, reason, promise) {
+            if (name === "rejectionHandled") {
+                return process.emit(name, promise);
+            } else {
+                return process.emit(name, reason, promise);
             }
-            o.stack = ret;
         };
     } else {
-        formatStack = function(stack, error) {
-            if (typeof stack === "string") return stack;
-
-            if ((typeof error === "object" ||
-                typeof error === "function") &&
-                error.name !== undefined &&
-                error.message !== undefined) {
-                return error.name + ". " + error.message;
+        var customEventWorks = false;
+        var anyEventWorks = true;
+        try {
+            var ev = new self.CustomEvent("test");
+            customEventWorks = ev instanceof CustomEvent;
+        } catch (e) {}
+        if (!customEventWorks) {
+            try {
+                var event = document.createEvent("CustomEvent");
+                event.initCustomEvent("testingtheevent", false, true, {});
+                self.dispatchEvent(event);
+            } catch (e) {
+                anyEventWorks = false;
             }
-            return formatNonError(error);
-        };
+        }
+        if (anyEventWorks) {
+            fireDomEvent = function(type, detail) {
+                var event;
+                if (customEventWorks) {
+                    event = new self.CustomEvent(type, {
+                        detail: detail,
+                        bubbles: false,
+                        cancelable: true
+                    });
+                } else if (self.dispatchEvent) {
+                    event = document.createEvent("CustomEvent");
+                    event.initCustomEvent(type, false, true, detail);
+                }
 
-        return null;
+                return event ? !self.dispatchEvent(event) : false;
+            };
+        }
+
+        var toWindowMethodNameMap = {};
+        toWindowMethodNameMap["unhandledRejection"] = ("on" +
+            "unhandledRejection").toLowerCase();
+        toWindowMethodNameMap["rejectionHandled"] = ("on" +
+            "rejectionHandled").toLowerCase();
+
+        return function(name, reason, promise) {
+            var methodName = toWindowMethodNameMap[name];
+            var method = self[methodName];
+            if (!method) return false;
+            if (name === "rejectionHandled") {
+                method.call(self, promise);
+            } else {
+                method.call(self, reason, promise);
+            }
+            return true;
+        };
     }
 })();
+
+if (typeof console !== "undefined" && typeof console.warn !== "undefined") {
+    warn = function (message) {
+        console.warn(message);
+    };
+    if (util.isNode && process.stderr.isTTY) {
+        warn = function(message) {
+            process.stderr.write("\u001b[31m" + message + "\u001b[39m\n");
+        };
+    } else if (!util.isNode && typeof (new Error().stack) === "string") {
+        warn = function(message) {
+            console.warn("%c" + message, "color: red");
+        };
+    }
+}
 
 return CapturedTrace;
 };
 
-},{"./es5.js":12,"./util.js":35}],7:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./util.js":38}],8:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(NEXT_FILTER) {
-var util = require("./util.js");
-var errors = require("./errors.js");
-var tryCatch1 = util.tryCatch1;
+var util = _dereq_("./util.js");
+var errors = _dereq_("./errors.js");
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
-var keys = require("./es5.js").keys;
+var keys = _dereq_("./es5.js").keys;
 var TypeError = errors.TypeError;
 
 function CatchFilter(instances, callback, promise) {
@@ -23323,7 +23541,7 @@ function CatchFilter(instances, callback, promise) {
 
 function safePredicate(predicate, e) {
     var safeObject = {};
-    var retfilter = tryCatch1(predicate, safeObject, e);
+    var retfilter = tryCatch(predicate).call(safeObject, e);
 
     if (retfilter === errorObj) return retfilter;
 
@@ -23345,7 +23563,7 @@ CatchFilter.prototype.doFilter = function (e) {
             (item != null && item.prototype instanceof Error);
 
         if (itemIsErrorType && e instanceof item) {
-            var ret = tryCatch1(cb, boundTo, e);
+            var ret = tryCatch(cb).call(boundTo, e);
             if (ret === errorObj) {
                 NEXT_FILTER.e = ret.e;
                 return NEXT_FILTER;
@@ -23354,14 +23572,10 @@ CatchFilter.prototype.doFilter = function (e) {
         } else if (typeof item === "function" && !itemIsErrorType) {
             var shouldHandle = safePredicate(item, e);
             if (shouldHandle === errorObj) {
-                var trace = errors.canAttachTrace(errorObj.e)
-                    ? errorObj.e
-                    : new Error(util.toString(errorObj.e));
-                this._promise._attachExtraTrace(trace);
                 e = errorObj.e;
                 break;
             } else if (shouldHandle) {
-                var ret = tryCatch1(cb, boundTo, e);
+                var ret = tryCatch(cb).call(boundTo, e);
                 if (ret === errorObj) {
                     NEXT_FILTER.e = ret.e;
                     return NEXT_FILTER;
@@ -23377,33 +23591,198 @@ CatchFilter.prototype.doFilter = function (e) {
 return CatchFilter;
 };
 
-},{"./errors.js":10,"./es5.js":12,"./util.js":35}],8:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors.js":13,"./es5.js":14,"./util.js":38}],9:[function(_dereq_,module,exports){
 "use strict";
-var util = require("./util.js");
+module.exports = function(Promise, CapturedTrace, isDebugging) {
+var contextStack = [];
+function Context() {
+    this._trace = new CapturedTrace(peekContext());
+}
+Context.prototype._pushContext = function () {
+    if (!isDebugging()) return;
+    if (this._trace !== undefined) {
+        contextStack.push(this._trace);
+    }
+};
+
+Context.prototype._popContext = function () {
+    if (!isDebugging()) return;
+    if (this._trace !== undefined) {
+        contextStack.pop();
+    }
+};
+
+function createContext() {
+    if (isDebugging()) return new Context();
+}
+
+function peekContext() {
+    var lastIndex = contextStack.length - 1;
+    if (lastIndex >= 0) {
+        return contextStack[lastIndex];
+    }
+    return undefined;
+}
+
+Promise.prototype._peekContext = peekContext;
+Promise.prototype._pushContext = Context.prototype._pushContext;
+Promise.prototype._popContext = Context.prototype._popContext;
+
+return createContext;
+};
+
+},{}],10:[function(_dereq_,module,exports){
+"use strict";
+module.exports = function(Promise, CapturedTrace) {
+var async = _dereq_("./async.js");
+var Warning = _dereq_("./errors.js").Warning;
+var util = _dereq_("./util.js");
+var canAttachTrace = util.canAttachTrace;
+var unhandledRejectionHandled;
+var possiblyUnhandledRejection;
+var debugging = false || (util.isNode &&
+                    (!!process.env["BLUEBIRD_DEBUG"] ||
+                     process.env["NODE_ENV"] === "development"));
+
+if (debugging) {
+    async.disableTrampolineIfNecessary();
+}
+
+Promise.prototype._ensurePossibleRejectionHandled = function () {
+    this._setRejectionIsUnhandled();
+    async.invokeLater(this._notifyUnhandledRejection, this, undefined);
+};
+
+Promise.prototype._notifyUnhandledRejectionIsHandled = function () {
+    CapturedTrace.fireRejectionEvent("rejectionHandled",
+                                  unhandledRejectionHandled, undefined, this);
+};
+
+Promise.prototype._notifyUnhandledRejection = function () {
+    if (this._isRejectionUnhandled()) {
+        var reason = this._getCarriedStackTrace() || this._settledValue;
+        this._setUnhandledRejectionIsNotified();
+        CapturedTrace.fireRejectionEvent("unhandledRejection",
+                                      possiblyUnhandledRejection, reason, this);
+    }
+};
+
+Promise.prototype._setUnhandledRejectionIsNotified = function () {
+    this._bitField = this._bitField | 524288;
+};
+
+Promise.prototype._unsetUnhandledRejectionIsNotified = function () {
+    this._bitField = this._bitField & (~524288);
+};
+
+Promise.prototype._isUnhandledRejectionNotified = function () {
+    return (this._bitField & 524288) > 0;
+};
+
+Promise.prototype._setRejectionIsUnhandled = function () {
+    this._bitField = this._bitField | 2097152;
+};
+
+Promise.prototype._unsetRejectionIsUnhandled = function () {
+    this._bitField = this._bitField & (~2097152);
+    if (this._isUnhandledRejectionNotified()) {
+        this._unsetUnhandledRejectionIsNotified();
+        this._notifyUnhandledRejectionIsHandled();
+    }
+};
+
+Promise.prototype._isRejectionUnhandled = function () {
+    return (this._bitField & 2097152) > 0;
+};
+
+Promise.prototype._setCarriedStackTrace = function (capturedTrace) {
+    this._bitField = this._bitField | 1048576;
+    this._fulfillmentHandler0 = capturedTrace;
+};
+
+Promise.prototype._isCarryingStackTrace = function () {
+    return (this._bitField & 1048576) > 0;
+};
+
+Promise.prototype._getCarriedStackTrace = function () {
+    return this._isCarryingStackTrace()
+        ? this._fulfillmentHandler0
+        : undefined;
+};
+
+Promise.prototype._captureStackTrace = function () {
+    if (debugging) {
+        this._trace = new CapturedTrace(this._peekContext());
+    }
+    return this;
+};
+
+Promise.prototype._attachExtraTrace = function (error, ignoreSelf) {
+    if (debugging && canAttachTrace(error)) {
+        var trace = this._trace;
+        if (trace !== undefined) {
+            if (ignoreSelf) trace = trace._parent;
+        }
+        if (trace !== undefined) {
+            trace.attachExtraTrace(error);
+        } else if (!error.__stackCleaned__) {
+            var parsed = CapturedTrace.parseStackAndMessage(error);
+            util.notEnumerableProp(error, "stack",
+                parsed.message + "\n" + parsed.stack.join("\n"));
+            util.notEnumerableProp(error, "__stackCleaned__", true);
+        }
+    }
+};
+
+Promise.prototype._warn = function(message) {
+    var warning = new Warning(message);
+    var ctx = this._peekContext();
+    if (ctx) {
+        ctx.attachExtraTrace(warning);
+    } else {
+        var parsed = CapturedTrace.parseStackAndMessage(warning);
+        warning.stack = parsed.message + "\n" + parsed.stack.join("\n");
+    }
+    CapturedTrace.formatAndLogError(warning, "");
+};
+
+Promise.onPossiblyUnhandledRejection = function (fn) {
+    possiblyUnhandledRejection = typeof fn === "function" ? fn : undefined;
+};
+
+Promise.onUnhandledRejectionHandled = function (fn) {
+    unhandledRejectionHandled = typeof fn === "function" ? fn : undefined;
+};
+
+Promise.longStackTraces = function () {
+    if (async.haveItemsQueued() &&
+        debugging === false
+   ) {
+        throw new Error("cannot enable long stack traces after promises have been created\u000a\u000a    See http://goo.gl/DT1qyG\u000a");
+    }
+    debugging = CapturedTrace.isSupported();
+    if (debugging) {
+        async.disableTrampolineIfNecessary();
+    }
+};
+
+Promise.hasLongStackTraces = function () {
+    return debugging && CapturedTrace.isSupported();
+};
+
+if (!CapturedTrace.isSupported()) {
+    Promise.longStackTraces = function(){};
+    debugging = false;
+}
+
+return function() {
+    return debugging;
+};
+};
+
+},{"./async.js":2,"./errors.js":13,"./util.js":38}],11:[function(_dereq_,module,exports){
+"use strict";
+var util = _dereq_("./util.js");
 var isPrimitive = util.isPrimitive;
 var wrapsPrimitiveReceiver = util.wrapsPrimitiveReceiver;
 
@@ -23457,31 +23836,7 @@ Promise.prototype.thenThrow = function (reason) {
 };
 };
 
-},{"./util.js":35}],9:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],12:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, INTERNAL) {
 var PromiseReduce = Promise.reduce;
@@ -23495,58 +23850,13 @@ Promise.each = function (promises, fn) {
 };
 };
 
-},{}],10:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],13:[function(_dereq_,module,exports){
 "use strict";
-var Objectfreeze = require("./es5.js").freeze;
-var propertyIsWritable = require("./es5.js").propertyIsWritable;
-var util = require("./util.js");
+var es5 = _dereq_("./es5.js");
+var Objectfreeze = es5.freeze;
+var util = _dereq_("./util.js");
 var inherits = util.inherits;
 var notEnumerableProp = util.notEnumerableProp;
-
-function markAsOriginatingFromRejection(e) {
-    try {
-        notEnumerableProp(e, "isOperational", true);
-    }
-    catch(ignore) {}
-}
-
-function originatesFromRejection(e) {
-    if (e == null) return false;
-    return ((e instanceof OperationalError) ||
-        e["isOperational"] === true);
-}
-
-function isError(obj) {
-    return obj instanceof Error;
-}
-
-function canAttachTrace(obj) {
-    return isError(obj) && propertyIsWritable(obj, "stack");
-}
 
 function subError(nameProperty, defaultMessage) {
     function SubError(message) {
@@ -23556,6 +23866,8 @@ function subError(nameProperty, defaultMessage) {
         notEnumerableProp(this, "name", nameProperty);
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, this.constructor);
+        } else {
+            Error.call(this);
         }
     }
     inherits(SubError, Error);
@@ -23563,6 +23875,7 @@ function subError(nameProperty, defaultMessage) {
 }
 
 var _TypeError, _RangeError;
+var Warning = subError("Warning", "warning");
 var CancellationError = subError("CancellationError", "cancellation error");
 var TimeoutError = subError("TimeoutError", "timeout error");
 var AggregateError = subError("AggregateError", "aggregate error");
@@ -23583,7 +23896,12 @@ for (var i = 0; i < methods.length; ++i) {
     }
 }
 
-AggregateError.prototype.length = 0;
+es5.defineProperty(AggregateError.prototype, "length", {
+    value: 0,
+    configurable: false,
+    writable: true,
+    enumerable: true
+});
 AggregateError.prototype["isOperational"] = true;
 var level = 0;
 AggregateError.prototype.toString = function() {
@@ -23605,6 +23923,8 @@ AggregateError.prototype.toString = function() {
 };
 
 function OperationalError(message) {
+    if (!(this instanceof OperationalError))
+        return new OperationalError(message);
     notEnumerableProp(this, "name", "OperationalError");
     notEnumerableProp(this, "message", message);
     this.cause = message;
@@ -23620,8 +23940,7 @@ function OperationalError(message) {
 }
 inherits(OperationalError, Error);
 
-var key = "__BluebirdErrorTypes__";
-var errorTypes = Error[key];
+var errorTypes = Error["__BluebirdErrorTypes__"];
 if (!errorTypes) {
     errorTypes = Objectfreeze({
         CancellationError: CancellationError,
@@ -23630,7 +23949,7 @@ if (!errorTypes) {
         RejectionError: OperationalError,
         AggregateError: AggregateError
     });
-    notEnumerableProp(Error, key, errorTypes);
+    notEnumerableProp(Error, "__BluebirdErrorTypes__", errorTypes);
 }
 
 module.exports = {
@@ -23641,78 +23960,10 @@ module.exports = {
     OperationalError: errorTypes.OperationalError,
     TimeoutError: errorTypes.TimeoutError,
     AggregateError: errorTypes.AggregateError,
-    originatesFromRejection: originatesFromRejection,
-    markAsOriginatingFromRejection: markAsOriginatingFromRejection,
-    canAttachTrace: canAttachTrace
+    Warning: Warning
 };
 
-},{"./es5.js":12,"./util.js":35}],11:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
-"use strict";
-module.exports = function(Promise) {
-var TypeError = require('./errors.js').TypeError;
-
-function apiRejection(msg) {
-    var error = new TypeError(msg);
-    var ret = Promise.rejected(error);
-    var parent = ret._peekContext();
-    if (parent != null) {
-        parent.attachExtraTrace(error);
-    }
-    return ret;
-}
-
-return apiRejection;
-};
-
-},{"./errors.js":10}],12:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./es5.js":14,"./util.js":38}],14:[function(_dereq_,module,exports){
 var isES5 = (function(){
     "use strict";
     return this === undefined;
@@ -23722,7 +23973,9 @@ if (isES5) {
     module.exports = {
         freeze: Object.freeze,
         defineProperty: Object.defineProperty,
+        getDescriptor: Object.getOwnPropertyDescriptor,
         keys: Object.keys,
+        names: Object.getOwnPropertyNames,
         getPrototypeOf: Object.getPrototypeOf,
         isArray: Array.isArray,
         isES5: isES5,
@@ -23744,16 +23997,20 @@ if (isES5) {
             }
         }
         return ret;
-    }
+    };
+
+    var ObjectGetDescriptor = function(o, key) {
+        return {value: o[key]};
+    };
 
     var ObjectDefineProperty = function (o, key, desc) {
         o[key] = desc.value;
         return o;
-    }
+    };
 
     var ObjectFreeze = function (obj) {
         return obj;
-    }
+    };
 
     var ObjectGetPrototypeOf = function (obj) {
         try {
@@ -23762,7 +24019,7 @@ if (isES5) {
         catch (e) {
             return proto;
         }
-    }
+    };
 
     var ArrayIsArray = function (obj) {
         try {
@@ -23771,12 +24028,14 @@ if (isES5) {
         catch(e) {
             return false;
         }
-    }
+    };
 
     module.exports = {
         isArray: ArrayIsArray,
         keys: ObjectKeys,
+        names: ObjectKeys,
         defineProperty: ObjectDefineProperty,
+        getDescriptor: ObjectGetDescriptor,
         freeze: ObjectFreeze,
         getPrototypeOf: ObjectGetPrototypeOf,
         isES5: isES5,
@@ -23786,31 +24045,7 @@ if (isES5) {
     };
 }
 
-},{}],13:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],15:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, INTERNAL) {
 var PromiseMap = Promise.map;
@@ -23824,34 +24059,10 @@ Promise.filter = function (promises, fn, options) {
 };
 };
 
-},{}],14:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],16:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, NEXT_FILTER, tryConvertToPromise) {
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 var wrapsPrimitiveReceiver = util.wrapsPrimitiveReceiver;
 var isPrimitive = util.isPrimitive;
 var thrower = util.thrower;
@@ -23891,7 +24102,7 @@ function finallyHandler(reasonOrValue) {
                     : handler();
 
     if (ret !== undefined) {
-        var maybePromise = tryConvertToPromise(ret, undefined);
+        var maybePromise = tryConvertToPromise(ret, promise);
         if (maybePromise instanceof Promise) {
             maybePromise = maybePromise._target();
             return promisedFinally(maybePromise, reasonOrValue,
@@ -23916,7 +24127,7 @@ function tapHandler(value) {
                     : handler(value);
 
     if (ret !== undefined) {
-        var maybePromise = tryConvertToPromise(ret, undefined);
+        var maybePromise = tryConvertToPromise(ret, promise);
         if (maybePromise instanceof Promise) {
             maybePromise = maybePromise._target();
             return promisedFinally(maybePromise, value, true);
@@ -23949,62 +24160,40 @@ Promise.prototype.tap = function (handler) {
 };
 };
 
-},{"./util.js":35}],15:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],17:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise,
                           apiRejection,
                           INTERNAL,
                           tryConvertToPromise) {
-var errors = require("./errors.js");
+var errors = _dereq_("./errors.js");
 var TypeError = errors.TypeError;
-var deprecated = require("./util.js").deprecated;
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 var errorObj = util.errorObj;
-var tryCatch1 = util.tryCatch1;
+var tryCatch = util.tryCatch;
 var yieldHandlers = [];
 
 function promiseFromYieldHandler(value, yieldHandlers, traceParent) {
-    var _errorObj = errorObj;
-    var _Promise = Promise;
-    var len = yieldHandlers.length;
-    for (var i = 0; i < len; ++i) {
-        var result = tryCatch1(yieldHandlers[i], undefined, value);
-        if (result === _errorObj) {
-            return _Promise.reject(_errorObj.e);
+    for (var i = 0; i < yieldHandlers.length; ++i) {
+        traceParent._pushContext();
+        var result = tryCatch(yieldHandlers[i])(value);
+        traceParent._popContext();
+        if (result === errorObj) {
+            traceParent._pushContext();
+            var ret = Promise.reject(errorObj.e);
+            traceParent._popContext();
+            return ret;
         }
         var maybePromise = tryConvertToPromise(result, traceParent);
-        if (maybePromise instanceof _Promise) return maybePromise;
+        if (maybePromise instanceof Promise) return maybePromise;
     }
     return null;
 }
 
-function PromiseSpawn(generatorFunction, receiver, yieldHandler) {
+function PromiseSpawn(generatorFunction, receiver, yieldHandler, stack) {
     var promise = this._promise = new Promise(INTERNAL);
-    promise._setTrace(undefined);
+    promise._captureStackTrace();
+    this._stack = stack;
     this._generatorFunction = generatorFunction;
     this._receiver = receiver;
     this._generator = undefined;
@@ -24026,20 +24215,12 @@ PromiseSpawn.prototype._run = function () {
 
 PromiseSpawn.prototype._continue = function (result) {
     if (result === errorObj) {
-        this._generator = undefined;
-        var trace = errors.canAttachTrace(result.e)
-            ? result.e : new Error(util.toString(result.e));
-        this._promise._attachExtraTrace(trace);
-        this._promise._reject(result.e, trace);
-        return;
+        return this._promise._rejectCallback(result.e, false, true);
     }
 
     var value = result.value;
     if (result.done === true) {
-        this._generator = undefined;
-        if (!this._promise._tryFollow(value)) {
-            this._promise._fulfill(value);
-        }
+        this._promise._resolveCallback(value);
     } else {
         var maybePromise = tryConvertToPromise(value, this._promise);
         if (!(maybePromise instanceof Promise)) {
@@ -24048,7 +24229,13 @@ PromiseSpawn.prototype._continue = function (result) {
                                         this._yieldHandlers,
                                         this._promise);
             if (maybePromise === null) {
-                this._throw(new TypeError("A value was yielded that could not be treated as a promise\u000a\u000a    See http://goo.gl/4Y4pDk\u000a"));
+                this._throw(
+                    new TypeError(
+                        "A value %s was yielded that could not be treated as a promise\u000a\u000a    See http://goo.gl/4Y4pDk\u000a\u000a".replace("%s", value) +
+                        "From coroutine:\u000a" +
+                        this._stack.split("\n").slice(1, -7).join("\n")
+                    )
+                );
                 return;
             }
         }
@@ -24063,17 +24250,19 @@ PromiseSpawn.prototype._continue = function (result) {
 };
 
 PromiseSpawn.prototype._throw = function (reason) {
-    if (errors.canAttachTrace(reason))
-        this._promise._attachExtraTrace(reason);
-    this._continue(
-        tryCatch1(this._generator["throw"], this._generator, reason)
-   );
+    this._promise._attachExtraTrace(reason);
+    this._promise._pushContext();
+    var result = tryCatch(this._generator["throw"])
+        .call(this._generator, reason);
+    this._promise._popContext();
+    this._continue(result);
 };
 
 PromiseSpawn.prototype._next = function (value) {
-    this._continue(
-        tryCatch1(this._generator.next, this._generator, value)
-   );
+    this._promise._pushContext();
+    var result = tryCatch(this._generator.next).call(this._generator, value);
+    this._promise._popContext();
+    this._continue(result);
 };
 
 Promise.coroutine = function (generatorFunction, options) {
@@ -24082,9 +24271,11 @@ Promise.coroutine = function (generatorFunction, options) {
     }
     var yieldHandler = Object(options).yieldHandler;
     var PromiseSpawn$ = PromiseSpawn;
+    var stack = new Error().stack;
     return function () {
         var generator = generatorFunction.apply(this, arguments);
-        var spawn = new PromiseSpawn$(undefined, undefined, yieldHandler);
+        var spawn = new PromiseSpawn$(undefined, undefined, yieldHandler,
+                                      stack);
         spawn._generator = generator;
         spawn._next(undefined);
         return spawn.promise();
@@ -24097,7 +24288,6 @@ Promise.coroutine.addYieldHandler = function(fn) {
 };
 
 Promise.spawn = function (generatorFunction) {
-    deprecated("Promise.spawn is deprecated. Use Promise.coroutine instead.");
     if (typeof generatorFunction !== "function") {
         return apiRejection("generatorFunction must be a function\u000a\u000a    See http://goo.gl/6Vqhm0\u000a");
     }
@@ -24108,40 +24298,17 @@ Promise.spawn = function (generatorFunction) {
 };
 };
 
-},{"./errors.js":10,"./util.js":35}],16:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors.js":13,"./util.js":38}],18:[function(_dereq_,module,exports){
 "use strict";
 module.exports =
 function(Promise, PromiseArray, tryConvertToPromise, INTERNAL) {
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 var canEvaluate = util.canEvaluate;
-var tryCatch1 = util.tryCatch1;
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
+var reject;
 
-
+if (!true) {
 if (canEvaluate) {
     var thenCallback = function(i) {
         return new Function("value", "holder", "                             \n\
@@ -24181,20 +24348,23 @@ if (canEvaluate) {
         var total = this.total;
         if (now >= total) {
             var handler = this.callers[total];
-            var ret = tryCatch1(handler, undefined, this);
+            promise._pushContext();
+            var ret = tryCatch(handler)(this);
+            promise._popContext();
             if (ret === errorObj) {
-                promise._rejectUnchecked(ret.e);
-            } else if (!promise._tryFollow(ret)) {
-                promise._fulfillUnchecked(ret);
+                promise._rejectCallback(ret.e, false, true);
+            } else {
+                promise._resolveCallback(ret);
             }
         } else {
             this.now = now;
         }
     };
-}
 
-function reject(reason) {
-    this._reject(reason);
+    var reject = function (reason) {
+        this._reject(reason);
+    };
+}
 }
 
 Promise.join = function () {
@@ -24202,78 +24372,58 @@ Promise.join = function () {
     var fn;
     if (last > 0 && typeof arguments[last] === "function") {
         fn = arguments[last];
-        if (last < 6 && canEvaluate) {
-            var ret = new Promise(INTERNAL);
-            ret._setTrace(undefined);
-            var holder = new Holder(last, fn);
-            var callbacks = thenCallbacks;
-            for (var i = 0; i < last; ++i) {
-                var maybePromise = tryConvertToPromise(arguments[i], undefined);
-                if (maybePromise instanceof Promise) {
-                    maybePromise = maybePromise._target();
-                    if (maybePromise._isPending()) {
-                        maybePromise._then(callbacks[i], reject,
-                                           undefined, ret, holder);
-                    } else if (maybePromise._isFulfilled()) {
-                        callbacks[i].call(ret,
-                                          maybePromise._value(), holder);
+        if (!true) {
+            if (last < 6 && canEvaluate) {
+                var ret = new Promise(INTERNAL);
+                ret._captureStackTrace();
+                var holder = new Holder(last, fn);
+                var callbacks = thenCallbacks;
+                for (var i = 0; i < last; ++i) {
+                    var maybePromise = tryConvertToPromise(arguments[i], ret);
+                    if (maybePromise instanceof Promise) {
+                        maybePromise = maybePromise._target();
+                        if (maybePromise._isPending()) {
+                            maybePromise._then(callbacks[i], reject,
+                                               undefined, ret, holder);
+                        } else if (maybePromise._isFulfilled()) {
+                            callbacks[i].call(ret,
+                                              maybePromise._value(), holder);
+                        } else {
+                            ret._reject(maybePromise._reason());
+                        }
                     } else {
-                        ret._reject(maybePromise._reason());
-                        maybePromise._unsetRejectionIsUnhandled();
+                        callbacks[i].call(ret, maybePromise, holder);
                     }
-                } else {
-                    callbacks[i].call(ret, maybePromise, holder);
                 }
+                return ret;
             }
-            return ret;
         }
     }
     var $_len = arguments.length;var args = new Array($_len); for(var $_i = 0; $_i < $_len; ++$_i) {args[$_i] = arguments[$_i];}
+    if (fn) args.pop();
     var ret = new PromiseArray(args).promise();
     return fn !== undefined ? ret.spread(fn) : ret;
 };
 
 };
 
-},{"./util.js":35}],17:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],19:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise,
                           PromiseArray,
                           apiRejection,
                           tryConvertToPromise,
                           INTERNAL) {
-var util = require("./util.js");
-var tryCatch3 = util.tryCatch3;
+var async = _dereq_("./async.js");
+var util = _dereq_("./util.js");
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
 var PENDING = {};
 var EMPTY_ARRAY = [];
 
 function MappingPromiseArray(promises, fn, limit, _filter) {
     this.constructor$(promises);
+    this._promise._captureStackTrace();
     this._callback = fn;
     this._preservedValues = _filter === INTERNAL
         ? new Array(this.length())
@@ -24281,9 +24431,10 @@ function MappingPromiseArray(promises, fn, limit, _filter) {
     this._limit = limit;
     this._inFlight = 0;
     this._queue = limit >= 1 ? [] : EMPTY_ARRAY;
-    this._init$(undefined, -2);
+    async.invoke(init, this, undefined);
 }
 util.inherits(MappingPromiseArray, PromiseArray);
+function init() {this._init$(undefined, -2);}
 
 MappingPromiseArray.prototype._init = function () {};
 
@@ -24309,7 +24460,9 @@ MappingPromiseArray.prototype._promiseFulfilled = function (value, index) {
 
         var callback = this._callback;
         var receiver = this._promise._boundTo;
-        var ret = tryCatch3(callback, receiver, value, index, length);
+        this._promise._pushContext();
+        var ret = tryCatch(callback).call(receiver, value, index, length);
+        this._promise._popContext();
         if (ret === errorObj) return this._reject(ret.e);
 
         var maybePromise = tryConvertToPromise(ret, this._promise);
@@ -24322,7 +24475,6 @@ MappingPromiseArray.prototype._promiseFulfilled = function (value, index) {
             } else if (maybePromise._isFulfilled()) {
                 ret = maybePromise._value();
             } else {
-                maybePromise._unsetRejectionIsUnhandled();
                 return this._reject(maybePromise._reason());
             }
         }
@@ -24388,64 +24540,94 @@ Promise.map = function (promises, fn, options, _filter) {
 
 };
 
-},{"./util.js":35}],18:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./util.js":38}],20:[function(_dereq_,module,exports){
+"use strict";
+module.exports =
+function(Promise, INTERNAL, tryConvertToPromise, apiRejection) {
+var util = _dereq_("./util.js");
+var tryCatch = util.tryCatch;
+
+Promise.method = function (fn) {
+    if (typeof fn !== "function") {
+        throw new Promise.TypeError("fn must be a function\u000a\u000a    See http://goo.gl/916lJJ\u000a");
+    }
+    return function () {
+        var ret = new Promise(INTERNAL);
+        ret._captureStackTrace();
+        ret._pushContext();
+        var value = tryCatch(fn).apply(this, arguments);
+        ret._popContext();
+        ret._resolveFromSyncValue(value);
+        return ret;
+    };
+};
+
+Promise.attempt = Promise["try"] = function (fn, args, ctx) {
+    if (typeof fn !== "function") {
+        return apiRejection("fn must be a function\u000a\u000a    See http://goo.gl/916lJJ\u000a");
+    }
+    var ret = new Promise(INTERNAL);
+    ret._captureStackTrace();
+    ret._pushContext();
+    var value = util.isArray(args)
+        ? tryCatch(fn).apply(ctx, args)
+        : tryCatch(fn).call(ctx, args);
+    ret._popContext();
+    ret._resolveFromSyncValue(value);
+    return ret;
+};
+
+Promise.prototype._resolveFromSyncValue = function (value) {
+    if (value === util.errorObj) {
+        this._rejectCallback(value.e, false, true);
+    } else {
+        this._resolveCallback(value, true);
+    }
+};
+};
+
+},{"./util.js":38}],21:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise) {
-var util = require("./util.js");
-var async = require("./async.js");
-var tryCatch2 = util.tryCatch2;
-var tryCatch1 = util.tryCatch1;
+var util = _dereq_("./util.js");
+var async = _dereq_("./async.js");
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
 
-function spreadAdapter(val, receiver) {
-    if (!util.isArray(val)) return successAdapter(val, receiver);
-    var ret = util.tryCatchApply(this, [null].concat(val), receiver);
+function spreadAdapter(val, nodeback) {
+    var promise = this;
+    if (!util.isArray(val)) return successAdapter.call(promise, val, nodeback);
+    var ret = tryCatch(nodeback).apply(promise._boundTo, [null].concat(val));
     if (ret === errorObj) {
         async.throwLater(ret.e);
     }
 }
 
-function successAdapter(val, receiver) {
-    var nodeback = this;
+function successAdapter(val, nodeback) {
+    var promise = this;
+    var receiver = promise._boundTo;
     var ret = val === undefined
-        ? tryCatch1(nodeback, receiver, null)
-        : tryCatch2(nodeback, receiver, null, val);
+        ? tryCatch(nodeback).call(receiver, null)
+        : tryCatch(nodeback).call(receiver, null, val);
     if (ret === errorObj) {
         async.throwLater(ret.e);
     }
 }
-function errorAdapter(reason, receiver) {
-    var nodeback = this;
-    var ret = tryCatch1(nodeback, receiver, reason);
+function errorAdapter(reason, nodeback) {
+    var promise = this;
+    if (!reason) {
+        var target = promise._target();
+        var newReason = target._getCarriedStackTrace();
+        newReason.cause = reason;
+        reason = newReason;
+    }
+    var ret = tryCatch(nodeback).call(promise._boundTo, reason);
     if (ret === errorObj) {
         async.throwLater(ret.e);
     }
 }
 
+Promise.prototype.asCallback = 
 Promise.prototype.nodeify = function (nodeback, options) {
     if (typeof nodeback == "function") {
         var adapter = successAdapter;
@@ -24456,45 +24638,20 @@ Promise.prototype.nodeify = function (nodeback, options) {
             adapter,
             errorAdapter,
             undefined,
-            nodeback,
-            this._boundTo
+            this,
+            nodeback
         );
     }
     return this;
 };
 };
 
-},{"./async.js":2,"./util.js":35}],19:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./util.js":38}],22:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, PromiseArray) {
-var util = require("./util.js");
-var async = require("./async.js");
-var errors = require("./errors.js");
-var tryCatch1 = util.tryCatch1;
+var util = _dereq_("./util.js");
+var async = _dereq_("./async.js");
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
 
 Promise.prototype.progressed = function (handler) {
@@ -24519,11 +24676,11 @@ Promise.prototype._doProgressWith = function (progression) {
     var promise = progression.promise;
     var receiver = progression.receiver;
 
-    var ret = tryCatch1(handler, receiver, progressValue);
+    var ret = tryCatch(handler).call(receiver, progressValue);
     if (ret === errorObj) {
         if (ret.e != null &&
             ret.e.name !== "StopProgressPropagation") {
-            var trace = errors.canAttachTrace(ret.e)
+            var trace = util.canAttachTrace(ret.e)
                 ? ret.e : new Error(util.toString(ret.e));
             promise._attachExtraTrace(trace);
             promise._progress(ret.e);
@@ -24567,31 +24724,7 @@ Promise.prototype._progressUnchecked = function (progressValue) {
 };
 };
 
-},{"./async.js":2,"./errors.js":10,"./util.js":35}],20:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./util.js":38}],23:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function() {
 var makeSelfResolutionError = function () {
@@ -24600,40 +24733,36 @@ var makeSelfResolutionError = function () {
 var reflect = function() {
     return new Promise.PromiseInspection(this._target());
 };
-var util = require("./util.js");
-var async = require("./async.js");
-var errors = require("./errors.js");
+var apiRejection = function(msg) {
+    return Promise.reject(new TypeError(msg));
+};
+var util = _dereq_("./util.js");
+var async = _dereq_("./async.js");
+var errors = _dereq_("./errors.js");
+var TypeError = Promise.TypeError = errors.TypeError;
+Promise.RangeError = errors.RangeError;
+Promise.CancellationError = errors.CancellationError;
+Promise.TimeoutError = errors.TimeoutError;
+Promise.OperationalError = errors.OperationalError;
+Promise.RejectionError = errors.OperationalError;
+Promise.AggregateError = errors.AggregateError;
 var INTERNAL = function(){};
 var APPLY = {};
 var NEXT_FILTER = {e: null};
-var tryConvertToPromise = require("./thenables.js")(Promise, INTERNAL);
+var tryConvertToPromise = _dereq_("./thenables.js")(Promise, INTERNAL);
 var PromiseArray =
-    require("./promise_array.js")(Promise, INTERNAL, tryConvertToPromise);
-var CapturedTrace = require("./captured_trace.js")();
-var CatchFilter = require("./catch_filter.js")(NEXT_FILTER);
-var PromiseResolver = require("./promise_resolver.js");
-var isArray = util.isArray;
+    _dereq_("./promise_array.js")(Promise, INTERNAL,
+                                    tryConvertToPromise, apiRejection);
+var CapturedTrace = _dereq_("./captured_trace.js")();
+var isDebugging = _dereq_("./debuggability.js")(Promise, CapturedTrace);
+ /*jshint unused:false*/
+var createContext =
+    _dereq_("./context.js")(Promise, CapturedTrace, isDebugging);
+var CatchFilter = _dereq_("./catch_filter.js")(NEXT_FILTER);
+var PromiseResolver = _dereq_("./promise_resolver.js");
+var nodebackForPromise = PromiseResolver._nodebackForPromise;
 var errorObj = util.errorObj;
-var tryCatch1 = util.tryCatch1;
-var tryCatch2 = util.tryCatch2;
-var tryCatchApply = util.tryCatchApply;
-var RangeError = errors.RangeError;
-var TypeError = errors.TypeError;
-var CancellationError = errors.CancellationError;
-var TimeoutError = errors.TimeoutError;
-var OperationalError = errors.OperationalError;
-var originatesFromRejection = errors.originatesFromRejection;
-var markAsOriginatingFromRejection = errors.markAsOriginatingFromRejection;
-var canAttachTrace = errors.canAttachTrace;
-var apiRejection = require("./errors_api_rejection")(Promise);
-var unhandledRejectionHandled;
-var debugging = false || !!(
-    typeof process !== "undefined" &&
-    typeof process.execPath === "string" &&
-    typeof process.env === "object" &&
-    (process.env["BLUEBIRD_DEBUG"] ||
-        process.env["NODE_ENV"] === "development")
-);
+var tryCatch = util.tryCatch;
 function Promise(resolver) {
     if (typeof resolver !== "function") {
         throw new TypeError("the promise constructor requires a resolver function\u000a\u000a    See http://goo.gl/EC22Yn\u000a");
@@ -24648,30 +24777,8 @@ function Promise(resolver) {
     this._promise0 = undefined;
     this._receiver0 = undefined;
     this._settledValue = undefined;
-    this._boundTo = undefined;
     if (resolver !== INTERNAL) this._resolveFromResolver(resolver);
 }
-
-Promise.prototype.bind = function (thisArg) {
-    var maybePromise = tryConvertToPromise(thisArg, this);
-    var ret = new Promise(INTERNAL);
-    ret._propagateFrom(this, 2 | 1);
-    var target = this._target();
-    if (maybePromise instanceof Promise) {
-        target._then(INTERNAL, ret._reject, ret._progress, ret, null);
-        maybePromise._then(function(thisArg) {
-            if (ret._isPending()) {
-                ret._setBoundTo(thisArg);
-                ret._follow(target);
-            }
-        }, ret._reject, ret._progress, ret, null);
-    } else {
-        ret._setBoundTo(thisArg);
-        ret._follow(target);
-    }
-
-    return ret;
-};
 
 Promise.prototype.toString = function () {
     return "[object Promise]";
@@ -24687,15 +24794,12 @@ Promise.prototype.caught = Promise.prototype["catch"] = function (fn) {
             if (typeof item === "function") {
                 catchInstances[j++] = item;
             } else {
-                var error = new TypeError("Catch filter must inherit from Error or be a simple predicate function\u000a\u000a    See http://goo.gl/o84o68\u000a");
-                this._attachExtraTrace(error);
-                return Promise.reject(error);
+                return Promise.reject(
+                    new TypeError("Catch filter must inherit from Error or be a simple predicate function\u000a\u000a    See http://goo.gl/o84o68\u000a"));
             }
         }
         catchInstances.length = j;
         fn = arguments[i];
-
-        this._resetTrace();
         var catchFilter = new CatchFilter(catchInstances, fn, this);
         return this._then(undefined, catchFilter.doFilter, undefined,
             catchFilter, undefined);
@@ -24708,10 +24812,19 @@ Promise.prototype.reflect = function () {
 };
 
 Promise.prototype.then = function (didFulfill, didReject, didProgress) {
+    if (isDebugging() && arguments.length > 0 &&
+        typeof didFulfill !== "function" &&
+        typeof didReject !== "function") {
+        var msg = ".then() only accepts functions but was passed: " +
+                util.classString(didFulfill);
+        if (arguments.length > 1) {
+            msg += ", " + util.classString(didReject);
+        }
+        this._warn(msg);
+    }
     return this._then(didFulfill, didReject, didProgress,
         undefined, undefined);
 };
-
 
 Promise.prototype.done = function (didFulfill, didReject, didProgress) {
     var promise = this._then(didFulfill, didReject, didProgress,
@@ -24750,84 +24863,37 @@ Promise.prototype.all = function () {
 };
 
 Promise.prototype.error = function (fn) {
-    return this.caught(originatesFromRejection, fn);
+    return this.caught(util.originatesFromRejection, fn);
 };
 
 Promise.is = function (val) {
     return val instanceof Promise;
 };
 
+Promise.fromNode = function(fn) {
+    var ret = new Promise(INTERNAL);
+    var result = tryCatch(fn)(nodebackForPromise(ret));
+    if (result === errorObj) {
+        ret._rejectCallback(result.e, true, true);
+    }
+    return ret;
+};
+
 Promise.all = function (promises) {
     return new PromiseArray(promises).promise();
 };
 
-Promise.method = function (fn) {
-    if (typeof fn !== "function") {
-        throw new TypeError("fn must be a function\u000a\u000a    See http://goo.gl/916lJJ\u000a");
-    }
-    return function () {
-        var value;
-        switch(arguments.length) {
-        case 0: value = tryCatch1(fn, this, undefined); break;
-        case 1: value = tryCatch1(fn, this, arguments[0]); break;
-        case 2: value = tryCatch2(fn, this, arguments[0], arguments[1]); break;
-        default:
-            var $_len = arguments.length;var args = new Array($_len); for(var $_i = 0; $_i < $_len; ++$_i) {args[$_i] = arguments[$_i];}
-            value = tryCatchApply(fn, args, this); break;
-        }
-        var ret = new Promise(INTERNAL);
-        ret._setTrace(undefined);
-        ret._resolveFromSyncValue(value);
-        return ret;
-    };
-};
-
-Promise.attempt = Promise["try"] = function (fn, args, ctx) {
-    if (typeof fn !== "function") {
-        return apiRejection("fn must be a function\u000a\u000a    See http://goo.gl/916lJJ\u000a");
-    }
-    var value = isArray(args)
-        ? tryCatchApply(fn, args, ctx)
-        : tryCatch1(fn, ctx, args);
-
-    var ret = new Promise(INTERNAL);
-    ret._setTrace(undefined);
-    ret._resolveFromSyncValue(value);
-    return ret;
-};
-
 Promise.defer = Promise.pending = function () {
     var promise = new Promise(INTERNAL);
-    promise._setTrace(undefined);
     return new PromiseResolver(promise);
 };
 
-Promise.bind = function (thisArg) {
-    var maybePromise = tryConvertToPromise(thisArg, undefined);
-    var ret = new Promise(INTERNAL);
-    ret._setTrace(undefined);
-
-    if (maybePromise instanceof Promise) {
-        maybePromise._then(function(thisArg) {
-            ret._setBoundTo(thisArg);
-            ret._fulfill(undefined);
-        }, ret._reject, ret._progress, ret, null);
-    } else {
-        ret._setBoundTo(thisArg);
-        ret._setFulfilled();
-    }
-    return ret;
-};
-
 Promise.cast = function (obj) {
-    var ret = tryConvertToPromise(obj, undefined);
+    var ret = tryConvertToPromise(obj);
     if (!(ret instanceof Promise)) {
         var val = ret;
         ret = new Promise(INTERNAL);
-        ret._setTrace(undefined);
-        ret._setFulfilled();
-        ret._settledValue = val;
-        ret._cleanValues();
+        ret._fulfillUnchecked(val);
     }
     return ret;
 };
@@ -24836,44 +24902,16 @@ Promise.resolve = Promise.fulfilled = Promise.cast;
 
 Promise.reject = Promise.rejected = function (reason) {
     var ret = new Promise(INTERNAL);
-    ret._setTrace(undefined);
-    markAsOriginatingFromRejection(reason);
-    ret._setRejected();
-    ret._settledValue = reason;
-    ret._cleanValues();
-    if (!canAttachTrace(reason)) {
-        var trace = new Error(util.toString(reason));
-        ret._setCarriedStackTrace(trace);
-    }
-    ret._ensurePossibleRejectionHandled();
+    ret._captureStackTrace();
+    ret._rejectCallback(reason, true);
     return ret;
-};
-
-Promise.onPossiblyUnhandledRejection = function (fn) {
-        CapturedTrace.possiblyUnhandledRejection = typeof fn === "function"
-                                                    ? fn : undefined;
-};
-
-Promise.onUnhandledRejectionHandled = function (fn) {
-    unhandledRejectionHandled = typeof fn === "function" ? fn : undefined;
-};
-
-Promise.longStackTraces = function () {
-    if (async.haveItemsQueued() &&
-        debugging === false
-   ) {
-        throw new Error("cannot enable long stack traces after promises have been created\u000a\u000a    See http://goo.gl/DT1qyG\u000a");
-    }
-    debugging = CapturedTrace.isSupported();
-};
-
-Promise.hasLongStackTraces = function () {
-    return debugging && CapturedTrace.isSupported();
 };
 
 Promise.setScheduler = function(fn) {
     if (typeof fn !== "function") throw new TypeError("fn must be a function\u000a\u000a    See http://goo.gl/916lJJ\u000a");
+    var prev = async._schedule;
     async._schedule = fn;
+    return prev;
 };
 
 Promise.prototype._then = function (
@@ -24887,7 +24925,8 @@ Promise.prototype._then = function (
     var ret = haveInternalData ? internalData : new Promise(INTERNAL);
 
     if (!haveInternalData) {
-        ret._propagateFrom(this, 7);
+        ret._propagateFrom(this, 4 | 1);
+        ret._captureStackTrace();
     }
 
     var target = this._target();
@@ -24913,7 +24952,7 @@ Promise.prototype._settlePromiseAtPostResolution = function (index) {
 };
 
 Promise.prototype._length = function () {
-    return this._bitField & 262143;
+    return this._bitField & 131071;
 };
 
 Promise.prototype._isFollowingOrFulfilledOrRejected = function () {
@@ -24925,8 +24964,8 @@ Promise.prototype._isFollowing = function () {
 };
 
 Promise.prototype._setLength = function (len) {
-    this._bitField = (this._bitField & -262144) |
-        (len & 262143);
+    this._bitField = (this._bitField & -131072) |
+        (len & 131071);
 };
 
 Promise.prototype._setFulfilled = function () {
@@ -24961,22 +25000,6 @@ Promise.prototype._unsetCancellable = function () {
     this._bitField = this._bitField & (~67108864);
 };
 
-Promise.prototype._setRejectionIsUnhandled = function () {
-    this._bitField = this._bitField | 2097152;
-};
-
-Promise.prototype._unsetRejectionIsUnhandled = function () {
-    this._bitField = this._bitField & (~2097152);
-    if (this._isUnhandledRejectionNotified()) {
-        this._unsetUnhandledRejectionIsNotified();
-        this._notifyUnhandledRejectionIsHandled();
-    }
-};
-
-Promise.prototype._isRejectionUnhandled = function () {
-    return (this._bitField & 2097152) > 0;
-};
-
 Promise.prototype._setIsMigrated = function () {
     this._bitField = this._bitField | 4194304;
 };
@@ -24989,44 +25012,12 @@ Promise.prototype._isMigrated = function () {
     return (this._bitField & 4194304) > 0;
 };
 
-Promise.prototype._setUnhandledRejectionIsNotified = function () {
-    this._bitField = this._bitField | 524288;
-};
-
-Promise.prototype._unsetUnhandledRejectionIsNotified = function () {
-    this._bitField = this._bitField & (~524288);
-};
-
-Promise.prototype._isUnhandledRejectionNotified = function () {
-    return (this._bitField & 524288) > 0;
-};
-
-Promise.prototype._setCarriedStackTrace = function (capturedTrace) {
-    this._bitField = this._bitField | 1048576;
-    this._fulfillmentHandler0 = capturedTrace;
-};
-
-Promise.prototype._unsetCarriedStackTrace = function () {
-    this._bitField = this._bitField & (~1048576);
-    this._fulfillmentHandler0 = undefined;
-};
-
-Promise.prototype._isCarryingStackTrace = function () {
-    return (this._bitField & 1048576) > 0;
-};
-
-Promise.prototype._getCarriedStackTrace = function () {
-    return this._isCarryingStackTrace()
-        ? this._fulfillmentHandler0
-        : undefined;
-};
-
 Promise.prototype._receiverAt = function (index) {
     var ret = index === 0
         ? this._receiver0
         : this[
             index * 5 - 5 + 4];
-    if (this._isBound() && ret === undefined) {
+    if (ret === undefined && this._isBound()) {
         return this._boundTo;
     }
     return ret;
@@ -25050,13 +25041,12 @@ Promise.prototype._rejectionHandlerAt = function (index) {
         : this[index * 5 - 5 + 1];
 };
 
-Promise.prototype._migrateCallbacks = function (
-    fulfill,
-    reject,
-    progress,
-    promise,
-    receiver
-) {
+Promise.prototype._migrateCallbacks = function (follower, index) {
+    var fulfill = follower._fulfillmentHandlerAt(index);
+    var reject = follower._rejectionHandlerAt(index);
+    var progress = follower._progressHandlerAt(index);
+    var promise = follower._promiseAt(index);
+    var receiver = follower._receiverAt(index);
     if (promise instanceof Promise) promise._setIsMigrated();
     this._addCallbacks(fulfill, reject, progress, promise, receiver);
 };
@@ -25070,7 +25060,7 @@ Promise.prototype._addCallbacks = function (
 ) {
     var index = this._length();
 
-    if (index >= 262143 - 5) {
+    if (index >= 131071 - 5) {
         index = 0;
         this._setLength(0);
     }
@@ -25100,7 +25090,7 @@ Promise.prototype._addCallbacks = function (
 Promise.prototype._setProxyHandlers = function (receiver, promiseSlotValue) {
     var index = this._length();
 
-    if (index >= 262143 - 5) {
+    if (index >= 131071 - 5) {
         index = 0;
         this._setLength(0);
     }
@@ -25119,85 +25109,84 @@ Promise.prototype._proxyPromiseArray = function (promiseArray, index) {
     this._setProxyHandlers(promiseArray, index);
 };
 
-Promise.prototype._setBoundTo = function (obj) {
-    if (obj !== undefined) {
-        this._bitField = this._bitField | 8388608;
-        this._boundTo = obj;
+Promise.prototype._resolveCallback = function(value, shouldBind) {
+    if (this._isFollowingOrFulfilledOrRejected()) return;
+    if (value === this)
+        return this._rejectCallback(makeSelfResolutionError(), false, true);
+    var maybePromise = tryConvertToPromise(value, this);
+    if (!(maybePromise instanceof Promise)) return this._fulfill(value);
+
+    var propagationFlags = 1 | (shouldBind ? 4 : 0);
+    this._propagateFrom(maybePromise, propagationFlags);
+    var promise = maybePromise._target();
+    if (promise._isPending()) {
+        var len = this._length();
+        for (var i = 0; i < len; ++i) {
+            promise._migrateCallbacks(this, i);
+        }
+        this._setFollowing();
+        this._setLength(0);
+        this._setFollowee(promise);
+    } else if (promise._isFulfilled()) {
+        this._fulfillUnchecked(promise._value());
     } else {
-        this._bitField = this._bitField & (~8388608);
+        this._rejectUnchecked(promise._reason(),
+            promise._getCarriedStackTrace());
     }
 };
 
-Promise.prototype._isBound = function () {
-    return (this._bitField & 8388608) === 8388608;
+Promise.prototype._rejectCallback =
+function(reason, synchronous, shouldNotMarkOriginatingFromRejection) {
+    if (!shouldNotMarkOriginatingFromRejection) {
+        util.markAsOriginatingFromRejection(reason);
+    }
+    var trace = util.ensureErrorObject(reason);
+    var hasStack = trace === reason;
+    this._attachExtraTrace(trace, synchronous ? hasStack : false);
+    this._reject(reason, hasStack ? undefined : trace);
 };
 
 Promise.prototype._resolveFromResolver = function (resolver) {
     var promise = this;
-    this._setTrace(undefined);
-
+    this._captureStackTrace();
     this._pushContext();
-    var r = tryCatch2(resolver, undefined, function(val) {
-        if (promise._tryFollow(val)) {
-            return;
-        }
-        promise._fulfill(val);
-    }, function (val) {
-        var trace = canAttachTrace(val) ? val : new Error(util.toString(val));
-        promise._attachExtraTrace(trace);
-        markAsOriginatingFromRejection(val);
-        promise._reject(val, trace === val ? undefined : trace);
+    var synchronous = true;
+    var r = tryCatch(resolver)(function(value) {
+        if (promise === null) return;
+        promise._resolveCallback(value);
+        promise = null;
+    }, function (reason) {
+        if (promise === null) return;
+        promise._rejectCallback(reason, synchronous);
+        promise = null;
     });
+    synchronous = false;
     this._popContext();
 
-    if (r !== undefined && r === errorObj) {
-        var e = r.e;
-        var trace = canAttachTrace(e) ? e : new Error(util.toString(e));
-        promise._reject(e, trace);
+    if (r !== undefined && r === errorObj && promise !== null) {
+        promise._rejectCallback(r.e, true, true);
+        promise = null;
     }
-};
-
-Promise.prototype._callHandler = function (
-    handler, receiver, promise, value) {
-    var x;
-    promise._pushContext();
-    if (receiver === APPLY && !this._isRejected()) {
-        x = tryCatchApply(handler, value, this._boundTo);
-    } else {
-        x = tryCatch1(handler, receiver, value);
-    }
-    promise._popContext();
-    return x;
 };
 
 Promise.prototype._settlePromiseFromHandler = function (
     handler, receiver, value, promise
 ) {
     if (promise._isRejected()) return;
-    var x = this._callHandler(handler, receiver, promise, value);
+    promise._pushContext();
+    var x;
+    if (receiver === APPLY && !this._isRejected()) {
+        x = tryCatch(handler).apply(this._boundTo, value);
+    } else {
+        x = tryCatch(handler).call(receiver, value);
+    }
+    promise._popContext();
 
     if (x === errorObj || x === promise || x === NEXT_FILTER) {
-        var err = x === promise
-                    ? makeSelfResolutionError()
-                    : x.e;
-        var trace = canAttachTrace(err) ? err : new Error(util.toString(err));
-        if (x !== NEXT_FILTER) promise._attachExtraTrace(trace);
-        promise._rejectUnchecked(err, trace);
+        var err = x === promise ? makeSelfResolutionError() : x.e;
+        promise._rejectCallback(err, false, true);
     } else {
-        x = tryConvertToPromise(x, promise);
-        if (x instanceof Promise) {
-            x = x._target();
-            if (x._isRejected() &&
-                !x._isCarryingStackTrace() &&
-                !canAttachTrace(x._reason())) {
-                var trace = new Error(util.toString(x._reason()));
-                promise._attachExtraTrace(trace);
-                x._setCarriedStackTrace(trace);
-            }
-            promise._follow(x);
-        } else {
-            promise._fulfillUnchecked(x);
-        }
+        promise._resolveCallback(x);
     }
 };
 
@@ -25215,74 +25204,6 @@ Promise.prototype._setFollowee = function(promise) {
     this._rejectionHandler0 = promise;
 };
 
-Promise.prototype._follow = function (promise) {
-    if (promise._isPending()) {
-        var len = this._length();
-        for (var i = 0; i < len; ++i) {
-            promise._migrateCallbacks(
-                this._fulfillmentHandlerAt(i),
-                this._rejectionHandlerAt(i),
-                this._progressHandlerAt(i),
-                this._promiseAt(i),
-                this._receiverAt(i)
-            );
-        }
-        this._setFollowing();
-        this._setLength(0);
-        this._setFollowee(promise);
-        this._propagateFrom(promise, 1);
-    } else if (promise._isFulfilled()) {
-        this._fulfillUnchecked(promise._value());
-    } else {
-        this._rejectUnchecked(promise._reason(),
-            promise._getCarriedStackTrace());
-    }
-    if (promise._isRejectionUnhandled()) promise._unsetRejectionIsUnhandled();
-
-    if (debugging &&
-        !promise._trace.hasParent()) {
-        promise._trace.setParent(this._trace);
-    }
-};
-
-Promise.prototype._tryFollow = function (value) {
-    if (this._isFollowingOrFulfilledOrRejected() ||
-        value === this) {
-        return false;
-    }
-    var maybePromise = tryConvertToPromise(value, this);
-    if (!(maybePromise instanceof Promise)) {
-        return false;
-    }
-    this._follow(maybePromise._target());
-    return true;
-};
-
-Promise.prototype._resetTrace = function () {
-    if (debugging) {
-        this._trace = new CapturedTrace(this._peekContext());
-    }
-};
-
-Promise.prototype._setTrace = function (parent) {
-    if (debugging) {
-        var context = this._peekContext();
-        if (parent !== undefined &&
-            parent._trace.parent() === context) {
-            this._trace = parent._trace;
-        } else {
-            this._trace = new CapturedTrace(context);
-        }
-    }
-    return this;
-};
-
-Promise.prototype._attachExtraTrace = function (error) {
-    if (debugging && canAttachTrace(error)) {
-        this._trace.attachExtraTrace(error);
-    }
-};
-
 Promise.prototype._cleanValues = function () {
     if (this._cancellable()) {
         this._cancellationParent = undefined;
@@ -25294,11 +25215,8 @@ Promise.prototype._propagateFrom = function (parent, flags) {
         this._setCancellable();
         this._cancellationParent = parent;
     }
-    if ((flags & 4) > 0) {
+    if ((flags & 4) > 0 && parent._isBound()) {
         this._setBoundTo(parent._boundTo);
-    }
-    if ((flags & 2) > 0) {
-        this._setTrace(parent);
     }
 };
 
@@ -25347,10 +25265,12 @@ Promise.prototype._settlePromiseAt = function (index) {
                 receiver._promiseRejected(value, promise);
             }
         }
-    } else if (this._isFulfilled()) {
-        promise._fulfill(value);
-    } else {
-        promise._reject(value, carriedStackTrace);
+    } else if (isPromise) {
+        if (this._isFulfilled()) {
+            promise._fulfill(value);
+        } else {
+            promise._reject(value, carriedStackTrace);
+        }
     }
 
     if (index >= 4 && (index & 31) === 4)
@@ -25390,10 +25310,8 @@ Promise.prototype._unsetSettlePromisesQueued = function () {
 };
 
 Promise.prototype._queueSettlePromises = function() {
-    if (!this._isSettlePromisesQueued()) {
-        async.invoke(this._settlePromises, this, undefined);
-        this._setSettlePromisesQueued();
-    }
+    async.settlePromises(this);
+    this._setSettlePromisesQueued();
 };
 
 Promise.prototype._fulfillUnchecked = function (value) {
@@ -25412,8 +25330,7 @@ Promise.prototype._fulfillUnchecked = function (value) {
 };
 
 Promise.prototype._rejectUncheckedCheckError = function (reason) {
-    var trace = canAttachTrace(reason)
-        ? reason : new Error(util.toString(reason));
+    var trace = util.ensureErrorObject(reason);
     this._rejectUnchecked(reason, trace === reason ? undefined : trace);
 };
 
@@ -25438,7 +25355,9 @@ Promise.prototype._rejectUnchecked = function (reason, trace) {
         return;
     }
 
-    if (trace !== undefined) this._setCarriedStackTrace(trace);
+    if (trace !== undefined && trace !== reason) {
+        this._setCarriedStackTrace(trace);
+    }
 
     if (this._length() > 0) {
         this._queueSettlePromises();
@@ -25455,156 +25374,67 @@ Promise.prototype._settlePromises = function () {
     }
 };
 
-Promise.prototype._ensurePossibleRejectionHandled = function () {
-    this._setRejectionIsUnhandled();
-    if (CapturedTrace.possiblyUnhandledRejection !== undefined) {
-        async.invokeLater(this._notifyUnhandledRejection, this, undefined);
-    }
-};
-
-Promise.prototype._notifyUnhandledRejectionIsHandled = function () {
-    if (typeof unhandledRejectionHandled === "function") {
-        async.throwLater(unhandledRejectionHandled, this);
-    }
-};
-
-Promise.prototype._notifyUnhandledRejection = function () {
-    if (this._isRejectionUnhandled()) {
-        var reason = this._settledValue;
-        var trace = this._getCarriedStackTrace();
-
-        this._setUnhandledRejectionIsNotified();
-
-        if (trace !== undefined) {
-            this._unsetCarriedStackTrace();
-            reason = trace;
-        }
-        if (typeof CapturedTrace.possiblyUnhandledRejection === "function") {
-            CapturedTrace.possiblyUnhandledRejection(reason, this);
-        }
-    }
-};
-
-var contextStack = [];
-Promise.prototype._peekContext = function () {
-    var lastIndex = contextStack.length - 1;
-    if (lastIndex >= 0) {
-        return contextStack[lastIndex];
-    }
-    return undefined;
-
-};
-
-Promise.prototype._pushContext = function () {
-    if (!debugging) return;
-    contextStack.push(this._trace);
-};
-
-Promise.prototype._popContext = function () {
-    if (!debugging) return;
-    contextStack.pop();
-};
-
-Promise.prototype._resolveFromSyncValue = function (value) {
-    if (value === errorObj) {
-        this._setRejected();
-        var reason = value.e;
-        this._settledValue = reason;
-        this._cleanValues();
-        this._attachExtraTrace(reason);
-        this._ensurePossibleRejectionHandled();
-    } else {
-        var maybePromise = tryConvertToPromise(value, this);
-        if (maybePromise instanceof Promise) {
-            maybePromise = maybePromise._target();
-            this._follow(maybePromise);
-        } else {
-            this._setFulfilled();
-            this._settledValue = value;
-            this._cleanValues();
-        }
-    }
-};
-
-if (!CapturedTrace.isSupported()) {
-    Promise.longStackTraces = function(){};
-    debugging = false;
-}
-
 Promise._makeSelfResolutionError = makeSelfResolutionError;
-require("./finally.js")(Promise, NEXT_FILTER, tryConvertToPromise);
-require("./direct_resolve.js")(Promise);
-require("./synchronous_inspection.js")(Promise);
-require("./join.js")(Promise, PromiseArray, tryConvertToPromise, INTERNAL);
-Promise.RangeError = RangeError;
-Promise.CancellationError = CancellationError;
-Promise.TimeoutError = TimeoutError;
-Promise.TypeError = TypeError;
-Promise.OperationalError = OperationalError;
-Promise.RejectionError = OperationalError;
-Promise.AggregateError = errors.AggregateError;
-
-util.toFastProperties(Promise);
-util.toFastProperties(Promise.prototype);
+_dereq_("./progress.js")(Promise, PromiseArray);
+_dereq_("./method.js")(Promise, INTERNAL, tryConvertToPromise, apiRejection);
+_dereq_("./bind.js")(Promise, INTERNAL, tryConvertToPromise);
+_dereq_("./finally.js")(Promise, NEXT_FILTER, tryConvertToPromise);
+_dereq_("./direct_resolve.js")(Promise);
+_dereq_("./synchronous_inspection.js")(Promise);
+_dereq_("./join.js")(Promise, PromiseArray, tryConvertToPromise, INTERNAL);
 Promise.Promise = Promise;
-CapturedTrace.setBounds(async.firstLineError, util.lastLineError);
-require('./timers.js')(Promise,INTERNAL,tryConvertToPromise);
-require('./race.js')(Promise,INTERNAL,tryConvertToPromise);
-require('./call_get.js')(Promise);
-require('./generators.js')(Promise,apiRejection,INTERNAL,tryConvertToPromise);
-require('./map.js')(Promise,PromiseArray,apiRejection,tryConvertToPromise,INTERNAL);
-require('./nodeify.js')(Promise);
-require('./promisify.js')(Promise,INTERNAL);
-require('./props.js')(Promise,PromiseArray,tryConvertToPromise);
-require('./reduce.js')(Promise,PromiseArray,apiRejection,tryConvertToPromise,INTERNAL);
-require('./settle.js')(Promise,PromiseArray);
-require('./some.js')(Promise,PromiseArray,apiRejection);
-require('./progress.js')(Promise,PromiseArray);
-require('./cancel.js')(Promise,INTERNAL);
-require('./filter.js')(Promise,INTERNAL);
-require('./any.js')(Promise,PromiseArray);
-require('./each.js')(Promise,INTERNAL);
-require('./using.js')(Promise,apiRejection,tryConvertToPromise);
-
-Promise.prototype = Promise.prototype;
-return Promise;
+_dereq_('./map.js')(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL);
+_dereq_('./cancel.js')(Promise);
+_dereq_('./using.js')(Promise, apiRejection, tryConvertToPromise, createContext);
+_dereq_('./generators.js')(Promise, apiRejection, INTERNAL, tryConvertToPromise);
+_dereq_('./nodeify.js')(Promise);
+_dereq_('./call_get.js')(Promise);
+_dereq_('./props.js')(Promise, PromiseArray, tryConvertToPromise, apiRejection);
+_dereq_('./race.js')(Promise, INTERNAL, tryConvertToPromise, apiRejection);
+_dereq_('./reduce.js')(Promise, PromiseArray, apiRejection, tryConvertToPromise, INTERNAL);
+_dereq_('./settle.js')(Promise, PromiseArray);
+_dereq_('./some.js')(Promise, PromiseArray, apiRejection);
+_dereq_('./promisify.js')(Promise, INTERNAL);
+_dereq_('./any.js')(Promise);
+_dereq_('./each.js')(Promise, INTERNAL);
+_dereq_('./timers.js')(Promise, INTERNAL);
+_dereq_('./filter.js')(Promise, INTERNAL);
+                                                         
+    util.toFastProperties(Promise);                                          
+    util.toFastProperties(Promise.prototype);                                
+    function fillTypes(value) {                                              
+        var p = new Promise(INTERNAL);                                       
+        p._fulfillmentHandler0 = value;                                      
+        p._rejectionHandler0 = value;                                        
+        p._progressHandler0 = value;                                         
+        p._promise0 = value;                                                 
+        p._receiver0 = value;                                                
+        p._settledValue = value;                                             
+    }                                                                        
+    // Complete slack tracking, opt out of field-type tracking and           
+    // stabilize map                                                         
+    fillTypes({a: 1});                                                       
+    fillTypes({b: 2});                                                       
+    fillTypes({c: 3});                                                       
+    fillTypes(1);                                                            
+    fillTypes(function(){});                                                 
+    fillTypes(undefined);                                                    
+    fillTypes(false);                                                        
+    fillTypes(new Promise(INTERNAL));                                        
+    CapturedTrace.setBounds(async.firstLineError, util.lastLineError);       
+    return Promise;                                                          
 
 };
 
-},{"./any.js":1,"./async.js":2,"./call_get.js":4,"./cancel.js":5,"./captured_trace.js":6,"./catch_filter.js":7,"./direct_resolve.js":8,"./each.js":9,"./errors.js":10,"./errors_api_rejection":11,"./filter.js":13,"./finally.js":14,"./generators.js":15,"./join.js":16,"./map.js":17,"./nodeify.js":18,"./progress.js":19,"./promise_array.js":21,"./promise_resolver.js":22,"./promisify.js":23,"./props.js":24,"./race.js":26,"./reduce.js":27,"./settle.js":29,"./some.js":30,"./synchronous_inspection.js":31,"./thenables.js":32,"./timers.js":33,"./using.js":34,"./util.js":35}],21:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./any.js":1,"./async.js":2,"./bind.js":3,"./call_get.js":5,"./cancel.js":6,"./captured_trace.js":7,"./catch_filter.js":8,"./context.js":9,"./debuggability.js":10,"./direct_resolve.js":11,"./each.js":12,"./errors.js":13,"./filter.js":15,"./finally.js":16,"./generators.js":17,"./join.js":18,"./map.js":19,"./method.js":20,"./nodeify.js":21,"./progress.js":22,"./promise_array.js":24,"./promise_resolver.js":25,"./promisify.js":26,"./props.js":27,"./race.js":29,"./reduce.js":30,"./settle.js":32,"./some.js":33,"./synchronous_inspection.js":34,"./thenables.js":35,"./timers.js":36,"./using.js":37,"./util.js":38}],24:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function(Promise, INTERNAL, tryConvertToPromise) {
-var canAttachTrace = require("./errors.js").canAttachTrace;
-var util = require("./util.js");
+module.exports = function(Promise, INTERNAL, tryConvertToPromise,
+    apiRejection) {
+var util = _dereq_("./util.js");
 var isArray = util.isArray;
 
 function toResolutionValue(val) {
     switch(val) {
-    case -1: return undefined;
     case -2: return [];
     case -3: return {};
     }
@@ -25617,7 +25447,6 @@ function PromiseArray(values) {
         parent = values;
         promise._propagateFrom(parent, 1 | 4);
     }
-    promise._setTrace(parent);
     this._values = values;
     this._length = 0;
     this._totalResolved = 0;
@@ -25632,10 +25461,8 @@ PromiseArray.prototype.promise = function () {
 };
 
 PromiseArray.prototype._init = function init(_, resolveValueIfEmpty) {
-
-    var values = tryConvertToPromise(this._values, undefined);
+    var values = tryConvertToPromise(this._values, this._promise);
     if (values instanceof Promise) {
-        values._setBoundTo(this._promise._boundTo);
         values = values._target();
         this._values = values;
         if (values._isFulfilled()) {
@@ -25655,13 +25482,11 @@ PromiseArray.prototype._init = function init(_, resolveValueIfEmpty) {
            );
             return;
         } else {
-            values._unsetRejectionIsUnhandled();
             this._reject(values._reason());
             return;
         }
     } else if (!isArray(values)) {
-        var err = new Promise.TypeError("expecting an array, a promise or a thenable\u000a\u000a    See http://goo.gl/s8MMhc\u000a");
-        this.__hardReject__(err);
+        this._promise._reject(apiRejection("expecting an array, a promise or a thenable\u000a\u000a    See http://goo.gl/s8MMhc\u000a")._reason());
         return;
     }
 
@@ -25679,19 +25504,20 @@ PromiseArray.prototype._init = function init(_, resolveValueIfEmpty) {
     this._values = this.shouldCopyValues() ? new Array(len) : this._values;
     var promise = this._promise;
     for (var i = 0; i < len; ++i) {
-        if (this._isResolved()) return;
+        var isResolved = this._isResolved();
         var maybePromise = tryConvertToPromise(values[i], promise);
         if (maybePromise instanceof Promise) {
             maybePromise = maybePromise._target();
-            if (maybePromise._isPending()) {
+            if (isResolved) {
+                maybePromise._unsetRejectionIsUnhandled();
+            } else if (maybePromise._isPending()) {
                 maybePromise._proxyPromiseArray(this, i);
             } else if (maybePromise._isFulfilled()) {
                 this._promiseFulfilled(maybePromise._value(), i);
             } else {
-                maybePromise._unsetRejectionIsUnhandled();
                 this._promiseRejected(maybePromise._reason(), i);
             }
-        } else {
+        } else if (!isResolved) {
             this._promiseFulfilled(maybePromise, i);
         }
     }
@@ -25709,10 +25535,7 @@ PromiseArray.prototype._resolve = function (value) {
 PromiseArray.prototype.__hardReject__ =
 PromiseArray.prototype._reject = function (reason) {
     this._values = null;
-    var trace = canAttachTrace(reason)
-        ? reason : new Error(util.toString(reason));
-    this._promise._attachExtraTrace(trace);
-    this._promise._reject(reason, trace);
+    this._promise._rejectCallback(reason, false, true);
 };
 
 PromiseArray.prototype._promiseProgressed = function (progressValue, index) {
@@ -25747,55 +25570,40 @@ PromiseArray.prototype.getActualLength = function (len) {
 return PromiseArray;
 };
 
-},{"./errors.js":10,"./util.js":35}],22:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],25:[function(_dereq_,module,exports){
 "use strict";
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 var maybeWrapAsError = util.maybeWrapAsError;
-var errors = require("./errors.js");
+var errors = _dereq_("./errors.js");
 var TimeoutError = errors.TimeoutError;
 var OperationalError = errors.OperationalError;
-var async = require("./async.js");
 var haveGetters = util.haveGetters;
-var es5 = require("./es5.js");
+var es5 = _dereq_("./es5.js");
 
 function isUntypedError(obj) {
     return obj instanceof Error &&
         es5.getPrototypeOf(obj) === Error.prototype;
 }
 
+var rErrorKey = /^(?:name|message|stack|cause)$/;
 function wrapAsOperationalError(obj) {
     var ret;
     if (isUntypedError(obj)) {
         ret = new OperationalError(obj);
-    } else {
-        ret = obj;
+        ret.name = obj.name;
+        ret.message = obj.message;
+        ret.stack = obj.stack;
+        var keys = es5.keys(obj);
+        for (var i = 0; i < keys.length; ++i) {
+            var key = keys[i];
+            if (!rErrorKey.test(key)) {
+                ret[key] = obj[key];
+            }
+        }
+        return ret;
     }
-    errors.markAsOriginatingFromRejection(ret);
-    return ret;
+    util.markAsOriginatingFromRejection(obj);
+    return obj;
 }
 
 function nodebackForPromise(promise) {
@@ -25852,39 +25660,25 @@ PromiseResolver.prototype.fulfill = function (value) {
     if (!(this instanceof PromiseResolver)) {
         throw new TypeError("Illegal invocation, resolver resolve/reject must be called within a resolver context. Consider using the promise constructor instead.\u000a\u000a    See http://goo.gl/sdkXL9\u000a");
     }
-
-    var promise = this.promise;
-    if (promise._tryFollow(value)) {
-        return;
-    }
-    async.invoke(promise._fulfill, promise, value);
+    this.promise._resolveCallback(value);
 };
 
 PromiseResolver.prototype.reject = function (reason) {
     if (!(this instanceof PromiseResolver)) {
         throw new TypeError("Illegal invocation, resolver resolve/reject must be called within a resolver context. Consider using the promise constructor instead.\u000a\u000a    See http://goo.gl/sdkXL9\u000a");
     }
-
-    var promise = this.promise;
-    errors.markAsOriginatingFromRejection(reason);
-    var trace = errors.canAttachTrace(reason)
-        ? reason : new Error(util.toString(reason));
-    promise._attachExtraTrace(trace);
-    async.invoke(promise._reject, promise, reason);
-    if (trace !== reason) {
-        async.invoke(this._setCarriedStackTrace, this, trace);
-    }
+    this.promise._rejectCallback(reason);
 };
 
 PromiseResolver.prototype.progress = function (value) {
     if (!(this instanceof PromiseResolver)) {
         throw new TypeError("Illegal invocation, resolver resolve/reject must be called within a resolver context. Consider using the promise constructor instead.\u000a\u000a    See http://goo.gl/sdkXL9\u000a");
     }
-    async.invoke(this.promise._progress, this.promise, value);
+    this.promise._progress(value);
 };
 
-PromiseResolver.prototype.cancel = function () {
-    async.invoke(this.promise.cancel, this.promise, undefined);
+PromiseResolver.prototype.cancel = function (err) {
+    this.promise.cancel(err);
 };
 
 PromiseResolver.prototype.timeout = function () {
@@ -25899,60 +25693,31 @@ PromiseResolver.prototype.toJSON = function () {
     return this.promise.toJSON();
 };
 
-PromiseResolver.prototype._setCarriedStackTrace = function (trace) {
-    if (this.promise.isRejected()) {
-        this.promise._setCarriedStackTrace(trace);
-    }
-};
-
 module.exports = PromiseResolver;
 
-},{"./async.js":2,"./errors.js":10,"./es5.js":12,"./util.js":35}],23:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors.js":13,"./es5.js":14,"./util.js":38}],26:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, INTERNAL) {
 var THIS = {};
-var util = require("./util.js");
-var nodebackForPromise = require("./promise_resolver.js")
+var util = _dereq_("./util.js");
+var nodebackForPromise = _dereq_("./promise_resolver.js")
     ._nodebackForPromise;
 var withAppended = util.withAppended;
 var maybeWrapAsError = util.maybeWrapAsError;
 var canEvaluate = util.canEvaluate;
-var TypeError = require("./errors").TypeError;
+var TypeError = _dereq_("./errors").TypeError;
 var defaultSuffix = "Async";
+var defaultPromisified = {__isPromisified__: true};
+var noCopyPropsPattern =
+    /^(?:length|name|arguments|caller|callee|prototype|__isPromisified__)$/;
 var defaultFilter = function(name, func) {
     return util.isIdentifier(name) &&
         name.charAt(0) !== "_" &&
         !util.isClass(func);
 };
-var defaultPromisified = {__isPromisified__: true};
 
-
-function escapeIdentRegex(str) {
-    return str.replace(/([$])/, "\\$");
+function propsFilter(key) {
+    return !noCopyPropsPattern.test(key);
 }
 
 function isPromisified(fn) {
@@ -25990,10 +25755,12 @@ function promisifiableMethods(obj, suffix, suffixRegexp, filter) {
     for (var i = 0; i < keys.length; ++i) {
         var key = keys[i];
         var value = obj[key];
+        var passesDefaultFilter = filter === defaultFilter
+            ? true : defaultFilter(key, value, obj);
         if (typeof value === "function" &&
             !isPromisified(value) &&
             !hasPromisified(obj, key, suffix) &&
-            filter(key, value, obj)) {
+            filter(key, value, obj, passesDefaultFilter)) {
             ret.push(key, value);
         }
     }
@@ -26001,97 +25768,65 @@ function promisifiableMethods(obj, suffix, suffixRegexp, filter) {
     return ret;
 }
 
-function switchCaseArgumentOrder(likelyArgumentCount) {
+var escapeIdentRegex = function(str) {
+    return str.replace(/([$])/, "\\$");
+};
+
+var makeNodePromisifiedEval;
+if (!true) {
+var switchCaseArgumentOrder = function(likelyArgumentCount) {
     var ret = [likelyArgumentCount];
-    var min = Math.max(0, likelyArgumentCount - 1 - 5);
+    var min = Math.max(0, likelyArgumentCount - 1 - 3);
     for(var i = likelyArgumentCount - 1; i >= min; --i) {
-        if (i === likelyArgumentCount) continue;
         ret.push(i);
     }
-    for(var i = likelyArgumentCount + 1; i <= 5; ++i) {
+    for(var i = likelyArgumentCount + 1; i <= 3; ++i) {
         ret.push(i);
     }
     return ret;
-}
+};
 
-function argumentSequence(argumentCount) {
-    return util.filledRange(argumentCount, "arguments[", "]");
-}
+var argumentSequence = function(argumentCount) {
+    return util.filledRange(argumentCount, "_arg", "");
+};
 
-function parameterDeclaration(parameterCount) {
-    return util.filledRange(parameterCount, "_arg", "");
-}
+var parameterDeclaration = function(parameterCount) {
+    return util.filledRange(
+        Math.max(parameterCount, 3), "_arg", "");
+};
 
-function parameterCount(fn) {
+var parameterCount = function(fn) {
     if (typeof fn.length === "number") {
         return Math.max(Math.min(fn.length, 1023 + 1), 0);
     }
     return 0;
-}
+};
 
-function generatePropertyAccess(key) {
-    if (util.isIdentifier(key)) {
-        return "." + key;
-    }
-    else return "['" + key.replace(/(['\\])/g, "\\$1") + "']";
-}
-
-function makeNodePromisifiedEval(callback, receiver, originalName, fn, suffix) {
+makeNodePromisifiedEval =
+function(callback, receiver, originalName, fn) {
     var newParameterCount = Math.max(0, parameterCount(fn) - 1);
     var argumentOrder = switchCaseArgumentOrder(newParameterCount);
-    var callbackName =
-        (typeof originalName === "string" && util.isIdentifier(originalName)
-            ? originalName + suffix
-            : "promisified");
+    var shouldProxyThis = typeof callback === "string" || receiver === THIS;
 
     function generateCallForArgumentCount(count) {
         var args = argumentSequence(count).join(", ");
         var comma = count > 0 ? ", " : "";
         var ret;
-        if (typeof callback === "string") {
-            ret = "                                                          \n\
-                this.method({{args}}, fn);                                   \n\
-                break;                                                       \n\
-            ".replace(".method", generatePropertyAccess(callback));
-        } else if (receiver === THIS) {
-            ret =  "                                                         \n\
-                callback.call(this, {{args}}, fn);                           \n\
-                break;                                                       \n\
-            ";
-        } else if (receiver !== undefined) {
-            ret =  "                                                         \n\
-                callback.call(receiver, {{args}}, fn);                       \n\
-                break;                                                       \n\
-            ";
+        if (shouldProxyThis) {
+            ret = "ret = callback.call(this, {{args}}, nodeback); break;\n";
         } else {
-            ret =  "                                                         \n\
-                callback({{args}}, fn);                                      \n\
-                break;                                                       \n\
-            ";
+            ret = receiver === undefined
+                ? "ret = callback({{args}}, nodeback); break;\n"
+                : "ret = callback.call(receiver, {{args}}, nodeback); break;\n";
         }
         return ret.replace("{{args}}", args).replace(", ", comma);
     }
 
     function generateArgumentSwitchCase() {
         var ret = "";
-        for(var i = 0; i < argumentOrder.length; ++i) {
+        for (var i = 0; i < argumentOrder.length; ++i) {
             ret += "case " + argumentOrder[i] +":" +
                 generateCallForArgumentCount(argumentOrder[i]);
-        }
-        var codeForCall;
-        if (typeof callback === "string") {
-            codeForCall = "                                                  \n\
-                this.property.apply(this, args);                             \n\
-            "
-                .replace(".property", generatePropertyAccess(callback));
-        } else if (receiver === THIS) {
-            codeForCall = "                                                  \n\
-                callback.apply(this, args);                                  \n\
-            ";
-        } else {
-            codeForCall = "                                                  \n\
-                callback.apply(receiver, args);                              \n\
-            ";
         }
 
         ret += "                                                             \n\
@@ -26101,69 +25836,81 @@ function makeNodePromisifiedEval(callback, receiver, originalName, fn, suffix) {
             for (var i = 0; i < len; ++i) {                                  \n\
                args[i] = arguments[i];                                       \n\
             }                                                                \n\
-            args[i] = fn;                                                    \n\
+            args[i] = nodeback;                                              \n\
             [CodeForCall]                                                    \n\
             break;                                                           \n\
-        ".replace("[CodeForCall]", codeForCall);
+        ".replace("[CodeForCall]", (shouldProxyThis
+                                ? "ret = callback.apply(this, args);\n"
+                                : "ret = callback.apply(receiver, args);\n"));
         return ret;
     }
 
+    var getFunctionCode = typeof callback === "string"
+                                ? ("this != null ? this['"+callback+"'] : fn")
+                                : "fn";
+
     return new Function("Promise",
-                        "callback",
+                        "fn",
                         "receiver",
                         "withAppended",
                         "maybeWrapAsError",
                         "nodebackForPromise",
-                        "INTERNAL","                                         \n\
-        var ret = function (Parameters) {                        \n\
+                        "tryCatch",
+                        "errorObj",
+                        "INTERNAL","'use strict';                            \n\
+        var ret = function (Parameters) {                                    \n\
             'use strict';                                                    \n\
             var len = arguments.length;                                      \n\
             var promise = new Promise(INTERNAL);                             \n\
-            promise._setTrace(undefined);                                    \n\
-            var fn = nodebackForPromise(promise);                            \n\
-            try {                                                            \n\
-                switch(len) {                                                \n\
-                    [CodeForSwitchCase]                                      \n\
-                }                                                            \n\
-            } catch (e) {                                                    \n\
-                var wrapped = maybeWrapAsError(e);                           \n\
-                promise._attachExtraTrace(wrapped);                          \n\
-                promise._reject(wrapped);                                    \n\
+            promise._captureStackTrace();                                    \n\
+            var nodeback = nodebackForPromise(promise);                      \n\
+            var ret;                                                         \n\
+            var callback = tryCatch([GetFunctionCode]);                      \n\
+            switch(len) {                                                    \n\
+                [CodeForSwitchCase]                                          \n\
+            }                                                                \n\
+            if (ret === errorObj) {                                          \n\
+                promise._rejectCallback(maybeWrapAsError(ret.e), true, true);\n\
             }                                                                \n\
             return promise;                                                  \n\
         };                                                                   \n\
         ret.__isPromisified__ = true;                                        \n\
         return ret;                                                          \n\
         "
-        .replace("FunctionName", callbackName)
         .replace("Parameters", parameterDeclaration(newParameterCount))
-        .replace("[CodeForSwitchCase]", generateArgumentSwitchCase()))(
+        .replace("[CodeForSwitchCase]", generateArgumentSwitchCase())
+        .replace("[GetFunctionCode]", getFunctionCode))(
             Promise,
-            callback,
+            fn,
             receiver,
             withAppended,
             maybeWrapAsError,
             nodebackForPromise,
+            util.tryCatch,
+            util.errorObj,
             INTERNAL
         );
+};
 }
 
-function makeNodePromisifiedClosure(callback, receiver) {
+function makeNodePromisifiedClosure(callback, receiver, _, fn) {
+    var defaultThis = (function() {return this;})();
+    var method = callback;
+    if (typeof method === "string") {
+        callback = fn;
+    }
     function promisified() {
         var _receiver = receiver;
         if (receiver === THIS) _receiver = this;
-        if (typeof callback === "string") {
-            callback = _receiver[callback];
-        }
         var promise = new Promise(INTERNAL);
-        promise._setTrace(undefined);
+        promise._captureStackTrace();
+        var cb = typeof method === "string" && this !== defaultThis
+            ? this[method] : callback;
         var fn = nodebackForPromise(promise);
         try {
-            callback.apply(_receiver, withAppended(arguments, fn));
+            cb.apply(_receiver, withAppended(arguments, fn));
         } catch(e) {
-            var wrapped = maybeWrapAsError(e);
-            promise._attachExtraTrace(wrapped);
-            promise._reject(wrapped);
+            promise._rejectCallback(maybeWrapAsError(e), true, true);
         }
         return promise;
     }
@@ -26186,7 +25933,9 @@ function promisifyAll(obj, suffix, filter, promisifier) {
         var promisifiedKey = key + suffix;
         obj[promisifiedKey] = promisifier === makeNodePromisified
                 ? makeNodePromisified(key, THIS, key, fn, suffix)
-                : promisifier(fn);
+                : promisifier(fn, function() {
+                    return makeNodePromisified(key, THIS, key, fn, suffix);
+                });
     }
     util.toFastProperties(obj);
     return obj;
@@ -26203,7 +25952,9 @@ Promise.promisify = function (fn, receiver) {
     if (isPromisified(fn)) {
         return fn;
     }
-    return promisify(fn, arguments.length < 2 ? THIS : receiver);
+    var ret = promisify(fn, arguments.length < 2 ? THIS : receiver);
+    util.copyDescriptors(fn, ret, propsFilter);
+    return ret;
 };
 
 Promise.promisifyAll = function (target, options) {
@@ -26222,7 +25973,7 @@ Promise.promisifyAll = function (target, options) {
         throw new RangeError("suffix must be a valid identifier\u000a\u000a    See http://goo.gl/8FZo5V\u000a");
     }
 
-    var keys = util.inheritedDataKeys(target, {includeHidden: true});
+    var keys = util.inheritedDataKeys(target);
     for (var i = 0; i < keys.length; ++i) {
         var value = target[keys[i]];
         if (keys[i] !== "constructor" &&
@@ -26237,37 +25988,13 @@ Promise.promisifyAll = function (target, options) {
 };
 
 
-},{"./errors":10,"./promise_resolver.js":22,"./util.js":35}],24:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors":13,"./promise_resolver.js":25,"./util.js":38}],27:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function(Promise, PromiseArray, tryConvertToPromise) {
-var util = require("./util.js");
-var apiRejection = require("./errors_api_rejection")(Promise);
+module.exports = function(
+    Promise, PromiseArray, tryConvertToPromise, apiRejection) {
+var util = _dereq_("./util.js");
 var isObject = util.isObject;
-var es5 = require("./es5.js");
+var es5 = _dereq_("./es5.js");
 
 function PropertiesPromiseArray(obj) {
     var keys = es5.keys(obj);
@@ -26316,7 +26043,7 @@ PropertiesPromiseArray.prototype.getActualLength = function (len) {
 
 function props(promises) {
     var ret;
-    var castValue = tryConvertToPromise(promises, undefined);
+    var castValue = tryConvertToPromise(promises);
 
     if (!isObject(castValue)) {
         return apiRejection("cannot await properties of a non-object\u000a\u000a    See http://goo.gl/OsFKC8\u000a");
@@ -26342,35 +26069,12 @@ Promise.props = function (promises) {
 };
 };
 
-},{"./errors_api_rejection":11,"./es5.js":12,"./util.js":35}],25:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./es5.js":14,"./util.js":38}],28:[function(_dereq_,module,exports){
 "use strict";
-function arrayCopy(src, srcIndex, dst, dstIndex, len) {
+function arrayMove(src, srcIndex, dst, dstIndex, len) {
     for (var j = 0; j < len; ++j) {
         dst[j + dstIndex] = src[j + srcIndex];
+        src[j + srcIndex] = void 0;
     }
 }
 
@@ -26378,7 +26082,6 @@ function Queue(capacity) {
     this._capacity = capacity;
     this._length = 0;
     this._front = 0;
-    this._makeCapacity();
 }
 
 Queue.prototype._willBeOverCapacity = function (size) {
@@ -26441,71 +26144,28 @@ Queue.prototype.length = function () {
     return this._length;
 };
 
-Queue.prototype._makeCapacity = function () {
-    var len = this._capacity;
-    for (var i = 0; i < len; ++i) {
-        this[i] = undefined;
-    }
-};
-
 Queue.prototype._checkCapacity = function (size) {
     if (this._capacity < size) {
-        this._resizeTo(this._capacity << 3);
+        this._resizeTo(this._capacity << 1);
     }
 };
 
 Queue.prototype._resizeTo = function (capacity) {
-    var oldFront = this._front;
     var oldCapacity = this._capacity;
-    var oldQueue = new Array(oldCapacity);
-    var length = this.length();
-
-    arrayCopy(this, 0, oldQueue, 0, oldCapacity);
     this._capacity = capacity;
-    this._makeCapacity();
-    this._front = 0;
-    if (oldFront + length <= oldCapacity) {
-        arrayCopy(oldQueue, oldFront, this, 0, length);
-    } else {        var lengthBeforeWrapping =
-            length - ((oldFront + length) & (oldCapacity - 1));
-
-        arrayCopy(oldQueue, oldFront, this, 0, lengthBeforeWrapping);
-        arrayCopy(oldQueue, 0, this, lengthBeforeWrapping,
-                    length - lengthBeforeWrapping);
-    }
+    var front = this._front;
+    var length = this._length;
+    var moveItemsCount = (front + length) & (oldCapacity - 1);
+    arrayMove(this, 0, this, oldCapacity, moveItemsCount);
 };
 
 module.exports = Queue;
 
-},{}],26:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],29:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function(Promise, INTERNAL, tryConvertToPromise) {
-var apiRejection = require("./errors_api_rejection.js")(Promise);
-var isArray = require("./util.js").isArray;
+module.exports = function(
+    Promise, INTERNAL, tryConvertToPromise, apiRejection) {
+var isArray = _dereq_("./util.js").isArray;
 
 var raceLater = function (promise) {
     return promise.then(function(array) {
@@ -26514,7 +26174,7 @@ var raceLater = function (promise) {
 };
 
 function race(promises, parent) {
-    var maybePromise = tryConvertToPromise(promises, undefined);
+    var maybePromise = tryConvertToPromise(promises);
 
     if (maybePromise instanceof Promise) {
         return raceLater(maybePromise);
@@ -26524,9 +26184,7 @@ function race(promises, parent) {
 
     var ret = new Promise(INTERNAL);
     if (parent !== undefined) {
-        ret._propagateFrom(parent, 7);
-    } else {
-        ret._setTrace(undefined);
+        ret._propagateFrom(parent, 4 | 1);
     }
     var fulfill = ret._fulfill;
     var reject = ret._reject;
@@ -26552,50 +26210,26 @@ Promise.prototype.race = function () {
 
 };
 
-},{"./errors_api_rejection.js":11,"./util.js":35}],27:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],30:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise,
                           PromiseArray,
                           apiRejection,
                           tryConvertToPromise,
                           INTERNAL) {
-var util = require("./util.js");
-var tryCatch4 = util.tryCatch4;
-var tryCatch3 = util.tryCatch3;
+var async = _dereq_("./async.js");
+var util = _dereq_("./util.js");
+var tryCatch = util.tryCatch;
 var errorObj = util.errorObj;
 function ReductionPromiseArray(promises, fn, accum, _each) {
     this.constructor$(promises);
+    this._promise._captureStackTrace();
     this._preservedValues = _each === INTERNAL ? [] : null;
     this._zerothIsAccum = (accum === undefined);
     this._gotAccum = false;
     this._reducingIndex = (this._zerothIsAccum ? 1 : 0);
     this._valuesPhase = undefined;
-
-    var maybePromise = tryConvertToPromise(accum, undefined);
+    var maybePromise = tryConvertToPromise(accum, this._promise);
     var rejected = false;
     var isPromise = maybePromise instanceof Promise;
     if (isPromise) {
@@ -26606,7 +26240,6 @@ function ReductionPromiseArray(promises, fn, accum, _each) {
             accum = maybePromise._value();
             this._gotAccum = true;
         } else {
-            maybePromise._unsetRejectionIsUnhandled();
             this._reject(maybePromise._reason());
             rejected = true;
         }
@@ -26614,7 +26247,10 @@ function ReductionPromiseArray(promises, fn, accum, _each) {
     if (!(isPromise || this._zerothIsAccum)) this._gotAccum = true;
     this._callback = fn;
     this._accum = accum;
-    if (!rejected) this._init$(undefined, -5);
+    if (!rejected) async.invoke(init, this, undefined);
+}
+function init() {
+    this._init$(undefined, -5);
 }
 util.inherits(ReductionPromiseArray, PromiseArray);
 
@@ -26637,7 +26273,7 @@ ReductionPromiseArray.prototype._promiseFulfilled = function (value, index) {
     var valuesPhase = this._valuesPhase;
     var valuesPhaseIndex;
     if (!valuesPhase) {
-        valuesPhase = this._valuesPhase = Array(length);
+        valuesPhase = this._valuesPhase = new Array(length);
         for (valuesPhaseIndex=0; valuesPhaseIndex<length; ++valuesPhaseIndex) {
             valuesPhase[valuesPhaseIndex] = 0;
         }
@@ -26645,26 +26281,19 @@ ReductionPromiseArray.prototype._promiseFulfilled = function (value, index) {
     valuesPhaseIndex = valuesPhase[index];
 
     if (index === 0 && this._zerothIsAccum) {
-        if (!gotAccum) {
-            this._accum = value;
-            this._gotAccum = gotAccum = true;
-        }
+        this._accum = value;
+        this._gotAccum = gotAccum = true;
         valuesPhase[index] = ((valuesPhaseIndex === 0)
             ? 1 : 2);
     } else if (index === -1) {
-        if (!gotAccum) {
-            this._accum = value;
-            this._gotAccum = gotAccum = true;
-        }
+        this._accum = value;
+        this._gotAccum = gotAccum = true;
     } else {
         if (valuesPhaseIndex === 0) {
             valuesPhase[index] = 1;
-        }
-        else {
+        } else {
             valuesPhase[index] = 2;
-            if (gotAccum) {
-                this._accum = value;
-            }
+            this._accum = value;
         }
     }
     if (!gotAccum) return;
@@ -26681,25 +26310,16 @@ ReductionPromiseArray.prototype._promiseFulfilled = function (value, index) {
         }
         if (valuesPhaseIndex !== 1) return;
         value = values[i];
-        if (value instanceof Promise) {
-            value = value._target();
-            if (value._isFulfilled()) {
-                value = value._value();
-            } else if (value._isPending()) {
-                return;
-            } else {
-                value._unsetRejectionIsUnhandled();
-                return this._reject(value._reason());
-            }
-        }
-
+        this._promise._pushContext();
         if (isEach) {
             preservedValues.push(value);
-            ret = tryCatch3(callback, receiver, value, i, length);
+            ret = tryCatch(callback).call(receiver, value, i, length);
         }
         else {
-            ret = tryCatch4(callback, receiver, this._accum, value, i, length);
+            ret = tryCatch(callback)
+                .call(receiver, this._accum, value, i, length);
         }
+        this._promise._popContext();
 
         if (ret === errorObj) return this._reject(ret.e);
 
@@ -26712,7 +26332,6 @@ ReductionPromiseArray.prototype._promiseFulfilled = function (value, index) {
             } else if (maybePromise._isFulfilled()) {
                 ret = maybePromise._value();
             } else {
-                maybePromise._unsetRejectionIsUnhandled();
                 return this._reject(maybePromise._reason());
             }
         }
@@ -26721,7 +26340,6 @@ ReductionPromiseArray.prototype._promiseFulfilled = function (value, index) {
         this._accum = ret;
     }
 
-    if (this._reducingIndex < length) return;
     this._resolve(isEach ? preservedValues : this._accum);
 };
 
@@ -26740,93 +26358,53 @@ Promise.reduce = function (promises, fn, initialValue, _each) {
 };
 };
 
-},{"./util.js":35}],28:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./async.js":2,"./util.js":38}],31:[function(_dereq_,module,exports){
 "use strict";
 var schedule;
-var _MutationObserver;
-if (typeof process === "object" && typeof process.version === "string") {
-    schedule = function (fn) {
-        process.nextTick(fn);
-    };
-}
-else if ((typeof MutationObserver !== "undefined" &&
-         (_MutationObserver = MutationObserver)) ||
-         (typeof WebKitMutationObserver !== "undefined" &&
-         (_MutationObserver = WebKitMutationObserver))) {
+var noAsyncScheduler = function() {
+    throw new Error("No async scheduler available\u000a\u000a    See http://goo.gl/m3OTXk\u000a");
+};
+if (_dereq_("./util.js").isNode) {
+    var version = process.versions.node.split(".").map(Number);
+    schedule = (version[0] === 0 && version[1] > 10) || (version[0] > 0)
+        ? global.setImmediate : process.nextTick;
+
+    if (!schedule) {
+        if (typeof setImmediate !== "undefined") {
+            schedule = setImmediate;
+        } else if (typeof setTimeout !== "undefined") {
+            schedule = setTimeout;
+        } else {
+            schedule = noAsyncScheduler;
+        }
+    }
+} else if (typeof MutationObserver !== "undefined") {
     schedule = function(fn) {
         var div = document.createElement("div");
-        var observer = new _MutationObserver(fn);
+        var observer = new MutationObserver(fn);
         observer.observe(div, {attributes: true});
         return function() { div.classList.toggle("foo"); };
     };
     schedule.isStatic = true;
-}
-else if (typeof setTimeout !== "undefined") {
+} else if (typeof setImmediate !== "undefined") {
+    schedule = function (fn) {
+        setImmediate(fn);
+    };
+} else if (typeof setTimeout !== "undefined") {
     schedule = function (fn) {
         setTimeout(fn, 0);
     };
-}
-else {
-    schedule = function() {
-        throw new Error("No async scheduler available\u000a\u000a    See http://goo.gl/m3OTXk\u000a");
-    };
+} else {
+    schedule = noAsyncScheduler;
 }
 module.exports = schedule;
 
-},{}],29:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],32:[function(_dereq_,module,exports){
 "use strict";
 module.exports =
     function(Promise, PromiseArray) {
 var PromiseInspection = Promise.PromiseInspection;
-var util = require("./util.js");
+var util = _dereq_("./util.js");
 
 function SettledPromiseArray(values) {
     this.constructor$(values);
@@ -26863,37 +26441,13 @@ Promise.prototype.settle = function () {
 };
 };
 
-},{"./util.js":35}],30:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],33:[function(_dereq_,module,exports){
 "use strict";
 module.exports =
 function(Promise, PromiseArray, apiRejection) {
-var util = require("./util.js");
-var RangeError = require("./errors.js").RangeError;
-var AggregateError = require("./errors.js").AggregateError;
+var util = _dereq_("./util.js");
+var RangeError = _dereq_("./errors.js").RangeError;
+var AggregateError = _dereq_("./errors.js").AggregateError;
 var isArray = util.isArray;
 
 
@@ -26936,7 +26490,6 @@ SomePromiseArray.prototype.howMany = function () {
 };
 
 SomePromiseArray.prototype.setHowMany = function (count) {
-    if (this._isResolved()) return;
     this._howMany = count;
 };
 
@@ -26999,9 +26552,6 @@ function some(promises, howMany) {
     }
     var ret = new SomePromiseArray(promises);
     var promise = ret.promise();
-    if (promise.isRejected()) {
-        return promise;
-    }
     ret.setHowMany(howMany);
     ret.init();
     return promise;
@@ -27018,40 +26568,14 @@ Promise.prototype.some = function (howMany) {
 Promise._SomePromiseArray = SomePromiseArray;
 };
 
-},{"./errors.js":10,"./util.js":35}],31:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors.js":13,"./util.js":38}],34:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise) {
 function PromiseInspection(promise) {
     if (promise !== undefined) {
         promise = promise._target();
         this._bitField = promise._bitField;
-        this._settledValue = promise._isResolved()
-            ? promise._settledValue
-            : undefined;
+        this._settledValue = promise._settledValue;
     }
     else {
         this._bitField = 0;
@@ -27115,6 +26639,7 @@ Promise.prototype._value = function() {
 };
 
 Promise.prototype._reason = function() {
+    this._unsetRejectionIsUnhandled();
     return this._settledValue;
 };
 
@@ -27131,6 +26656,7 @@ Promise.prototype.reason = function() {
     if (!target.isRejected()) {
         throw new TypeError("cannot get rejection reason of a non-rejected promise\u000a\u000a    See http://goo.gl/hPuiwB\u000a");
     }
+    target._unsetRejectionIsUnhandled();
     return target._settledValue;
 };
 
@@ -27138,56 +26664,20 @@ Promise.prototype.reason = function() {
 Promise.PromiseInspection = PromiseInspection;
 };
 
-},{}],32:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{}],35:[function(_dereq_,module,exports){
 "use strict";
 module.exports = function(Promise, INTERNAL) {
-var util = require("./util.js");
-var canAttachTrace = require("./errors.js").canAttachTrace;
+var util = _dereq_("./util.js");
 var errorObj = util.errorObj;
 var isObject = util.isObject;
 
-function getThen(obj) {
-    try {
-        return obj.then;
-    }
-    catch(e) {
-        errorObj.e = e;
-        return errorObj;
-    }
-}
-
-function tryConvertToPromise(obj, traceParent) {
+function tryConvertToPromise(obj, context) {
     if (isObject(obj)) {
         if (obj instanceof Promise) {
             return obj;
         }
         else if (isAnyBluebirdPromise(obj)) {
             var ret = new Promise(INTERNAL);
-            ret._setTrace(undefined);
             obj._then(
                 ret._fulfillUnchecked,
                 ret._rejectUncheckedCheckError,
@@ -27197,17 +26687,21 @@ function tryConvertToPromise(obj, traceParent) {
             );
             return ret;
         }
-        var then = getThen(obj);
+        var then = util.tryCatch(getThen)(obj);
         if (then === errorObj) {
-            if (traceParent !== undefined && canAttachTrace(then.e)) {
-                traceParent._attachExtraTrace(then.e);
-            }
-            return Promise.reject(then.e);
+            if (context) context._pushContext();
+            var ret = Promise.reject(then.e);
+            if (context) context._popContext();
+            return ret;
         } else if (typeof then === "function") {
-            return doThenable(obj, then, traceParent);
+            return doThenable(obj, then, context);
         }
     }
     return obj;
+}
+
+function getThen(obj) {
+    return obj.then;
 }
 
 var hasProp = {}.hasOwnProperty;
@@ -27215,95 +26709,56 @@ function isAnyBluebirdPromise(obj) {
     return hasProp.call(obj, "_promise0");
 }
 
-function doThenable(x, then, traceParent) {
-    var resolver = Promise.defer();
-    var called = false;
-    try {
-        then.call(
-            x,
-            resolveFromThenable,
-            rejectFromThenable,
-            progressFromThenable
-        );
-    } catch(e) {
-        if (!called) {
-            called = true;
-            var trace = canAttachTrace(e) ? e : new Error(util.toString(e));
-            if (traceParent !== undefined) {
-                traceParent._attachExtraTrace(trace);
-            }
-            resolver.promise._reject(e, trace);
-        }
-    }
-    return resolver.promise;
-
-    function resolveFromThenable(y) {
-        if (called) return;
-        called = true;
-
-        if (x === y) {
-            var e = Promise._makeSelfResolutionError();
-            if (traceParent !== undefined) {
-                traceParent._attachExtraTrace(e);
-            }
-            resolver.promise._reject(e, undefined);
-            return;
-        }
-        resolver.resolve(y);
+function doThenable(x, then, context) {
+    var promise = new Promise(INTERNAL);
+    var ret = promise;
+    if (context) context._pushContext();
+    promise._captureStackTrace();
+    if (context) context._popContext();
+    var synchronous = true;
+    var result = util.tryCatch(then).call(x,
+                                        resolveFromThenable,
+                                        rejectFromThenable,
+                                        progressFromThenable);
+    synchronous = false;
+    if (promise && result === errorObj) {
+        promise._rejectCallback(result.e, true, true);
+        promise = null;
     }
 
-    function rejectFromThenable(r) {
-        if (called) return;
-        called = true;
-        var trace = canAttachTrace(r) ? r : new Error(util.toString(r));
-        if (traceParent !== undefined) {
-            traceParent._attachExtraTrace(trace);
+    function resolveFromThenable(value) {
+        if (!promise) return;
+        if (x === value) {
+            promise._rejectCallback(
+                Promise._makeSelfResolutionError(), false, true);
+        } else {
+            promise._resolveCallback(value);
         }
-        resolver.promise._reject(r, trace);
+        promise = null;
     }
 
-    function progressFromThenable(v) {
-        if (called) return;
-        var promise = resolver.promise;
+    function rejectFromThenable(reason) {
+        if (!promise) return;
+        promise._rejectCallback(reason, synchronous, true);
+        promise = null;
+    }
+
+    function progressFromThenable(value) {
+        if (!promise) return;
         if (typeof promise._progress === "function") {
-            promise._progress(v);
+            promise._progress(value);
         }
     }
+    return ret;
 }
 
 return tryConvertToPromise;
 };
 
-},{"./errors.js":10,"./util.js":35}],33:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],36:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function(Promise, INTERNAL, tryConvertToPromise) {
-var util = require("./util.js");
-var errors = require("./errors.js");
-var apiRejection = require("./errors_api_rejection")(Promise);
+module.exports = function(Promise, INTERNAL) {
+var util = _dereq_("./util.js");
 var TimeoutError = Promise.TimeoutError;
 
 var afterTimeout = function (promise, message) {
@@ -27312,37 +26767,22 @@ var afterTimeout = function (promise, message) {
         message = "operation timed out";
     }
     var err = new TimeoutError(message);
-    errors.markAsOriginatingFromRejection(err);
+    util.markAsOriginatingFromRejection(err);
     promise._attachExtraTrace(err);
     promise._cancel(err);
 };
 
-var afterDelay = function (value, promise) {
-    promise._fulfill(value);
-};
-
+var afterValue = function(value) { return delay(+this).thenReturn(value); };
 var delay = Promise.delay = function (value, ms) {
     if (ms === undefined) {
         ms = value;
         value = undefined;
+        var ret = new Promise(INTERNAL);
+        setTimeout(function() { ret._fulfill(); }, ms);
+        return ret;
     }
     ms = +ms;
-    var maybePromise = tryConvertToPromise(value, undefined);
-    var promise = new Promise(INTERNAL);
-
-    if (maybePromise instanceof Promise) {
-        promise._propagateFrom(maybePromise, 7);
-        promise._follow(maybePromise._target());
-        return promise.then(function(value) {
-            return Promise.delay(value, ms);
-        });
-    } else {
-        promise._setTrace(undefined);
-        setTimeout(function delayTimeout() {
-            afterDelay(value, promise);
-        }, ms);
-    }
-    return promise;
+    return Promise.resolve(value)._then(afterValue, null, null, ms, undefined);
 };
 
 Promise.prototype.delay = function (ms) {
@@ -27364,11 +26804,9 @@ function failureClear(reason) {
 }
 
 Promise.prototype.timeout = function (ms, message) {
-    var target = this._target();
     ms = +ms;
-    var ret = new Promise(INTERNAL).cancellable();
-    ret._propagateFrom(this, 7);
-    ret._follow(target);
+    var ret = this.then().cancellable();
+    ret._cancellationParent = this;
     var handle = setTimeout(function timeoutTimeout() {
         afterTimeout(ret, message);
     }, ms);
@@ -27377,35 +26815,12 @@ Promise.prototype.timeout = function (ms, message) {
 
 };
 
-},{"./errors.js":10,"./errors_api_rejection":11,"./util.js":35}],34:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./util.js":38}],37:[function(_dereq_,module,exports){
 "use strict";
-module.exports = function (Promise, apiRejection, tryConvertToPromise) {
-    var TypeError = require("./errors.js").TypeError;
-    var inherits = require("./util.js").inherits;
+module.exports = function (Promise, apiRejection, tryConvertToPromise,
+    createContext) {
+    var TypeError = _dereq_("./errors.js").TypeError;
+    var inherits = _dereq_("./util.js").inherits;
     var PromiseInspection = Promise.PromiseInspection;
 
     function inspectionMapper(inspections) {
@@ -27425,7 +26840,7 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
     }
 
     function castPreservingDisposable(thenable) {
-        var maybePromise = tryConvertToPromise(thenable, undefined);
+        var maybePromise = tryConvertToPromise(thenable);
         if (maybePromise !== thenable &&
             typeof thenable._isDisposable === "function" &&
             typeof thenable._getDisposer === "function" &&
@@ -27446,7 +26861,7 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
                 try {
                     maybePromise = tryConvertToPromise(
                         maybePromise._getDisposer().tryDispose(inspection),
-                        undefined);
+                        resources.promise);
                 } catch (e) {
                     return thrower(e);
                 }
@@ -27475,9 +26890,10 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
         return dispose(this, inspection).thenThrow(reason);
     }
 
-    function Disposer(data, promise) {
+    function Disposer(data, promise, context) {
         this._data = data;
         this._promise = promise;
+        this._context = context;
     }
 
     Disposer.prototype.data = function () {
@@ -27489,18 +26905,21 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
     };
 
     Disposer.prototype.resource = function () {
-        if (this.promise()._isFulfilled()) {
-            return this.promise()._value();
+        if (this.promise().isFulfilled()) {
+            return this.promise().value();
         }
         return null;
     };
 
     Disposer.prototype.tryDispose = function(inspection) {
         var resource = this.resource();
+        var context = this._context;
+        if (context !== undefined) context._pushContext();
         var ret = resource !== null
             ? this.doDispose(resource, inspection) : null;
+        if (context !== undefined) context._popContext();
         this._promise._unsetDisposable();
-        this._data = this._promise = null;
+        this._data = null;
         return ret;
     };
 
@@ -27510,8 +26929,8 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
                 typeof d.tryDispose === "function");
     };
 
-    function FunctionDisposer(fn, promise) {
-        this.constructor$(fn, promise);
+    function FunctionDisposer(fn, promise, context) {
+        this.constructor$(fn, promise, context);
     }
     inherits(FunctionDisposer, Disposer);
 
@@ -27519,6 +26938,14 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
         var fn = this.data();
         return fn.call(resource, resource, inspection);
     };
+
+    function maybeUnwrapDisposer(value) {
+        if (Disposer.isDisposer(value)) {
+            this.resources[this.index]._setDisposable(value);
+            return value.promise();
+        }
+        return value;
+    }
 
     Promise.using = function () {
         var len = arguments.length;
@@ -27534,15 +26961,35 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
                 var disposer = resource;
                 resource = resource.promise();
                 resource._setDisposable(disposer);
+            } else {
+                var maybePromise = tryConvertToPromise(resource);
+                if (maybePromise instanceof Promise) {
+                    resource =
+                        maybePromise._then(maybeUnwrapDisposer, null, null, {
+                            resources: resources,
+                            index: i
+                    }, undefined);
+                }
             }
             resources[i] = resource;
         }
 
-        return Promise.settle(resources)
+        var promise = Promise.settle(resources)
             .then(inspectionMapper)
-            .spread(fn)
+            .then(function(vals) {
+                promise._pushContext();
+                var ret;
+                try {
+                    ret = fn.apply(undefined, vals);
+                } finally {
+                    promise._popContext();
+                }
+                return ret;
+            })
             ._then(
                 disposerSuccess, disposerFail, undefined, resources, undefined);
+        resources.promise = promise;
+        return promise;
     };
 
     Promise.prototype._setDisposable = function (disposer) {
@@ -27565,40 +27012,17 @@ module.exports = function (Promise, apiRejection, tryConvertToPromise) {
 
     Promise.prototype.disposer = function (fn) {
         if (typeof fn === "function") {
-            return new FunctionDisposer(fn, this._target());
+            return new FunctionDisposer(fn, this, createContext());
         }
         throw new TypeError();
     };
 
 };
 
-},{"./errors.js":10,"./util.js":35}],35:[function(require,module,exports){
-/**
- * The MIT License (MIT)
- * 
- * Copyright (c) 2014 Petka Antonov
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:</p>
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * 
- */
+},{"./errors.js":13,"./util.js":38}],38:[function(_dereq_,module,exports){
 "use strict";
-var es5 = require("./es5.js");
+var es5 = _dereq_("./es5.js");
+var canEvaluate = typeof navigator == "undefined";
 var haveGetters = (function(){
     try {
         var o = {};
@@ -27614,46 +27038,20 @@ var haveGetters = (function(){
     }
 
 })();
-var canEvaluate = typeof navigator == "undefined";
+
 var errorObj = {e: {}};
-function tryCatch1(fn, receiver, arg) {
-    try { return fn.call(receiver, arg); }
-    catch (e) {
+var tryCatchTarget;
+function tryCatcher() {
+    try {
+        return tryCatchTarget.apply(this, arguments);
+    } catch (e) {
         errorObj.e = e;
         return errorObj;
     }
 }
-
-function tryCatch2(fn, receiver, arg, arg2) {
-    try { return fn.call(receiver, arg, arg2); }
-    catch (e) {
-        errorObj.e = e;
-        return errorObj;
-    }
-}
-
-function tryCatch3(fn, receiver, arg, arg2, arg3) {
-    try { return fn.call(receiver, arg, arg2, arg3); }
-    catch (e) {
-        errorObj.e = e;
-        return errorObj;
-    }
-}
-
-function tryCatch4(fn, receiver, arg, arg2, arg3, arg4) {
-    try { return fn.call(receiver, arg, arg2, arg3, arg4); }
-    catch (e) {
-        errorObj.e = e;
-        return errorObj;
-    }
-}
-
-function tryCatchApply(fn, args, receiver) {
-    try { return fn.apply(receiver, args); }
-    catch (e) {
-        errorObj.e = e;
-        return errorObj;
-    }
+function tryCatch(fn) {
+    tryCatchTarget = fn;
+    return tryCatcher;
 }
 
 var inherits = function(Child, Parent) {
@@ -27675,9 +27073,6 @@ var inherits = function(Child, Parent) {
     return Child.prototype;
 };
 
-function asString(val) {
-    return typeof val === "string" ? val : ("" + val);
-}
 
 function isPrimitive(val) {
     return val == null || val === true || val === false ||
@@ -27692,7 +27087,7 @@ function isObject(value) {
 function maybeWrapAsError(maybeError) {
     if (!isPrimitive(maybeError)) return maybeError;
 
-    return new Error(asString(maybeError));
+    return new Error(safeToString(maybeError));
 }
 
 function withAppended(target, appendee) {
@@ -27742,13 +27137,12 @@ function thrower(r) {
 
 var inheritedDataKeys = (function() {
     if (es5.isES5) {
-        return function(obj, opts) {
+        var oProto = Object.prototype;
+        var getKeys = Object.getOwnPropertyNames;
+        return function(obj) {
             var ret = [];
             var visitedKeys = Object.create(null);
-            var getKeys = Object(opts).includeHidden
-                ? Object.getOwnPropertyNames
-                : Object.keys;
-            while (obj != null) {
+            while (obj != null && obj !== oProto) {
                 var keys;
                 try {
                     keys = getKeys(obj);
@@ -27784,7 +27178,8 @@ var inheritedDataKeys = (function() {
 function isClass(fn) {
     try {
         if (typeof fn === "function") {
-            var keys = es5.keys(fn.prototype);
+            var keys = es5.names(fn.prototype);
+            if (es5.isES5) return keys.length > 1;
             return keys.length > 0 &&
                    !(keys.length === 1 && keys[0] === "constructor");
         }
@@ -27795,10 +27190,12 @@ function isClass(fn) {
 }
 
 function toFastProperties(obj) {
-    /*jshint -W027*/
+    /*jshint -W027,-W055,-W031*/
     function f() {}
     f.prototype = obj;
-    return f;
+    var l = 8;
+    while (l--) new f();
+    return obj;
     eval(obj);
 }
 
@@ -27823,6 +27220,52 @@ function safeToString(obj) {
     }
 }
 
+function markAsOriginatingFromRejection(e) {
+    try {
+        notEnumerableProp(e, "isOperational", true);
+    }
+    catch(ignore) {}
+}
+
+function originatesFromRejection(e) {
+    if (e == null) return false;
+    return ((e instanceof Error["__BluebirdErrorTypes__"].OperationalError) ||
+        e["isOperational"] === true);
+}
+
+function canAttachTrace(obj) {
+    return obj instanceof Error && es5.propertyIsWritable(obj, "stack");
+}
+
+var ensureErrorObject = (function() {
+    if (!("stack" in new Error())) {
+        return function(value) {
+            if (canAttachTrace(value)) return value;
+            try {throw new Error(safeToString(value));}
+            catch(err) {return err;}
+        };
+    } else {
+        return function(value) {
+            if (canAttachTrace(value)) return value;
+            return new Error(safeToString(value));
+        };
+    }
+})();
+
+function classString(obj) {
+    return {}.toString.call(obj);
+}
+
+function copyDescriptors(from, to, filter) {
+    var keys = es5.names(from);
+    for (var i = 0; i < keys.length; ++i) {
+        var key = keys[i];
+        if (filter(key)) {
+            es5.defineProperty(to, key, es5.getDescriptor(from, key));
+        }
+    }
+}
+
 var ret = {
     isClass: isClass,
     isIdentifier: isIdentifier,
@@ -27836,28 +27279,333 @@ var ret = {
     isObject: isObject,
     canEvaluate: canEvaluate,
     errorObj: errorObj,
-    tryCatch1: tryCatch1,
-    tryCatch2: tryCatch2,
-    tryCatch3: tryCatch3,
-    tryCatch4: tryCatch4,
-    tryCatchApply: tryCatchApply,
+    tryCatch: tryCatch,
     inherits: inherits,
     withAppended: withAppended,
-    asString: asString,
     maybeWrapAsError: maybeWrapAsError,
     wrapsPrimitiveReceiver: wrapsPrimitiveReceiver,
     toFastProperties: toFastProperties,
     filledRange: filledRange,
     toString: safeToString,
-    lastLineError: new Error()
+    canAttachTrace: canAttachTrace,
+    ensureErrorObject: ensureErrorObject,
+    originatesFromRejection: originatesFromRejection,
+    markAsOriginatingFromRejection: markAsOriginatingFromRejection,
+    classString: classString,
+    copyDescriptors: copyDescriptors,
+    hasDevTools: typeof chrome !== "undefined" && chrome &&
+                 typeof chrome.loadTimes === "function",
+    isNode: typeof process !== "undefined" &&
+        classString(process).toLowerCase() === "[object process]"
 };
-
+try {throw new Error(); } catch (e) {ret.lastLineError = e;}
 module.exports = ret;
 
-},{"./es5.js":12}]},{},[3])
-(3)
-});
-;            ;if (typeof window !== 'undefined' && window !== null) {                           window.P = window.Promise;                                                 } else if (typeof self !== 'undefined' && self !== null) {                         self.P = self.Promise;                                                     }
+},{"./es5.js":14}],39:[function(_dereq_,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      }
+      throw TypeError('Uncaught, unspecified "error" event.');
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        len = arguments.length;
+        args = new Array(len - 1);
+        for (i = 1; i < len; i++)
+          args[i - 1] = arguments[i];
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    len = arguments.length;
+    args = new Array(len - 1);
+    for (i = 1; i < len; i++)
+      args[i - 1] = arguments[i];
+
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    var m;
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  var ret;
+  if (!emitter._events || !emitter._events[type])
+    ret = 0;
+  else if (isFunction(emitter._events[type]))
+    ret = 1;
+  else
+    ret = emitter._events[type].length;
+  return ret;
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+},{}]},{},[4])(4)
+});                    ;if (typeof window !== 'undefined' && window !== null) {                               window.P = window.Promise;                                                     } else if (typeof self !== 'undefined' && self !== null) {                             self.P = self.Promise;                                                         }
 /*
  * classList.js: Cross-browser full element.classList implementation.
  * 2014-07-23
@@ -28097,831 +27845,849 @@ if (objCtr.defineProperty) {
 }
 
 
-/**
- * @preserve FastClick: polyfill to remove click delays on browsers with touch UIs.
- *
- * @version 1.0.3
- * @codingstandard ftlabs-jsv2
- * @copyright The Financial Times Limited [All Rights Reserved]
- * @license MIT License (see LICENSE.txt)
- */
-
-/*jslint browser:true, node:true*/
-/*global define, Event, Node*/
-
-
-/**
- * Instantiate fast-clicking listeners on the specified layer.
- *
- * @constructor
- * @param {Element} layer The layer to listen on
- * @param {Object} options The options to override the defaults
- */
-function FastClick(layer, options) {
+;(function () {
 	'use strict';
-	var oldOnClick;
-
-	options = options || {};
 
 	/**
-	 * Whether a click is currently being tracked.
+	 * @preserve FastClick: polyfill to remove click delays on browsers with touch UIs.
+	 *
+	 * @codingstandard ftlabs-jsv2
+	 * @copyright The Financial Times Limited [All Rights Reserved]
+	 * @license MIT License (see LICENSE.txt)
+	 */
+
+	/*jslint browser:true, node:true*/
+	/*global define, Event, Node*/
+
+
+	/**
+	 * Instantiate fast-clicking listeners on the specified layer.
+	 *
+	 * @constructor
+	 * @param {Element} layer The layer to listen on
+	 * @param {Object} [options={}] The options to override the defaults
+	 */
+	function FastClick(layer, options) {
+		var oldOnClick;
+
+		options = options || {};
+
+		/**
+		 * Whether a click is currently being tracked.
+		 *
+		 * @type boolean
+		 */
+		this.trackingClick = false;
+
+
+		/**
+		 * Timestamp for when click tracking started.
+		 *
+		 * @type number
+		 */
+		this.trackingClickStart = 0;
+
+
+		/**
+		 * The element being tracked for a click.
+		 *
+		 * @type EventTarget
+		 */
+		this.targetElement = null;
+
+
+		/**
+		 * X-coordinate of touch start event.
+		 *
+		 * @type number
+		 */
+		this.touchStartX = 0;
+
+
+		/**
+		 * Y-coordinate of touch start event.
+		 *
+		 * @type number
+		 */
+		this.touchStartY = 0;
+
+
+		/**
+		 * ID of the last touch, retrieved from Touch.identifier.
+		 *
+		 * @type number
+		 */
+		this.lastTouchIdentifier = 0;
+
+
+		/**
+		 * Touchmove boundary, beyond which a click will be cancelled.
+		 *
+		 * @type number
+		 */
+		this.touchBoundary = options.touchBoundary || 10;
+
+
+		/**
+		 * The FastClick layer.
+		 *
+		 * @type Element
+		 */
+		this.layer = layer;
+
+		/**
+		 * The minimum time between tap(touchstart and touchend) events
+		 *
+		 * @type number
+		 */
+		this.tapDelay = options.tapDelay || 200;
+
+		/**
+		 * The maximum time for a tap
+		 *
+		 * @type number
+		 */
+		this.tapTimeout = options.tapTimeout || 700;
+
+		if (FastClick.notNeeded(layer)) {
+			return;
+		}
+
+		// Some old versions of Android don't have Function.prototype.bind
+		function bind(method, context) {
+			return function() { return method.apply(context, arguments); };
+		}
+
+
+		var methods = ['onMouse', 'onClick', 'onTouchStart', 'onTouchMove', 'onTouchEnd', 'onTouchCancel'];
+		var context = this;
+		for (var i = 0, l = methods.length; i < l; i++) {
+			context[methods[i]] = bind(context[methods[i]], context);
+		}
+
+		// Set up event handlers as required
+		if (deviceIsAndroid) {
+			layer.addEventListener('mouseover', this.onMouse, true);
+			layer.addEventListener('mousedown', this.onMouse, true);
+			layer.addEventListener('mouseup', this.onMouse, true);
+		}
+
+		layer.addEventListener('click', this.onClick, true);
+		layer.addEventListener('touchstart', this.onTouchStart, false);
+		layer.addEventListener('touchmove', this.onTouchMove, false);
+		layer.addEventListener('touchend', this.onTouchEnd, false);
+		layer.addEventListener('touchcancel', this.onTouchCancel, false);
+
+		// Hack is required for browsers that don't support Event#stopImmediatePropagation (e.g. Android 2)
+		// which is how FastClick normally stops click events bubbling to callbacks registered on the FastClick
+		// layer when they are cancelled.
+		if (!Event.prototype.stopImmediatePropagation) {
+			layer.removeEventListener = function(type, callback, capture) {
+				var rmv = Node.prototype.removeEventListener;
+				if (type === 'click') {
+					rmv.call(layer, type, callback.hijacked || callback, capture);
+				} else {
+					rmv.call(layer, type, callback, capture);
+				}
+			};
+
+			layer.addEventListener = function(type, callback, capture) {
+				var adv = Node.prototype.addEventListener;
+				if (type === 'click') {
+					adv.call(layer, type, callback.hijacked || (callback.hijacked = function(event) {
+						if (!event.propagationStopped) {
+							callback(event);
+						}
+					}), capture);
+				} else {
+					adv.call(layer, type, callback, capture);
+				}
+			};
+		}
+
+		// If a handler is already declared in the element's onclick attribute, it will be fired before
+		// FastClick's onClick handler. Fix this by pulling out the user-defined handler function and
+		// adding it as listener.
+		if (typeof layer.onclick === 'function') {
+
+			// Android browser on at least 3.2 requires a new reference to the function in layer.onclick
+			// - the old one won't work if passed to addEventListener directly.
+			oldOnClick = layer.onclick;
+			layer.addEventListener('click', function(event) {
+				oldOnClick(event);
+			}, false);
+			layer.onclick = null;
+		}
+	}
+
+	/**
+	* Windows Phone 8.1 fakes user agent string to look like Android and iPhone.
+	*
+	* @type boolean
+	*/
+	var deviceIsWindowsPhone = navigator.userAgent.indexOf("Windows Phone") >= 0;
+
+	/**
+	 * Android requires exceptions.
 	 *
 	 * @type boolean
 	 */
-	this.trackingClick = false;
+	var deviceIsAndroid = navigator.userAgent.indexOf('Android') > 0 && !deviceIsWindowsPhone;
 
 
 	/**
-	 * Timestamp for when click tracking started.
+	 * iOS requires exceptions.
 	 *
-	 * @type number
+	 * @type boolean
 	 */
-	this.trackingClickStart = 0;
+	var deviceIsIOS = /iP(ad|hone|od)/.test(navigator.userAgent) && !deviceIsWindowsPhone;
 
 
 	/**
-	 * The element being tracked for a click.
+	 * iOS 4 requires an exception for select elements.
 	 *
-	 * @type EventTarget
+	 * @type boolean
 	 */
-	this.targetElement = null;
+	var deviceIsIOS4 = deviceIsIOS && (/OS 4_\d(_\d)?/).test(navigator.userAgent);
 
 
 	/**
-	 * X-coordinate of touch start event.
+	 * iOS 6.0-7.* requires the target element to be manually derived
 	 *
-	 * @type number
+	 * @type boolean
 	 */
-	this.touchStartX = 0;
-
+	var deviceIsIOSWithBadTarget = deviceIsIOS && (/OS [6-7]_\d/).test(navigator.userAgent);
 
 	/**
-	 * Y-coordinate of touch start event.
+	 * BlackBerry requires exceptions.
 	 *
-	 * @type number
+	 * @type boolean
 	 */
-	this.touchStartY = 0;
-
+	var deviceIsBlackBerry10 = navigator.userAgent.indexOf('BB10') > 0;
 
 	/**
-	 * ID of the last touch, retrieved from Touch.identifier.
+	 * Determine whether a given element requires a native click.
 	 *
-	 * @type number
+	 * @param {EventTarget|Element} target Target DOM element
+	 * @returns {boolean} Returns true if the element needs a native click
 	 */
-	this.lastTouchIdentifier = 0;
+	FastClick.prototype.needsClick = function(target) {
+		switch (target.nodeName.toLowerCase()) {
 
-
-	/**
-	 * Touchmove boundary, beyond which a click will be cancelled.
-	 *
-	 * @type number
-	 */
-	this.touchBoundary = options.touchBoundary || 10;
-
-
-	/**
-	 * The FastClick layer.
-	 *
-	 * @type Element
-	 */
-	this.layer = layer;
-
-	/**
-	 * The minimum time between tap(touchstart and touchend) events
-	 *
-	 * @type number
-	 */
-	this.tapDelay = options.tapDelay || 200;
-
-	if (FastClick.notNeeded(layer)) {
-		return;
-	}
-
-	// Some old versions of Android don't have Function.prototype.bind
-	function bind(method, context) {
-		return function() { return method.apply(context, arguments); };
-	}
-
-
-	var methods = ['onMouse', 'onClick', 'onTouchStart', 'onTouchMove', 'onTouchEnd', 'onTouchCancel'];
-	var context = this;
-	for (var i = 0, l = methods.length; i < l; i++) {
-		context[methods[i]] = bind(context[methods[i]], context);
-	}
-
-	// Set up event handlers as required
-	if (deviceIsAndroid) {
-		layer.addEventListener('mouseover', this.onMouse, true);
-		layer.addEventListener('mousedown', this.onMouse, true);
-		layer.addEventListener('mouseup', this.onMouse, true);
-	}
-
-	layer.addEventListener('click', this.onClick, true);
-	layer.addEventListener('touchstart', this.onTouchStart, false);
-	layer.addEventListener('touchmove', this.onTouchMove, false);
-	layer.addEventListener('touchend', this.onTouchEnd, false);
-	layer.addEventListener('touchcancel', this.onTouchCancel, false);
-
-	// Hack is required for browsers that don't support Event#stopImmediatePropagation (e.g. Android 2)
-	// which is how FastClick normally stops click events bubbling to callbacks registered on the FastClick
-	// layer when they are cancelled.
-	if (!Event.prototype.stopImmediatePropagation) {
-		layer.removeEventListener = function(type, callback, capture) {
-			var rmv = Node.prototype.removeEventListener;
-			if (type === 'click') {
-				rmv.call(layer, type, callback.hijacked || callback, capture);
-			} else {
-				rmv.call(layer, type, callback, capture);
-			}
-		};
-
-		layer.addEventListener = function(type, callback, capture) {
-			var adv = Node.prototype.addEventListener;
-			if (type === 'click') {
-				adv.call(layer, type, callback.hijacked || (callback.hijacked = function(event) {
-					if (!event.propagationStopped) {
-						callback(event);
-					}
-				}), capture);
-			} else {
-				adv.call(layer, type, callback, capture);
-			}
-		};
-	}
-
-	// If a handler is already declared in the element's onclick attribute, it will be fired before
-	// FastClick's onClick handler. Fix this by pulling out the user-defined handler function and
-	// adding it as listener.
-	if (typeof layer.onclick === 'function') {
-
-		// Android browser on at least 3.2 requires a new reference to the function in layer.onclick
-		// - the old one won't work if passed to addEventListener directly.
-		oldOnClick = layer.onclick;
-		layer.addEventListener('click', function(event) {
-			oldOnClick(event);
-		}, false);
-		layer.onclick = null;
-	}
-}
-
-
-/**
- * Android requires exceptions.
- *
- * @type boolean
- */
-var deviceIsAndroid = navigator.userAgent.indexOf('Android') > 0;
-
-
-/**
- * iOS requires exceptions.
- *
- * @type boolean
- */
-var deviceIsIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
-
-
-/**
- * iOS 4 requires an exception for select elements.
- *
- * @type boolean
- */
-var deviceIsIOS4 = deviceIsIOS && (/OS 4_\d(_\d)?/).test(navigator.userAgent);
-
-
-/**
- * iOS 6.0(+?) requires the target element to be manually derived
- *
- * @type boolean
- */
-var deviceIsIOSWithBadTarget = deviceIsIOS && (/OS ([6-9]|\d{2})_\d/).test(navigator.userAgent);
-
-/**
- * BlackBerry requires exceptions.
- *
- * @type boolean
- */
-var deviceIsBlackBerry10 = navigator.userAgent.indexOf('BB10') > 0;
-
-/**
- * Determine whether a given element requires a native click.
- *
- * @param {EventTarget|Element} target Target DOM element
- * @returns {boolean} Returns true if the element needs a native click
- */
-FastClick.prototype.needsClick = function(target) {
-	'use strict';
-	switch (target.nodeName.toLowerCase()) {
-
-	// Don't send a synthetic click to disabled inputs (issue #62)
-	case 'button':
-	case 'select':
-	case 'textarea':
-		if (target.disabled) {
-			return true;
-		}
-
-		break;
-	case 'input':
-
-		// File inputs need real clicks on iOS 6 due to a browser bug (issue #68)
-		if ((deviceIsIOS && target.type === 'file') || target.disabled) {
-			return true;
-		}
-
-		break;
-	case 'label':
-	case 'video':
-		return true;
-	}
-
-	return (/\bneedsclick\b/).test(target.className);
-};
-
-
-/**
- * Determine whether a given element requires a call to focus to simulate click into element.
- *
- * @param {EventTarget|Element} target Target DOM element
- * @returns {boolean} Returns true if the element requires a call to focus to simulate native click.
- */
-FastClick.prototype.needsFocus = function(target) {
-	'use strict';
-	switch (target.nodeName.toLowerCase()) {
-	case 'textarea':
-		return true;
-	case 'select':
-		return !deviceIsAndroid;
-	case 'input':
-		switch (target.type) {
+		// Don't send a synthetic click to disabled inputs (issue #62)
 		case 'button':
-		case 'checkbox':
-		case 'file':
-		case 'image':
-		case 'radio':
-		case 'submit':
-			return false;
-		}
-
-		// No point in attempting to focus disabled inputs
-		return !target.disabled && !target.readOnly;
-	default:
-		return (/\bneedsfocus\b/).test(target.className);
-	}
-};
-
-
-/**
- * Send a click event to the specified element.
- *
- * @param {EventTarget|Element} targetElement
- * @param {Event} event
- */
-FastClick.prototype.sendClick = function(targetElement, event) {
-	'use strict';
-	var clickEvent, touch;
-
-	// On some Android devices activeElement needs to be blurred otherwise the synthetic click will have no effect (#24)
-	if (document.activeElement && document.activeElement !== targetElement) {
-		document.activeElement.blur();
-	}
-
-	touch = event.changedTouches[0];
-
-	// Synthesise a click event, with an extra attribute so it can be tracked
-	clickEvent = document.createEvent('MouseEvents');
-	clickEvent.initMouseEvent(this.determineEventType(targetElement), true, true, window, 1, touch.screenX, touch.screenY, touch.clientX, touch.clientY, false, false, false, false, 0, null);
-	clickEvent.forwardedTouchEvent = true;
-	targetElement.dispatchEvent(clickEvent);
-};
-
-FastClick.prototype.determineEventType = function(targetElement) {
-	'use strict';
-
-	//Issue #159: Android Chrome Select Box does not open with a synthetic click event
-	if (deviceIsAndroid && targetElement.tagName.toLowerCase() === 'select') {
-		return 'mousedown';
-	}
-
-	return 'click';
-};
-
-
-/**
- * @param {EventTarget|Element} targetElement
- */
-FastClick.prototype.focus = function(targetElement) {
-	'use strict';
-	var length;
-
-	// Issue #160: on iOS 7, some input elements (e.g. date datetime) throw a vague TypeError on setSelectionRange. These elements don't have an integer value for the selectionStart and selectionEnd properties, but unfortunately that can't be used for detection because accessing the properties also throws a TypeError. Just check the type instead. Filed as Apple bug #15122724.
-	if (deviceIsIOS && targetElement.setSelectionRange && targetElement.type.indexOf('date') !== 0 && targetElement.type !== 'time') {
-		length = targetElement.value.length;
-		targetElement.setSelectionRange(length, length);
-	} else {
-		targetElement.focus();
-	}
-};
-
-
-/**
- * Check whether the given target element is a child of a scrollable layer and if so, set a flag on it.
- *
- * @param {EventTarget|Element} targetElement
- */
-FastClick.prototype.updateScrollParent = function(targetElement) {
-	'use strict';
-	var scrollParent, parentElement;
-
-	scrollParent = targetElement.fastClickScrollParent;
-
-	// Attempt to discover whether the target element is contained within a scrollable layer. Re-check if the
-	// target element was moved to another parent.
-	if (!scrollParent || !scrollParent.contains(targetElement)) {
-		parentElement = targetElement;
-		do {
-			if (parentElement.scrollHeight > parentElement.offsetHeight) {
-				scrollParent = parentElement;
-				targetElement.fastClickScrollParent = parentElement;
-				break;
+		case 'select':
+		case 'textarea':
+			if (target.disabled) {
+				return true;
 			}
 
-			parentElement = parentElement.parentElement;
-		} while (parentElement);
-	}
+			break;
+		case 'input':
 
-	// Always update the scroll top tracker if possible.
-	if (scrollParent) {
-		scrollParent.fastClickLastScrollTop = scrollParent.scrollTop;
-	}
-};
+			// File inputs need real clicks on iOS 6 due to a browser bug (issue #68)
+			if ((deviceIsIOS && target.type === 'file') || target.disabled) {
+				return true;
+			}
 
-
-/**
- * @param {EventTarget} targetElement
- * @returns {Element|EventTarget}
- */
-FastClick.prototype.getTargetElementFromEventTarget = function(eventTarget) {
-	'use strict';
-
-	// On some older browsers (notably Safari on iOS 4.1 - see issue #56) the event target may be a text node.
-	if (eventTarget.nodeType === Node.TEXT_NODE) {
-		return eventTarget.parentNode;
-	}
-
-	return eventTarget;
-};
-
-
-/**
- * On touch start, record the position and scroll offset.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.onTouchStart = function(event) {
-	'use strict';
-	var targetElement, touch, selection;
-
-	// Ignore multiple touches, otherwise pinch-to-zoom is prevented if both fingers are on the FastClick element (issue #111).
-	if (event.targetTouches.length > 1) {
-		return true;
-	}
-
-	targetElement = this.getTargetElementFromEventTarget(event.target);
-	touch = event.targetTouches[0];
-
-	if (deviceIsIOS) {
-
-		// Only trusted events will deselect text on iOS (issue #49)
-		selection = window.getSelection();
-		if (selection.rangeCount && !selection.isCollapsed) {
+			break;
+		case 'label':
+		case 'iframe': // iOS8 homescreen apps can prevent events bubbling into frames
+		case 'video':
 			return true;
 		}
 
-		if (!deviceIsIOS4) {
+		return (/\bneedsclick\b/).test(target.className);
+	};
 
-			// Weird things happen on iOS when an alert or confirm dialog is opened from a click event callback (issue #23):
-			// when the user next taps anywhere else on the page, new touchstart and touchend events are dispatched
-			// with the same identifier as the touch event that previously triggered the click that triggered the alert.
-			// Sadly, there is an issue on iOS 4 that causes some normal touch events to have the same identifier as an
-			// immediately preceeding touch event (issue #52), so this fix is unavailable on that platform.
-			// Issue 120: touch.identifier is 0 when Chrome dev tools 'Emulate touch events' is set with an iOS device UA string,
-			// which causes all touch events to be ignored. As this block only applies to iOS, and iOS identifiers are always long,
-			// random integers, it's safe to to continue if the identifier is 0 here.
-			if (touch.identifier && touch.identifier === this.lastTouchIdentifier) {
-				event.preventDefault();
+
+	/**
+	 * Determine whether a given element requires a call to focus to simulate click into element.
+	 *
+	 * @param {EventTarget|Element} target Target DOM element
+	 * @returns {boolean} Returns true if the element requires a call to focus to simulate native click.
+	 */
+	FastClick.prototype.needsFocus = function(target) {
+		switch (target.nodeName.toLowerCase()) {
+		case 'textarea':
+			return true;
+		case 'select':
+			return !deviceIsAndroid;
+		case 'input':
+			switch (target.type) {
+			case 'button':
+			case 'checkbox':
+			case 'file':
+			case 'image':
+			case 'radio':
+			case 'submit':
 				return false;
 			}
 
-			this.lastTouchIdentifier = touch.identifier;
-
-			// If the target element is a child of a scrollable layer (using -webkit-overflow-scrolling: touch) and:
-			// 1) the user does a fling scroll on the scrollable layer
-			// 2) the user stops the fling scroll with another tap
-			// then the event.target of the last 'touchend' event will be the element that was under the user's finger
-			// when the fling scroll was started, causing FastClick to send a click event to that layer - unless a check
-			// is made to ensure that a parent layer was not scrolled before sending a synthetic click (issue #42).
-			this.updateScrollParent(targetElement);
+			// No point in attempting to focus disabled inputs
+			return !target.disabled && !target.readOnly;
+		default:
+			return (/\bneedsfocus\b/).test(target.className);
 		}
-	}
-
-	this.trackingClick = true;
-	this.trackingClickStart = event.timeStamp;
-	this.targetElement = targetElement;
-
-	this.touchStartX = touch.pageX;
-	this.touchStartY = touch.pageY;
-
-	// Prevent phantom clicks on fast double-tap (issue #36)
-	if ((event.timeStamp - this.lastClickTime) < this.tapDelay) {
-		event.preventDefault();
-	}
-
-	return true;
-};
+	};
 
 
-/**
- * Based on a touchmove event object, check whether the touch has moved past a boundary since it started.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.touchHasMoved = function(event) {
-	'use strict';
-	var touch = event.changedTouches[0], boundary = this.touchBoundary;
+	/**
+	 * Send a click event to the specified element.
+	 *
+	 * @param {EventTarget|Element} targetElement
+	 * @param {Event} event
+	 */
+	FastClick.prototype.sendClick = function(targetElement, event) {
+		var clickEvent, touch;
 
-	if (Math.abs(touch.pageX - this.touchStartX) > boundary || Math.abs(touch.pageY - this.touchStartY) > boundary) {
-		return true;
-	}
+		// On some Android devices activeElement needs to be blurred otherwise the synthetic click will have no effect (#24)
+		if (document.activeElement && document.activeElement !== targetElement) {
+			document.activeElement.blur();
+		}
 
-	return false;
-};
-
-
-/**
- * Update the last position.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.onTouchMove = function(event) {
-	'use strict';
-	if (!this.trackingClick) {
-		return true;
-	}
-
-	// If the touch has moved, cancel the click tracking
-	if (this.targetElement !== this.getTargetElementFromEventTarget(event.target) || this.touchHasMoved(event)) {
-		this.trackingClick = false;
-		this.targetElement = null;
-	}
-
-	return true;
-};
-
-
-/**
- * Attempt to find the labelled control for the given label element.
- *
- * @param {EventTarget|HTMLLabelElement} labelElement
- * @returns {Element|null}
- */
-FastClick.prototype.findControl = function(labelElement) {
-	'use strict';
-
-	// Fast path for newer browsers supporting the HTML5 control attribute
-	if (labelElement.control !== undefined) {
-		return labelElement.control;
-	}
-
-	// All browsers under test that support touch events also support the HTML5 htmlFor attribute
-	if (labelElement.htmlFor) {
-		return document.getElementById(labelElement.htmlFor);
-	}
-
-	// If no for attribute exists, attempt to retrieve the first labellable descendant element
-	// the list of which is defined here: http://www.w3.org/TR/html5/forms.html#category-label
-	return labelElement.querySelector('button, input:not([type=hidden]), keygen, meter, output, progress, select, textarea');
-};
-
-
-/**
- * On touch end, determine whether to send a click event at once.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.onTouchEnd = function(event) {
-	'use strict';
-	var forElement, trackingClickStart, targetTagName, scrollParent, touch, targetElement = this.targetElement;
-
-	if (!this.trackingClick) {
-		return true;
-	}
-
-	// Prevent phantom clicks on fast double-tap (issue #36)
-	if ((event.timeStamp - this.lastClickTime) < this.tapDelay) {
-		this.cancelNextClick = true;
-		return true;
-	}
-
-	// Reset to prevent wrong click cancel on input (issue #156).
-	this.cancelNextClick = false;
-
-	this.lastClickTime = event.timeStamp;
-
-	trackingClickStart = this.trackingClickStart;
-	this.trackingClick = false;
-	this.trackingClickStart = 0;
-
-	// On some iOS devices, the targetElement supplied with the event is invalid if the layer
-	// is performing a transition or scroll, and has to be re-detected manually. Note that
-	// for this to function correctly, it must be called *after* the event target is checked!
-	// See issue #57; also filed as rdar://13048589 .
-	if (deviceIsIOSWithBadTarget) {
 		touch = event.changedTouches[0];
 
-		// In certain cases arguments of elementFromPoint can be negative, so prevent setting targetElement to null
-		targetElement = document.elementFromPoint(touch.pageX - window.pageXOffset, touch.pageY - window.pageYOffset) || targetElement;
-		targetElement.fastClickScrollParent = this.targetElement.fastClickScrollParent;
-	}
+		// Synthesise a click event, with an extra attribute so it can be tracked
+		clickEvent = document.createEvent('MouseEvents');
+		clickEvent.initMouseEvent(this.determineEventType(targetElement), true, true, window, 1, touch.screenX, touch.screenY, touch.clientX, touch.clientY, false, false, false, false, 0, null);
+		clickEvent.forwardedTouchEvent = true;
+		targetElement.dispatchEvent(clickEvent);
+	};
 
-	targetTagName = targetElement.tagName.toLowerCase();
-	if (targetTagName === 'label') {
-		forElement = this.findControl(targetElement);
-		if (forElement) {
-			this.focus(targetElement);
-			if (deviceIsAndroid) {
-				return false;
+	FastClick.prototype.determineEventType = function(targetElement) {
+
+		//Issue #159: Android Chrome Select Box does not open with a synthetic click event
+		if (deviceIsAndroid && targetElement.tagName.toLowerCase() === 'select') {
+			return 'mousedown';
+		}
+
+		return 'click';
+	};
+
+
+	/**
+	 * @param {EventTarget|Element} targetElement
+	 */
+	FastClick.prototype.focus = function(targetElement) {
+		var length;
+
+		// Issue #160: on iOS 7, some input elements (e.g. date datetime month) throw a vague TypeError on setSelectionRange. These elements don't have an integer value for the selectionStart and selectionEnd properties, but unfortunately that can't be used for detection because accessing the properties also throws a TypeError. Just check the type instead. Filed as Apple bug #15122724.
+		if (deviceIsIOS && targetElement.setSelectionRange && targetElement.type.indexOf('date') !== 0 && targetElement.type !== 'time' && targetElement.type !== 'month') {
+			length = targetElement.value.length;
+			targetElement.setSelectionRange(length, length);
+		} else {
+			targetElement.focus();
+		}
+	};
+
+
+	/**
+	 * Check whether the given target element is a child of a scrollable layer and if so, set a flag on it.
+	 *
+	 * @param {EventTarget|Element} targetElement
+	 */
+	FastClick.prototype.updateScrollParent = function(targetElement) {
+		var scrollParent, parentElement;
+
+		scrollParent = targetElement.fastClickScrollParent;
+
+		// Attempt to discover whether the target element is contained within a scrollable layer. Re-check if the
+		// target element was moved to another parent.
+		if (!scrollParent || !scrollParent.contains(targetElement)) {
+			parentElement = targetElement;
+			do {
+				if (parentElement.scrollHeight > parentElement.offsetHeight) {
+					scrollParent = parentElement;
+					targetElement.fastClickScrollParent = parentElement;
+					break;
+				}
+
+				parentElement = parentElement.parentElement;
+			} while (parentElement);
+		}
+
+		// Always update the scroll top tracker if possible.
+		if (scrollParent) {
+			scrollParent.fastClickLastScrollTop = scrollParent.scrollTop;
+		}
+	};
+
+
+	/**
+	 * @param {EventTarget} targetElement
+	 * @returns {Element|EventTarget}
+	 */
+	FastClick.prototype.getTargetElementFromEventTarget = function(eventTarget) {
+
+		// On some older browsers (notably Safari on iOS 4.1 - see issue #56) the event target may be a text node.
+		if (eventTarget.nodeType === Node.TEXT_NODE) {
+			return eventTarget.parentNode;
+		}
+
+		return eventTarget;
+	};
+
+
+	/**
+	 * On touch start, record the position and scroll offset.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.onTouchStart = function(event) {
+		var targetElement, touch, selection;
+
+		// Ignore multiple touches, otherwise pinch-to-zoom is prevented if both fingers are on the FastClick element (issue #111).
+		if (event.targetTouches.length > 1) {
+			return true;
+		}
+
+		targetElement = this.getTargetElementFromEventTarget(event.target);
+		touch = event.targetTouches[0];
+
+		if (deviceIsIOS) {
+
+			// Only trusted events will deselect text on iOS (issue #49)
+			selection = window.getSelection();
+			if (selection.rangeCount && !selection.isCollapsed) {
+				return true;
 			}
 
-			targetElement = forElement;
+			if (!deviceIsIOS4) {
+
+				// Weird things happen on iOS when an alert or confirm dialog is opened from a click event callback (issue #23):
+				// when the user next taps anywhere else on the page, new touchstart and touchend events are dispatched
+				// with the same identifier as the touch event that previously triggered the click that triggered the alert.
+				// Sadly, there is an issue on iOS 4 that causes some normal touch events to have the same identifier as an
+				// immediately preceeding touch event (issue #52), so this fix is unavailable on that platform.
+				// Issue 120: touch.identifier is 0 when Chrome dev tools 'Emulate touch events' is set with an iOS device UA string,
+				// which causes all touch events to be ignored. As this block only applies to iOS, and iOS identifiers are always long,
+				// random integers, it's safe to to continue if the identifier is 0 here.
+				if (touch.identifier && touch.identifier === this.lastTouchIdentifier) {
+					event.preventDefault();
+					return false;
+				}
+
+				this.lastTouchIdentifier = touch.identifier;
+
+				// If the target element is a child of a scrollable layer (using -webkit-overflow-scrolling: touch) and:
+				// 1) the user does a fling scroll on the scrollable layer
+				// 2) the user stops the fling scroll with another tap
+				// then the event.target of the last 'touchend' event will be the element that was under the user's finger
+				// when the fling scroll was started, causing FastClick to send a click event to that layer - unless a check
+				// is made to ensure that a parent layer was not scrolled before sending a synthetic click (issue #42).
+				this.updateScrollParent(targetElement);
+			}
 		}
-	} else if (this.needsFocus(targetElement)) {
 
-		// Case 1: If the touch started a while ago (best guess is 100ms based on tests for issue #36) then focus will be triggered anyway. Return early and unset the target element reference so that the subsequent click will be allowed through.
-		// Case 2: Without this exception for input elements tapped when the document is contained in an iframe, then any inputted text won't be visible even though the value attribute is updated as the user types (issue #37).
-		if ((event.timeStamp - trackingClickStart) > 100 || (deviceIsIOS && window.top !== window && targetTagName === 'input')) {
-			this.targetElement = null;
-			return false;
-		}
+		this.trackingClick = true;
+		this.trackingClickStart = event.timeStamp;
+		this.targetElement = targetElement;
 
-		this.focus(targetElement);
-		this.sendClick(targetElement, event);
+		this.touchStartX = touch.pageX;
+		this.touchStartY = touch.pageY;
 
-		// Select elements need the event to go through on iOS 4, otherwise the selector menu won't open.
-		// Also this breaks opening selects when VoiceOver is active on iOS6, iOS7 (and possibly others)
-		if (!deviceIsIOS || targetTagName !== 'select') {
-			this.targetElement = null;
+		// Prevent phantom clicks on fast double-tap (issue #36)
+		if ((event.timeStamp - this.lastClickTime) < this.tapDelay) {
 			event.preventDefault();
 		}
 
-		return false;
-	}
+		return true;
+	};
 
-	if (deviceIsIOS && !deviceIsIOS4) {
 
-		// Don't send a synthetic click event if the target element is contained within a parent layer that was scrolled
-		// and this tap is being used to stop the scrolling (usually initiated by a fling - issue #42).
-		scrollParent = targetElement.fastClickScrollParent;
-		if (scrollParent && scrollParent.fastClickLastScrollTop !== scrollParent.scrollTop) {
+	/**
+	 * Based on a touchmove event object, check whether the touch has moved past a boundary since it started.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.touchHasMoved = function(event) {
+		var touch = event.changedTouches[0], boundary = this.touchBoundary;
+
+		if (Math.abs(touch.pageX - this.touchStartX) > boundary || Math.abs(touch.pageY - this.touchStartY) > boundary) {
 			return true;
 		}
-	}
-
-	// Prevent the actual click from going though - unless the target node is marked as requiring
-	// real clicks or if it is in the whitelist in which case only non-programmatic clicks are permitted.
-	if (!this.needsClick(targetElement)) {
-		event.preventDefault();
-		this.sendClick(targetElement, event);
-	}
-
-	return false;
-};
-
-
-/**
- * On touch cancel, stop tracking the click.
- *
- * @returns {void}
- */
-FastClick.prototype.onTouchCancel = function() {
-	'use strict';
-	this.trackingClick = false;
-	this.targetElement = null;
-};
-
-
-/**
- * Determine mouse events which should be permitted.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.onMouse = function(event) {
-	'use strict';
-
-	// If a target element was never set (because a touch event was never fired) allow the event
-	if (!this.targetElement) {
-		return true;
-	}
-
-	if (event.forwardedTouchEvent) {
-		return true;
-	}
-
-	// Programmatically generated events targeting a specific element should be permitted
-	if (!event.cancelable) {
-		return true;
-	}
-
-	// Derive and check the target element to see whether the mouse event needs to be permitted;
-	// unless explicitly enabled, prevent non-touch click events from triggering actions,
-	// to prevent ghost/doubleclicks.
-	if (!this.needsClick(this.targetElement) || this.cancelNextClick) {
-
-		// Prevent any user-added listeners declared on FastClick element from being fired.
-		if (event.stopImmediatePropagation) {
-			event.stopImmediatePropagation();
-		} else {
-
-			// Part of the hack for browsers that don't support Event#stopImmediatePropagation (e.g. Android 2)
-			event.propagationStopped = true;
-		}
-
-		// Cancel the event
-		event.stopPropagation();
-		event.preventDefault();
 
 		return false;
-	}
-
-	// If the mouse event is permitted, return true for the action to go through.
-	return true;
-};
+	};
 
 
-/**
- * On actual clicks, determine whether this is a touch-generated click, a click action occurring
- * naturally after a delay after a touch (which needs to be cancelled to avoid duplication), or
- * an actual click which should be permitted.
- *
- * @param {Event} event
- * @returns {boolean}
- */
-FastClick.prototype.onClick = function(event) {
-	'use strict';
-	var permitted;
+	/**
+	 * Update the last position.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.onTouchMove = function(event) {
+		if (!this.trackingClick) {
+			return true;
+		}
 
-	// It's possible for another FastClick-like library delivered with third-party code to fire a click event before FastClick does (issue #44). In that case, set the click-tracking flag back to false and return early. This will cause onTouchEnd to return early.
-	if (this.trackingClick) {
-		this.targetElement = null;
+		// If the touch has moved, cancel the click tracking
+		if (this.targetElement !== this.getTargetElementFromEventTarget(event.target) || this.touchHasMoved(event)) {
+			this.trackingClick = false;
+			this.targetElement = null;
+		}
+
+		return true;
+	};
+
+
+	/**
+	 * Attempt to find the labelled control for the given label element.
+	 *
+	 * @param {EventTarget|HTMLLabelElement} labelElement
+	 * @returns {Element|null}
+	 */
+	FastClick.prototype.findControl = function(labelElement) {
+
+		// Fast path for newer browsers supporting the HTML5 control attribute
+		if (labelElement.control !== undefined) {
+			return labelElement.control;
+		}
+
+		// All browsers under test that support touch events also support the HTML5 htmlFor attribute
+		if (labelElement.htmlFor) {
+			return document.getElementById(labelElement.htmlFor);
+		}
+
+		// If no for attribute exists, attempt to retrieve the first labellable descendant element
+		// the list of which is defined here: http://www.w3.org/TR/html5/forms.html#category-label
+		return labelElement.querySelector('button, input:not([type=hidden]), keygen, meter, output, progress, select, textarea');
+	};
+
+
+	/**
+	 * On touch end, determine whether to send a click event at once.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.onTouchEnd = function(event) {
+		var forElement, trackingClickStart, targetTagName, scrollParent, touch, targetElement = this.targetElement;
+
+		if (!this.trackingClick) {
+			return true;
+		}
+
+		// Prevent phantom clicks on fast double-tap (issue #36)
+		if ((event.timeStamp - this.lastClickTime) < this.tapDelay) {
+			this.cancelNextClick = true;
+			return true;
+		}
+
+		if ((event.timeStamp - this.trackingClickStart) > this.tapTimeout) {
+			return true;
+		}
+
+		// Reset to prevent wrong click cancel on input (issue #156).
+		this.cancelNextClick = false;
+
+		this.lastClickTime = event.timeStamp;
+
+		trackingClickStart = this.trackingClickStart;
 		this.trackingClick = false;
-		return true;
-	}
+		this.trackingClickStart = 0;
 
-	// Very odd behaviour on iOS (issue #18): if a submit element is present inside a form and the user hits enter in the iOS simulator or clicks the Go button on the pop-up OS keyboard the a kind of 'fake' click event will be triggered with the submit-type input element as the target.
-	if (event.target.type === 'submit' && event.detail === 0) {
-		return true;
-	}
+		// On some iOS devices, the targetElement supplied with the event is invalid if the layer
+		// is performing a transition or scroll, and has to be re-detected manually. Note that
+		// for this to function correctly, it must be called *after* the event target is checked!
+		// See issue #57; also filed as rdar://13048589 .
+		if (deviceIsIOSWithBadTarget) {
+			touch = event.changedTouches[0];
 
-	permitted = this.onMouse(event);
+			// In certain cases arguments of elementFromPoint can be negative, so prevent setting targetElement to null
+			targetElement = document.elementFromPoint(touch.pageX - window.pageXOffset, touch.pageY - window.pageYOffset) || targetElement;
+			targetElement.fastClickScrollParent = this.targetElement.fastClickScrollParent;
+		}
 
-	// Only unset targetElement if the click is not permitted. This will ensure that the check for !targetElement in onMouse fails and the browser's click doesn't go through.
-	if (!permitted) {
+		targetTagName = targetElement.tagName.toLowerCase();
+		if (targetTagName === 'label') {
+			forElement = this.findControl(targetElement);
+			if (forElement) {
+				this.focus(targetElement);
+				if (deviceIsAndroid) {
+					return false;
+				}
+
+				targetElement = forElement;
+			}
+		} else if (this.needsFocus(targetElement)) {
+
+			// Case 1: If the touch started a while ago (best guess is 100ms based on tests for issue #36) then focus will be triggered anyway. Return early and unset the target element reference so that the subsequent click will be allowed through.
+			// Case 2: Without this exception for input elements tapped when the document is contained in an iframe, then any inputted text won't be visible even though the value attribute is updated as the user types (issue #37).
+			if ((event.timeStamp - trackingClickStart) > 100 || (deviceIsIOS && window.top !== window && targetTagName === 'input')) {
+				this.targetElement = null;
+				return false;
+			}
+
+			this.focus(targetElement);
+			this.sendClick(targetElement, event);
+
+			// Select elements need the event to go through on iOS 4, otherwise the selector menu won't open.
+			// Also this breaks opening selects when VoiceOver is active on iOS6, iOS7 (and possibly others)
+			if (!deviceIsIOS || targetTagName !== 'select') {
+				this.targetElement = null;
+				event.preventDefault();
+			}
+
+			return false;
+		}
+
+		if (deviceIsIOS && !deviceIsIOS4) {
+
+			// Don't send a synthetic click event if the target element is contained within a parent layer that was scrolled
+			// and this tap is being used to stop the scrolling (usually initiated by a fling - issue #42).
+			scrollParent = targetElement.fastClickScrollParent;
+			if (scrollParent && scrollParent.fastClickLastScrollTop !== scrollParent.scrollTop) {
+				return true;
+			}
+		}
+
+		// Prevent the actual click from going though - unless the target node is marked as requiring
+		// real clicks or if it is in the whitelist in which case only non-programmatic clicks are permitted.
+		if (!this.needsClick(targetElement)) {
+			event.preventDefault();
+			this.sendClick(targetElement, event);
+		}
+
+		return false;
+	};
+
+
+	/**
+	 * On touch cancel, stop tracking the click.
+	 *
+	 * @returns {void}
+	 */
+	FastClick.prototype.onTouchCancel = function() {
+		this.trackingClick = false;
 		this.targetElement = null;
-	}
-
-	// If clicks are permitted, return true for the action to go through.
-	return permitted;
-};
+	};
 
 
-/**
- * Remove all FastClick's event listeners.
- *
- * @returns {void}
- */
-FastClick.prototype.destroy = function() {
-	'use strict';
-	var layer = this.layer;
+	/**
+	 * Determine mouse events which should be permitted.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.onMouse = function(event) {
 
-	if (deviceIsAndroid) {
-		layer.removeEventListener('mouseover', this.onMouse, true);
-		layer.removeEventListener('mousedown', this.onMouse, true);
-		layer.removeEventListener('mouseup', this.onMouse, true);
-	}
+		// If a target element was never set (because a touch event was never fired) allow the event
+		if (!this.targetElement) {
+			return true;
+		}
 
-	layer.removeEventListener('click', this.onClick, true);
-	layer.removeEventListener('touchstart', this.onTouchStart, false);
-	layer.removeEventListener('touchmove', this.onTouchMove, false);
-	layer.removeEventListener('touchend', this.onTouchEnd, false);
-	layer.removeEventListener('touchcancel', this.onTouchCancel, false);
-};
+		if (event.forwardedTouchEvent) {
+			return true;
+		}
 
+		// Programmatically generated events targeting a specific element should be permitted
+		if (!event.cancelable) {
+			return true;
+		}
 
-/**
- * Check whether FastClick is needed.
- *
- * @param {Element} layer The layer to listen on
- */
-FastClick.notNeeded = function(layer) {
-	'use strict';
-	var metaViewport;
-	var chromeVersion;
-	var blackberryVersion;
+		// Derive and check the target element to see whether the mouse event needs to be permitted;
+		// unless explicitly enabled, prevent non-touch click events from triggering actions,
+		// to prevent ghost/doubleclicks.
+		if (!this.needsClick(this.targetElement) || this.cancelNextClick) {
 
-	// Devices that don't support touch don't need FastClick
-	if (typeof window.ontouchstart === 'undefined') {
+			// Prevent any user-added listeners declared on FastClick element from being fired.
+			if (event.stopImmediatePropagation) {
+				event.stopImmediatePropagation();
+			} else {
+
+				// Part of the hack for browsers that don't support Event#stopImmediatePropagation (e.g. Android 2)
+				event.propagationStopped = true;
+			}
+
+			// Cancel the event
+			event.stopPropagation();
+			event.preventDefault();
+
+			return false;
+		}
+
+		// If the mouse event is permitted, return true for the action to go through.
 		return true;
-	}
+	};
 
-	// Chrome version - zero for other browsers
-	chromeVersion = +(/Chrome\/([0-9]+)/.exec(navigator.userAgent) || [,0])[1];
 
-	if (chromeVersion) {
+	/**
+	 * On actual clicks, determine whether this is a touch-generated click, a click action occurring
+	 * naturally after a delay after a touch (which needs to be cancelled to avoid duplication), or
+	 * an actual click which should be permitted.
+	 *
+	 * @param {Event} event
+	 * @returns {boolean}
+	 */
+	FastClick.prototype.onClick = function(event) {
+		var permitted;
+
+		// It's possible for another FastClick-like library delivered with third-party code to fire a click event before FastClick does (issue #44). In that case, set the click-tracking flag back to false and return early. This will cause onTouchEnd to return early.
+		if (this.trackingClick) {
+			this.targetElement = null;
+			this.trackingClick = false;
+			return true;
+		}
+
+		// Very odd behaviour on iOS (issue #18): if a submit element is present inside a form and the user hits enter in the iOS simulator or clicks the Go button on the pop-up OS keyboard the a kind of 'fake' click event will be triggered with the submit-type input element as the target.
+		if (event.target.type === 'submit' && event.detail === 0) {
+			return true;
+		}
+
+		permitted = this.onMouse(event);
+
+		// Only unset targetElement if the click is not permitted. This will ensure that the check for !targetElement in onMouse fails and the browser's click doesn't go through.
+		if (!permitted) {
+			this.targetElement = null;
+		}
+
+		// If clicks are permitted, return true for the action to go through.
+		return permitted;
+	};
+
+
+	/**
+	 * Remove all FastClick's event listeners.
+	 *
+	 * @returns {void}
+	 */
+	FastClick.prototype.destroy = function() {
+		var layer = this.layer;
 
 		if (deviceIsAndroid) {
-			metaViewport = document.querySelector('meta[name=viewport]');
+			layer.removeEventListener('mouseover', this.onMouse, true);
+			layer.removeEventListener('mousedown', this.onMouse, true);
+			layer.removeEventListener('mouseup', this.onMouse, true);
+		}
 
-			if (metaViewport) {
-				// Chrome on Android with user-scalable="no" doesn't need FastClick (issue #89)
-				if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
-					return true;
-				}
-				// Chrome 32 and above with width=device-width or less don't need FastClick
-				if (chromeVersion > 31 && document.documentElement.scrollWidth <= window.outerWidth) {
-					return true;
-				}
-			}
+		layer.removeEventListener('click', this.onClick, true);
+		layer.removeEventListener('touchstart', this.onTouchStart, false);
+		layer.removeEventListener('touchmove', this.onTouchMove, false);
+		layer.removeEventListener('touchend', this.onTouchEnd, false);
+		layer.removeEventListener('touchcancel', this.onTouchCancel, false);
+	};
 
-		// Chrome desktop doesn't need FastClick (issue #15)
-		} else {
+
+	/**
+	 * Check whether FastClick is needed.
+	 *
+	 * @param {Element} layer The layer to listen on
+	 */
+	FastClick.notNeeded = function(layer) {
+		var metaViewport;
+		var chromeVersion;
+		var blackberryVersion;
+		var firefoxVersion;
+
+		// Devices that don't support touch don't need FastClick
+		if (typeof window.ontouchstart === 'undefined') {
 			return true;
 		}
-	}
 
-	if (deviceIsBlackBerry10) {
-		blackberryVersion = navigator.userAgent.match(/Version\/([0-9]*)\.([0-9]*)/);
+		// Chrome version - zero for other browsers
+		chromeVersion = +(/Chrome\/([0-9]+)/.exec(navigator.userAgent) || [,0])[1];
 
-		// BlackBerry 10.3+ does not require Fastclick library.
-		// https://github.com/ftlabs/fastclick/issues/251
-		if (blackberryVersion[1] >= 10 && blackberryVersion[2] >= 3) {
-			metaViewport = document.querySelector('meta[name=viewport]');
+		if (chromeVersion) {
 
-			if (metaViewport) {
-				// user-scalable=no eliminates click delay.
-				if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
-					return true;
+			if (deviceIsAndroid) {
+				metaViewport = document.querySelector('meta[name=viewport]');
+
+				if (metaViewport) {
+					// Chrome on Android with user-scalable="no" doesn't need FastClick (issue #89)
+					if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
+						return true;
+					}
+					// Chrome 32 and above with width=device-width or less don't need FastClick
+					if (chromeVersion > 31 && document.documentElement.scrollWidth <= window.outerWidth) {
+						return true;
+					}
 				}
-				// width=device-width (or less than device-width) eliminates click delay.
-				if (document.documentElement.scrollWidth <= window.outerWidth) {
-					return true;
+
+			// Chrome desktop doesn't need FastClick (issue #15)
+			} else {
+				return true;
+			}
+		}
+
+		if (deviceIsBlackBerry10) {
+			blackberryVersion = navigator.userAgent.match(/Version\/([0-9]*)\.([0-9]*)/);
+
+			// BlackBerry 10.3+ does not require Fastclick library.
+			// https://github.com/ftlabs/fastclick/issues/251
+			if (blackberryVersion[1] >= 10 && blackberryVersion[2] >= 3) {
+				metaViewport = document.querySelector('meta[name=viewport]');
+
+				if (metaViewport) {
+					// user-scalable=no eliminates click delay.
+					if (metaViewport.content.indexOf('user-scalable=no') !== -1) {
+						return true;
+					}
+					// width=device-width (or less than device-width) eliminates click delay.
+					if (document.documentElement.scrollWidth <= window.outerWidth) {
+						return true;
+					}
 				}
 			}
 		}
+
+		// IE10 with -ms-touch-action: none or manipulation, which disables double-tap-to-zoom (issue #97)
+		if (layer.style.msTouchAction === 'none' || layer.style.touchAction === 'manipulation') {
+			return true;
+		}
+
+		// Firefox version - zero for other browsers
+		firefoxVersion = +(/Firefox\/([0-9]+)/.exec(navigator.userAgent) || [,0])[1];
+
+		if (firefoxVersion >= 27) {
+			// Firefox 27+ does not have tap delay if the content is not zoomable - https://bugzilla.mozilla.org/show_bug.cgi?id=922896
+
+			metaViewport = document.querySelector('meta[name=viewport]');
+			if (metaViewport && (metaViewport.content.indexOf('user-scalable=no') !== -1 || document.documentElement.scrollWidth <= window.outerWidth)) {
+				return true;
+			}
+		}
+
+		// IE11: prefixed -ms-touch-action is no longer supported and it's recomended to use non-prefixed version
+		// http://msdn.microsoft.com/en-us/library/windows/apps/Hh767313.aspx
+		if (layer.style.touchAction === 'none' || layer.style.touchAction === 'manipulation') {
+			return true;
+		}
+
+		return false;
+	};
+
+
+	/**
+	 * Factory method for creating a FastClick object
+	 *
+	 * @param {Element} layer The layer to listen on
+	 * @param {Object} [options={}] The options to override the defaults
+	 */
+	FastClick.attach = function(layer, options) {
+		return new FastClick(layer, options);
+	};
+
+
+	if (typeof define === 'function' && typeof define.amd === 'object' && define.amd) {
+
+		// AMD. Register as an anonymous module.
+		define(function() {
+			return FastClick;
+		});
+	} else if (typeof module !== 'undefined' && module.exports) {
+		module.exports = FastClick.attach;
+		module.exports.FastClick = FastClick;
+	} else {
+		window.FastClick = FastClick;
 	}
-
-	// IE10 with -ms-touch-action: none, which disables double-tap-to-zoom (issue #97)
-	if (layer.style.msTouchAction === 'none') {
-		return true;
-	}
-
-	return false;
-};
-
-
-/**
- * Factory method for creating a FastClick object
- *
- * @param {Element} layer The layer to listen on
- * @param {Object} options The options to override the defaults
- */
-FastClick.attach = function(layer, options) {
-	'use strict';
-	return new FastClick(layer, options);
-};
-
-
-if (typeof define == 'function' && typeof define.amd == 'object' && define.amd) {
-
-	// AMD. Register as an anonymous module.
-	define(function() {
-		'use strict';
-		return FastClick;
-	});
-} else if (typeof module !== 'undefined' && module.exports) {
-	module.exports = FastClick.attach;
-	module.exports.FastClick = FastClick;
-} else {
-	window.FastClick = FastClick;
-}
+}());
 
 typeof JSON!="object"&&(JSON={}),function(){"use strict";function f(e){return e<10?"0"+e:e}function quote(e){return escapable.lastIndex=0,escapable.test(e)?'"'+e.replace(escapable,function(e){var t=meta[e];return typeof t=="string"?t:"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+e+'"'}function str(e,t){var n,r,i,s,o=gap,u,a=t[e];a&&typeof a=="object"&&typeof a.toJSON=="function"&&(a=a.toJSON(e)),typeof rep=="function"&&(a=rep.call(t,e,a));switch(typeof a){case"string":return quote(a);case"number":return isFinite(a)?String(a):"null";case"boolean":case"null":return String(a);case"object":if(!a)return"null";gap+=indent,u=[];if(Object.prototype.toString.apply(a)==="[object Array]"){s=a.length;for(n=0;n<s;n+=1)u[n]=str(n,a)||"null";return i=u.length===0?"[]":gap?"[\n"+gap+u.join(",\n"+gap)+"\n"+o+"]":"["+u.join(",")+"]",gap=o,i}if(rep&&typeof rep=="object"){s=rep.length;for(n=0;n<s;n+=1)typeof rep[n]=="string"&&(r=rep[n],i=str(r,a),i&&u.push(quote(r)+(gap?": ":":")+i))}else for(r in a)Object.prototype.hasOwnProperty.call(a,r)&&(i=str(r,a),i&&u.push(quote(r)+(gap?": ":":")+i));return i=u.length===0?"{}":gap?"{\n"+gap+u.join(",\n"+gap)+"\n"+o+"}":"{"+u.join(",")+"}",gap=o,i}}typeof Date.prototype.toJSON!="function"&&(Date.prototype.toJSON=function(e){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null},String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(e){return this.valueOf()});var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={"\b":"\\b","	":"\\t","\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"},rep;typeof JSON.stringify!="function"&&(JSON.stringify=function(e,t,n){var r;gap="",indent="";if(typeof n=="number")for(r=0;r<n;r+=1)indent+=" ";else typeof n=="string"&&(indent=n);rep=t;if(!t||typeof t=="function"||typeof t=="object"&&typeof t.length=="number")return str("",{"":e});throw new Error("JSON.stringify")}),typeof JSON.parse!="function"&&(JSON.parse=function(text,reviver){function walk(e,t){var n,r,i=e[t];if(i&&typeof i=="object")for(n in i)Object.prototype.hasOwnProperty.call(i,n)&&(r=walk(i,n),r!==undefined?i[n]=r:delete i[n]);return reviver.call(e,t,i)}var j;text=String(text),cx.lastIndex=0,cx.test(text)&&(text=text.replace(cx,function(e){return"\\u"+("0000"+e.charCodeAt(0).toString(16)).slice(-4)}));if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,"")))return j=eval("("+text+")"),typeof reviver=="function"?walk({"":j},""):j;throw new SyntaxError("JSON.parse")})}(),function(e,t){"use strict";var n=e.History=e.History||{},r=e.jQuery;if(typeof n.Adapter!="undefined")throw new Error("History.js Adapter has already been loaded...");n.Adapter={bind:function(e,t,n){r(e).bind(t,n)},trigger:function(e,t,n){r(e).trigger(t,n)},extractEventData:function(e,n,r){var i=n&&n.originalEvent&&n.originalEvent[e]||r&&r[e]||t;return i},onDomLoad:function(e){r(e)}},typeof n.init!="undefined"&&n.init()}(window),function(e,t){"use strict";var n=e.document,r=e.setTimeout||r,i=e.clearTimeout||i,s=e.setInterval||s,o=e.History=e.History||{};if(typeof o.initHtml4!="undefined")throw new Error("History.js HTML4 Support has already been loaded...");o.initHtml4=function(){if(typeof o.initHtml4.initialized!="undefined")return!1;o.initHtml4.initialized=!0,o.enabled=!0,o.savedHashes=[],o.isLastHash=function(e){var t=o.getHashByIndex(),n;return n=e===t,n},o.isHashEqual=function(e,t){return e=encodeURIComponent(e).replace(/%25/g,"%"),t=encodeURIComponent(t).replace(/%25/g,"%"),e===t},o.saveHash=function(e){return o.isLastHash(e)?!1:(o.savedHashes.push(e),!0)},o.getHashByIndex=function(e){var t=null;return typeof e=="undefined"?t=o.savedHashes[o.savedHashes.length-1]:e<0?t=o.savedHashes[o.savedHashes.length+e]:t=o.savedHashes[e],t},o.discardedHashes={},o.discardedStates={},o.discardState=function(e,t,n){var r=o.getHashByState(e),i;return i={discardedState:e,backState:n,forwardState:t},o.discardedStates[r]=i,!0},o.discardHash=function(e,t,n){var r={discardedHash:e,backState:n,forwardState:t};return o.discardedHashes[e]=r,!0},o.discardedState=function(e){var t=o.getHashByState(e),n;return n=o.discardedStates[t]||!1,n},o.discardedHash=function(e){var t=o.discardedHashes[e]||!1;return t},o.recycleState=function(e){var t=o.getHashByState(e);return o.discardedState(e)&&delete o.discardedStates[t],!0},o.emulated.hashChange&&(o.hashChangeInit=function(){o.checkerFunction=null;var t="",r,i,u,a,f=Boolean(o.getHash());return o.isInternetExplorer()?(r="historyjs-iframe",i=n.createElement("iframe"),i.setAttribute("id",r),i.setAttribute("src","#"),i.style.display="none",n.body.appendChild(i),i.contentWindow.document.open(),i.contentWindow.document.close(),u="",a=!1,o.checkerFunction=function(){if(a)return!1;a=!0;var n=o.getHash(),r=o.getHash(i.contentWindow.document);return n!==t?(t=n,r!==n&&(u=r=n,i.contentWindow.document.open(),i.contentWindow.document.close(),i.contentWindow.document.location.hash=o.escapeHash(n)),o.Adapter.trigger(e,"hashchange")):r!==u&&(u=r,f&&r===""?o.back():o.setHash(r,!1)),a=!1,!0}):o.checkerFunction=function(){var n=o.getHash()||"";return n!==t&&(t=n,o.Adapter.trigger(e,"hashchange")),!0},o.intervalList.push(s(o.checkerFunction,o.options.hashChangeInterval)),!0},o.Adapter.onDomLoad(o.hashChangeInit)),o.emulated.pushState&&(o.onHashChange=function(t){var n=t&&t.newURL||o.getLocationHref(),r=o.getHashByUrl(n),i=null,s=null,u=null,a;return o.isLastHash(r)?(o.busy(!1),!1):(o.doubleCheckComplete(),o.saveHash(r),r&&o.isTraditionalAnchor(r)?(o.Adapter.trigger(e,"anchorchange"),o.busy(!1),!1):(i=o.extractState(o.getFullUrl(r||o.getLocationHref()),!0),o.isLastSavedState(i)?(o.busy(!1),!1):(s=o.getHashByState(i),a=o.discardedState(i),a?(o.getHashByIndex(-2)===o.getHashByState(a.forwardState)?o.back(!1):o.forward(!1),!1):(o.pushState(i.data,i.title,encodeURI(i.url),!1),!0))))},o.Adapter.bind(e,"hashchange",o.onHashChange),o.pushState=function(t,n,r,i){r=encodeURI(r).replace(/%25/g,"%");if(o.getHashByUrl(r))throw new Error("History.js does not support states with fragment-identifiers (hashes/anchors).");if(i!==!1&&o.busy())return o.pushQueue({scope:o,callback:o.pushState,args:arguments,queue:i}),!1;o.busy(!0);var s=o.createStateObject(t,n,r),u=o.getHashByState(s),a=o.getState(!1),f=o.getHashByState(a),l=o.getHash(),c=o.expectedStateId==s.id;return o.storeState(s),o.expectedStateId=s.id,o.recycleState(s),o.setTitle(s),u===f?(o.busy(!1),!1):(o.saveState(s),c||o.Adapter.trigger(e,"statechange"),!o.isHashEqual(u,l)&&!o.isHashEqual(u,o.getShortUrl(o.getLocationHref()))&&o.setHash(u,!1),o.busy(!1),!0)},o.replaceState=function(t,n,r,i){r=encodeURI(r).replace(/%25/g,"%");if(o.getHashByUrl(r))throw new Error("History.js does not support states with fragment-identifiers (hashes/anchors).");if(i!==!1&&o.busy())return o.pushQueue({scope:o,callback:o.replaceState,args:arguments,queue:i}),!1;o.busy(!0);var s=o.createStateObject(t,n,r),u=o.getHashByState(s),a=o.getState(!1),f=o.getHashByState(a),l=o.getStateByIndex(-2);return o.discardState(a,s,l),u===f?(o.storeState(s),o.expectedStateId=s.id,o.recycleState(s),o.setTitle(s),o.saveState(s),o.Adapter.trigger(e,"statechange"),o.busy(!1)):o.pushState(s.data,s.title,s.url,!1),!0}),o.emulated.pushState&&o.getHash()&&!o.emulated.hashChange&&o.Adapter.onDomLoad(function(){o.Adapter.trigger(e,"hashchange")})},typeof o.init!="undefined"&&o.init()}(window),function(e,t){"use strict";var n=e.console||t,r=e.document,i=e.navigator,s=e.sessionStorage||!1,o=e.setTimeout,u=e.clearTimeout,a=e.setInterval,f=e.clearInterval,l=e.JSON,c=e.alert,h=e.History=e.History||{},p=e.history;try{s.setItem("TEST","1"),s.removeItem("TEST")}catch(d){s=!1}l.stringify=l.stringify||l.encode,l.parse=l.parse||l.decode;if(typeof h.init!="undefined")throw new Error("History.js Core has already been loaded...");h.init=function(e){return typeof h.Adapter=="undefined"?!1:(typeof h.initCore!="undefined"&&h.initCore(),typeof h.initHtml4!="undefined"&&h.initHtml4(),!0)},h.initCore=function(d){if(typeof h.initCore.initialized!="undefined")return!1;h.initCore.initialized=!0,h.options=h.options||{},h.options.hashChangeInterval=h.options.hashChangeInterval||100,h.options.safariPollInterval=h.options.safariPollInterval||500,h.options.doubleCheckInterval=h.options.doubleCheckInterval||500,h.options.disableSuid=h.options.disableSuid||!1,h.options.storeInterval=h.options.storeInterval||1e3,h.options.busyDelay=h.options.busyDelay||250,h.options.debug=h.options.debug||!1,h.options.initialTitle=h.options.initialTitle||r.title,h.options.html4Mode=h.options.html4Mode||!1,h.options.delayInit=h.options.delayInit||!1,h.intervalList=[],h.clearAllIntervals=function(){var e,t=h.intervalList;if(typeof t!="undefined"&&t!==null){for(e=0;e<t.length;e++)f(t[e]);h.intervalList=null}},h.debug=function(){(h.options.debug||!1)&&h.log.apply(h,arguments)},h.log=function(){var e=typeof n!="undefined"&&typeof n.log!="undefined"&&typeof n.log.apply!="undefined",t=r.getElementById("log"),i,s,o,u,a;e?(u=Array.prototype.slice.call(arguments),i=u.shift(),typeof n.debug!="undefined"?n.debug.apply(n,[i,u]):n.log.apply(n,[i,u])):i="\n"+arguments[0]+"\n";for(s=1,o=arguments.length;s<o;++s){a=arguments[s];if(typeof a=="object"&&typeof l!="undefined")try{a=l.stringify(a)}catch(f){}i+="\n"+a+"\n"}return t?(t.value+=i+"\n-----\n",t.scrollTop=t.scrollHeight-t.clientHeight):e||c(i),!0},h.getInternetExplorerMajorVersion=function(){var e=h.getInternetExplorerMajorVersion.cached=typeof h.getInternetExplorerMajorVersion.cached!="undefined"?h.getInternetExplorerMajorVersion.cached:function(){var e=3,t=r.createElement("div"),n=t.getElementsByTagName("i");while((t.innerHTML="<!--[if gt IE "+ ++e+"]><i></i><![endif]-->")&&n[0]);return e>4?e:!1}();return e},h.isInternetExplorer=function(){var e=h.isInternetExplorer.cached=typeof h.isInternetExplorer.cached!="undefined"?h.isInternetExplorer.cached:Boolean(h.getInternetExplorerMajorVersion());return e},h.options.html4Mode?h.emulated={pushState:!0,hashChange:!0}:h.emulated={pushState:!Boolean(e.history&&e.history.pushState&&e.history.replaceState&&!/ Mobile\/([1-7][a-z]|(8([abcde]|f(1[0-8]))))/i.test(i.userAgent)&&!/AppleWebKit\/5([0-2]|3[0-2])/i.test(i.userAgent)),hashChange:Boolean(!("onhashchange"in e||"onhashchange"in r)||h.isInternetExplorer()&&h.getInternetExplorerMajorVersion()<8)},h.enabled=!h.emulated.pushState,h.bugs={setHash:Boolean(!h.emulated.pushState&&i.vendor==="Apple Computer, Inc."&&/AppleWebKit\/5([0-2]|3[0-3])/.test(i.userAgent)),safariPoll:Boolean(!h.emulated.pushState&&i.vendor==="Apple Computer, Inc."&&/AppleWebKit\/5([0-2]|3[0-3])/.test(i.userAgent)),ieDoubleCheck:Boolean(h.isInternetExplorer()&&h.getInternetExplorerMajorVersion()<8),hashEscape:Boolean(h.isInternetExplorer()&&h.getInternetExplorerMajorVersion()<7)},h.isEmptyObject=function(e){for(var t in e)if(e.hasOwnProperty(t))return!1;return!0},h.cloneObject=function(e){var t,n;return e?(t=l.stringify(e),n=l.parse(t)):n={},n},h.getRootUrl=function(){var e=r.location.protocol+"//"+(r.location.hostname||r.location.host);if(r.location.port||!1)e+=":"+r.location.port;return e+="/",e},h.getBaseHref=function(){var e=r.getElementsByTagName("base"),t=null,n="";return e.length===1&&(t=e[0],n=t.href.replace(/[^\/]+$/,"")),n=n.replace(/\/+$/,""),n&&(n+="/"),n},h.getBaseUrl=function(){var e=h.getBaseHref()||h.getBasePageUrl()||h.getRootUrl();return e},h.getPageUrl=function(){var e=h.getState(!1,!1),t=(e||{}).url||h.getLocationHref(),n;return n=t.replace(/\/+$/,"").replace(/[^\/]+$/,function(e,t,n){return/\./.test(e)?e:e+"/"}),n},h.getBasePageUrl=function(){var e=h.getLocationHref().replace(/[#\?].*/,"").replace(/[^\/]+$/,function(e,t,n){return/[^\/]$/.test(e)?"":e}).replace(/\/+$/,"")+"/";return e},h.getFullUrl=function(e,t){var n=e,r=e.substring(0,1);return t=typeof t=="undefined"?!0:t,/[a-z]+\:\/\//.test(e)||(r==="/"?n=h.getRootUrl()+e.replace(/^\/+/,""):r==="#"?n=h.getPageUrl().replace(/#.*/,"")+e:r==="?"?n=h.getPageUrl().replace(/[\?#].*/,"")+e:t?n=h.getBaseUrl()+e.replace(/^(\.\/)+/,""):n=h.getBasePageUrl()+e.replace(/^(\.\/)+/,"")),n.replace(/\#$/,"")},h.getShortUrl=function(e){var t=e,n=h.getBaseUrl(),r=h.getRootUrl();return h.emulated.pushState&&(t=t.replace(n,"")),t=t.replace(r,"/"),h.isTraditionalAnchor(t)&&(t="./"+t),t=t.replace(/^(\.\/)+/g,"./").replace(/\#$/,""),t},h.getLocationHref=function(e){return e=e||r,e.URL===e.location.href?e.location.href:e.location.href===decodeURIComponent(e.URL)?e.URL:e.location.hash&&decodeURIComponent(e.location.href.replace(/^[^#]+/,""))===e.location.hash?e.location.href:e.URL.indexOf("#")==-1&&e.location.href.indexOf("#")!=-1?e.location.href:e.URL||e.location.href},h.store={},h.idToState=h.idToState||{},h.stateToId=h.stateToId||{},h.urlToId=h.urlToId||{},h.storedStates=h.storedStates||[],h.savedStates=h.savedStates||[],h.normalizeStore=function(){h.store.idToState=h.store.idToState||{},h.store.urlToId=h.store.urlToId||{},h.store.stateToId=h.store.stateToId||{}},h.getState=function(e,t){typeof e=="undefined"&&(e=!0),typeof t=="undefined"&&(t=!0);var n=h.getLastSavedState();return!n&&t&&(n=h.createStateObject()),e&&(n=h.cloneObject(n),n.url=n.cleanUrl||n.url),n},h.getIdByState=function(e){var t=h.extractId(e.url),n;if(!t){n=h.getStateString(e);if(typeof h.stateToId[n]!="undefined")t=h.stateToId[n];else if(typeof h.store.stateToId[n]!="undefined")t=h.store.stateToId[n];else{for(;;){t=(new Date).getTime()+String(Math.random()).replace(/\D/g,"");if(typeof h.idToState[t]=="undefined"&&typeof h.store.idToState[t]=="undefined")break}h.stateToId[n]=t,h.idToState[t]=e}}return t},h.normalizeState=function(e){var t,n;if(!e||typeof e!="object")e={};if(typeof e.normalized!="undefined")return e;if(!e.data||typeof e.data!="object")e.data={};return t={},t.normalized=!0,t.title=e.title||"",t.url=h.getFullUrl(e.url?e.url:h.getLocationHref()),t.hash=h.getShortUrl(t.url),t.data=h.cloneObject(e.data),t.id=h.getIdByState(t),t.cleanUrl=t.url.replace(/\??\&_suid.*/,""),t.url=t.cleanUrl,n=!h.isEmptyObject(t.data),(t.title||n)&&h.options.disableSuid!==!0&&(t.hash=h.getShortUrl(t.url).replace(/\??\&_suid.*/,""),/\?/.test(t.hash)||(t.hash+="?"),t.hash+="&_suid="+t.id),t.hashedUrl=h.getFullUrl(t.hash),(h.emulated.pushState||h.bugs.safariPoll)&&h.hasUrlDuplicate(t)&&(t.url=t.hashedUrl),t},h.createStateObject=function(e,t,n){var r={data:e,title:t,url:n};return r=h.normalizeState(r),r},h.getStateById=function(e){e=String(e);var n=h.idToState[e]||h.store.idToState[e]||t;return n},h.getStateString=function(e){var t,n,r;return t=h.normalizeState(e),n={data:t.data,title:e.title,url:e.url},r=l.stringify(n),r},h.getStateId=function(e){var t,n;return t=h.normalizeState(e),n=t.id,n},h.getHashByState=function(e){var t,n;return t=h.normalizeState(e),n=t.hash,n},h.extractId=function(e){var t,n,r,i;return e.indexOf("#")!=-1?i=e.split("#")[0]:i=e,n=/(.*)\&_suid=([0-9]+)$/.exec(i),r=n?n[1]||e:e,t=n?String(n[2]||""):"",t||!1},h.isTraditionalAnchor=function(e){var t=!/[\/\?\.]/.test(e);return t},h.extractState=function(e,t){var n=null,r,i;return t=t||!1,r=h.extractId(e),r&&(n=h.getStateById(r)),n||(i=h.getFullUrl(e),r=h.getIdByUrl(i)||!1,r&&(n=h.getStateById(r)),!n&&t&&!h.isTraditionalAnchor(e)&&(n=h.createStateObject(null,null,i))),n},h.getIdByUrl=function(e){var n=h.urlToId[e]||h.store.urlToId[e]||t;return n},h.getLastSavedState=function(){return h.savedStates[h.savedStates.length-1]||t},h.getLastStoredState=function(){return h.storedStates[h.storedStates.length-1]||t},h.hasUrlDuplicate=function(e){var t=!1,n;return n=h.extractState(e.url),t=n&&n.id!==e.id,t},h.storeState=function(e){return h.urlToId[e.url]=e.id,h.storedStates.push(h.cloneObject(e)),e},h.isLastSavedState=function(e){var t=!1,n,r,i;return h.savedStates.length&&(n=e.id,r=h.getLastSavedState(),i=r.id,t=n===i),t},h.saveState=function(e){return h.isLastSavedState(e)?!1:(h.savedStates.push(h.cloneObject(e)),!0)},h.getStateByIndex=function(e){var t=null;return typeof e=="undefined"?t=h.savedStates[h.savedStates.length-1]:e<0?t=h.savedStates[h.savedStates.length+e]:t=h.savedStates[e],t},h.getCurrentIndex=function(){var e=null;return h.savedStates.length<1?e=0:e=h.savedStates.length-1,e},h.getHash=function(e){var t=h.getLocationHref(e),n;return n=h.getHashByUrl(t),n},h.unescapeHash=function(e){var t=h.normalizeHash(e);return t=decodeURIComponent(t),t},h.normalizeHash=function(e){var t=e.replace(/[^#]*#/,"").replace(/#.*/,"");return t},h.setHash=function(e,t){var n,i;return t!==!1&&h.busy()?(h.pushQueue({scope:h,callback:h.setHash,args:arguments,queue:t}),!1):(h.busy(!0),n=h.extractState(e,!0),n&&!h.emulated.pushState?h.pushState(n.data,n.title,n.url,!1):h.getHash()!==e&&(h.bugs.setHash?(i=h.getPageUrl(),h.pushState(null,null,i+"#"+e,!1)):r.location.hash=e),h)},h.escapeHash=function(t){var n=h.normalizeHash(t);return n=e.encodeURIComponent(n),h.bugs.hashEscape||(n=n.replace(/\%21/g,"!").replace(/\%26/g,"&").replace(/\%3D/g,"=").replace(/\%3F/g,"?")),n},h.getHashByUrl=function(e){var t=String(e).replace(/([^#]*)#?([^#]*)#?(.*)/,"$2");return t=h.unescapeHash(t),t},h.setTitle=function(e){var t=e.title,n;t||(n=h.getStateByIndex(0),n&&n.url===e.url&&(t=n.title||h.options.initialTitle));try{r.getElementsByTagName("title")[0].innerHTML=t.replace("<","&lt;").replace(">","&gt;").replace(" & "," &amp; ")}catch(i){}return r.title=t,h},h.queues=[],h.busy=function(e){typeof e!="undefined"?h.busy.flag=e:typeof h.busy.flag=="undefined"&&(h.busy.flag=!1);if(!h.busy.flag){u(h.busy.timeout);var t=function(){var e,n,r;if(h.busy.flag)return;for(e=h.queues.length-1;e>=0;--e){n=h.queues[e];if(n.length===0)continue;r=n.shift(),h.fireQueueItem(r),h.busy.timeout=o(t,h.options.busyDelay)}};h.busy.timeout=o(t,h.options.busyDelay)}return h.busy.flag},h.busy.flag=!1,h.fireQueueItem=function(e){return e.callback.apply(e.scope||h,e.args||[])},h.pushQueue=function(e){return h.queues[e.queue||0]=h.queues[e.queue||0]||[],h.queues[e.queue||0].push(e),h},h.queue=function(e,t){return typeof e=="function"&&(e={callback:e}),typeof t!="undefined"&&(e.queue=t),h.busy()?h.pushQueue(e):h.fireQueueItem(e),h},h.clearQueue=function(){return h.busy.flag=!1,h.queues=[],h},h.stateChanged=!1,h.doubleChecker=!1,h.doubleCheckComplete=function(){return h.stateChanged=!0,h.doubleCheckClear(),h},h.doubleCheckClear=function(){return h.doubleChecker&&(u(h.doubleChecker),h.doubleChecker=!1),h},h.doubleCheck=function(e){return h.stateChanged=!1,h.doubleCheckClear(),h.bugs.ieDoubleCheck&&(h.doubleChecker=o(function(){return h.doubleCheckClear(),h.stateChanged||e(),!0},h.options.doubleCheckInterval)),h},h.safariStatePoll=function(){var t=h.extractState(h.getLocationHref()),n;if(!h.isLastSavedState(t))return n=t,n||(n=h.createStateObject()),h.Adapter.trigger(e,"popstate"),h;return},h.back=function(e){return e!==!1&&h.busy()?(h.pushQueue({scope:h,callback:h.back,args:arguments,queue:e}),!1):(h.busy(!0),h.doubleCheck(function(){h.back(!1)}),p.go(-1),!0)},h.forward=function(e){return e!==!1&&h.busy()?(h.pushQueue({scope:h,callback:h.forward,args:arguments,queue:e}),!1):(h.busy(!0),h.doubleCheck(function(){h.forward(!1)}),p.go(1),!0)},h.go=function(e,t){var n;if(e>0)for(n=1;n<=e;++n)h.forward(t);else{if(!(e<0))throw new Error("History.go: History.go requires a positive or negative integer passed.");for(n=-1;n>=e;--n)h.back(t)}return h};if(h.emulated.pushState){var v=function(){};h.pushState=h.pushState||v,h.replaceState=h.replaceState||v}else h.onPopState=function(t,n){var r=!1,i=!1,s,o;return h.doubleCheckComplete(),s=h.getHash(),s?(o=h.extractState(s||h.getLocationHref(),!0),o?h.replaceState(o.data,o.title,o.url,!1):(h.Adapter.trigger(e,"anchorchange"),h.busy(!1)),h.expectedStateId=!1,!1):(r=h.Adapter.extractEventData("state",t,n)||!1,r?i=h.getStateById(r):h.expectedStateId?i=h.getStateById(h.expectedStateId):i=h.extractState(h.getLocationHref()),i||(i=h.createStateObject(null,null,h.getLocationHref())),h.expectedStateId=!1,h.isLastSavedState(i)?(h.busy(!1),!1):(h.storeState(i),h.saveState(i),h.setTitle(i),h.Adapter.trigger(e,"statechange"),h.busy(!1),!0))},h.Adapter.bind(e,"popstate",h.onPopState),h.pushState=function(t,n,r,i){if(h.getHashByUrl(r)&&h.emulated.pushState)throw new Error("History.js does not support states with fragement-identifiers (hashes/anchors).");if(i!==!1&&h.busy())return h.pushQueue({scope:h,callback:h.pushState,args:arguments,queue:i}),!1;h.busy(!0);var s=h.createStateObject(t,n,r);return h.isLastSavedState(s)?h.busy(!1):(h.storeState(s),h.expectedStateId=s.id,p.pushState(s.id,s.title,s.url),h.Adapter.trigger(e,"popstate")),!0},h.replaceState=function(t,n,r,i){if(h.getHashByUrl(r)&&h.emulated.pushState)throw new Error("History.js does not support states with fragement-identifiers (hashes/anchors).");if(i!==!1&&h.busy())return h.pushQueue({scope:h,callback:h.replaceState,args:arguments,queue:i}),!1;h.busy(!0);var s=h.createStateObject(t,n,r);return h.isLastSavedState(s)?h.busy(!1):(h.storeState(s),h.expectedStateId=s.id,p.replaceState(s.id,s.title,s.url),h.Adapter.trigger(e,"popstate")),!0};if(s){try{h.store=l.parse(s.getItem("History.store"))||{}}catch(m){h.store={}}h.normalizeStore()}else h.store={},h.normalizeStore();h.Adapter.bind(e,"unload",h.clearAllIntervals),h.saveState(h.storeState(h.extractState(h.getLocationHref(),!0))),s&&(h.onUnload=function(){var e,t,n;try{e=l.parse(s.getItem("History.store"))||{}}catch(r){e={}}e.idToState=e.idToState||{},e.urlToId=e.urlToId||{},e.stateToId=e.stateToId||{};for(t in h.idToState){if(!h.idToState.hasOwnProperty(t))continue;e.idToState[t]=h.idToState[t]}for(t in h.urlToId){if(!h.urlToId.hasOwnProperty(t))continue;e.urlToId[t]=h.urlToId[t]}for(t in h.stateToId){if(!h.stateToId.hasOwnProperty(t))continue;e.stateToId[t]=h.stateToId[t]}h.store=e,h.normalizeStore(),n=l.stringify(e);try{s.setItem("History.store",n)}catch(i){if(i.code!==DOMException.QUOTA_EXCEEDED_ERR)throw i;s.length&&(s.removeItem("History.store"),s.setItem("History.store",n))}},h.intervalList.push(a(h.onUnload,h.options.storeInterval)),h.Adapter.bind(e,"beforeunload",h.onUnload),h.Adapter.bind(e,"unload",h.onUnload));if(!h.emulated.pushState){h.bugs.safariPoll&&h.intervalList.push(a(h.safariStatePoll,h.options.safariPollInterval));if(i.vendor==="Apple Computer, Inc."||(i.appCodeName||"")==="Mozilla")h.Adapter.bind(e,"hashchange",function(){h.Adapter.trigger(e,"popstate")}),h.getHash()&&h.Adapter.onDomLoad(function(){h.Adapter.trigger(e,"hashchange")})}},(!h.options||!h.options.delayInit)&&h.init()}(window)
-var LZString={_f:String.fromCharCode,_keyStrBase64:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",_keyStrUriSafe:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",_getBaseValue:function(r,e){if(LZString._baseReverseDic||(LZString._baseReverseDic={}),!LZString._baseReverseDic[r]){LZString._baseReverseDic[r]={};for(var n=0;n<r.length;n++)LZString._baseReverseDic[r][r[n]]=n}return LZString._baseReverseDic[r][e]},compressToBase64:function(r){if(null==r)return"";var e=LZString._compress(r,6,function(r){return LZString._keyStrBase64.charAt(r)});switch(e.length%4){default:case 0:return e;case 1:return e+"===";case 2:return e+"==";case 3:return e+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:LZString._decompress(r.length,32,function(e){return LZString._getBaseValue(LZString._keyStrBase64,r.charAt(e))})},compressToUTF16:function(r){return null==r?"":LZString._compress(r,15,function(r){return String.fromCharCode(r+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:LZString._decompress(r.length,16384,function(e){return r.charCodeAt(e)-32})},compressToUint8Array:function(r){for(var e=LZString.compress(r),n=new Uint8Array(2*e.length),o=0,t=e.length;t>o;o++){var i=e.charCodeAt(o);n[2*o]=i>>>8,n[2*o+1]=i%256}return n},decompressFromUint8Array:function(r){if(null===r||void 0===r)return LZString.decompress(r);for(var e=new Array(r.length/2),n=0,o=e.length;o>n;n++)e[n]=256*r[2*n]+r[2*n+1];var t=[];return e.forEach(function(r){t.push(String.fromCharCode(r))}),LZString.decompress(t.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":LZString._compress(r,6,function(r){return LZString._keyStrUriSafe.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:LZString._decompress(r.length,32,function(e){return LZString._getBaseValue(LZString._keyStrUriSafe,r.charAt(e))})},compress:function(r){return LZString._compress(r,16,function(r){return String.fromCharCode(r)})},_compress:function(r,e,n){if(null==r)return"";{var o,t,i,s={},a={},p="",u="",c="",l=2,f=3,h=2,d=[],g=0,S=0;LZString._f}for(i=0;i<r.length;i+=1)if(p=r[i],Object.prototype.hasOwnProperty.call(s,p)||(s[p]=f++,a[p]=!0),u=c+p,Object.prototype.hasOwnProperty.call(s,u))c=u;else{if(Object.prototype.hasOwnProperty.call(a,c)){if(c.charCodeAt(0)<256){for(o=0;h>o;o++)g<<=1,S==e-1?(S=0,d.push(n(g)),g=0):S++;for(t=c.charCodeAt(0),o=0;8>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1}else{for(t=1,o=0;h>o;o++)g=g<<1|t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t=0;for(t=c.charCodeAt(0),o=0;16>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete a[c]}else for(t=s[c],o=0;h>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[u]=f++,c=String(p)}if(""!==c){if(Object.prototype.hasOwnProperty.call(a,c)){if(c.charCodeAt(0)<256){for(o=0;h>o;o++)g<<=1,S==e-1?(S=0,d.push(n(g)),g=0):S++;for(t=c.charCodeAt(0),o=0;8>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1}else{for(t=1,o=0;h>o;o++)g=g<<1|t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t=0;for(t=c.charCodeAt(0),o=0;16>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete a[c]}else for(t=s[c],o=0;h>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(t=2,o=0;h>o;o++)g=g<<1|1&t,S==e-1?(S=0,d.push(n(g)),g=0):S++,t>>=1;for(;;){if(g<<=1,S==e-1){d.push(n(g));break}S++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:LZString._decompress(r.length,32768,function(e){return r.charCodeAt(e)})},_decompress:function(r,e,n){var o,t,i,s,a,p,u,c,l=[],f=4,h=4,d=3,g="",S=[],m=LZString._f,v={val:n(0),position:e,index:1};for(t=0;3>t;t+=1)l[t]=t;for(s=0,p=Math.pow(2,2),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;switch(o=s){case 0:for(s=0,p=Math.pow(2,8),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;c=m(s);break;case 1:for(s=0,p=Math.pow(2,16),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;c=m(s);break;case 2:return""}for(l[3]=c,i=c,S.push(c);;){if(v.index>r)return"";for(s=0,p=Math.pow(2,d),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;switch(c=s){case 0:for(s=0,p=Math.pow(2,8),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;l[h++]=m(s),c=h-1,f--;break;case 1:for(s=0,p=Math.pow(2,16),u=1;u!=p;)a=v.val&v.position,v.position>>=1,0==v.position&&(v.position=e,v.val=n(v.index++)),s|=(a>0?1:0)*u,u<<=1;l[h++]=m(s),c=h-1,f--;break;case 2:return S.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])g=l[c];else{if(c!==h)return null;g=i+i[0]}S.push(g),l[h++]=i+g[0],f--,i=g,0==f&&(f=Math.pow(2,d),d++)}}};"undefined"!=typeof module&&null!=module&&(module.exports=LZString);
-
 /*!
  * Modernizr v2.8.3
  * www.modernizr.com

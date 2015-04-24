@@ -1,6 +1,23 @@
-build
-dist
 .brackets.json
-node_modules/**
-bower_components/**
+npm-debug.log
+.sass-cache
 
+/build/**
+
+/dist/**
+
+/node_modules/**
+
+/bower_components/**
+
+/example-project/node_modules/**
+
+/example-project/bower_components/**
+
+/example-project/build/**
+
+/example-project/dist/**
+
+/example-project/src/octane_core/**
+
+/example-project/cordova

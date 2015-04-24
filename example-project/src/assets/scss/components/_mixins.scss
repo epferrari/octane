@@ -62,7 +62,7 @@
 		}
 }
 
-/* for gradients, just add variables (use percentages for opacity!!) 
+/* for gradients, just add variables (use percentages for opacity!!)
 c1-pos = color1 position, i.e. top, bottom. op-c1 = color1 opacity, and so forth */
 @mixin gradient($c1,$c1-pos,$c1-op,$c2,$c2-pos,$c2-op) {
 	background: -ms-linear-gradient($c1-pos, $c1 $c1-op, $c2 $c2-op);
@@ -90,10 +90,10 @@ c1-pos = color1 position, i.e. top, bottom. op-c1 = color1 opacity, and so forth
 }
 
 @mixin opacity($value){
-  $IEValue: $value*100;
-  opacity: $value;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity="+$IEValue+")";
-  filter: alpha(opacity=$IEValue);
+	$IEValue: $value*100;
+	opacity: $value;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity="+$IEValue+")";
+	filter: alpha(opacity=$IEValue);
 }
 
 @mixin rotate($degree){

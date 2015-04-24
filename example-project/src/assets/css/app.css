@@ -1,8 +1,4 @@
 /* Framework */
-/* Bourbon 4.0.2
- * http://bourbon.io
- * Copyright 2011-2014 thoughtbot, inc.
- * MIT License */
 /* Scss Document */
 ul {
   list-style: none;
@@ -12,94 +8,21 @@ ul {
 /* Scss Document */
 /* one off for responding to width changes */
 /* add breakpoint widths to any element */
-/* for gradients, just add variables (use percentages for opacity!!) 
+/* for gradients, just add variables (use percentages for opacity!!)
 c1-pos = color1 position, i.e. top, bottom. op-c1 = color1 opacity, and so forth */
-/* Scss Document */
-div#app-loading-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  background-color: black;
-  background-image: url(../img/loader-light.gif);
-  background-size: auto;
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-  background-size: cover !important;
-  padding-top: 33%; }
-  div#app-loading-screen:before {
-    contents: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #373737; }
-  div#app-loading-screen > div {
-    position: relative;
-    margin-left: auto;
-    margin-right: auto;
-    width: 33%;
-    height: 50px;
-    text-align: center; }
-    div#app-loading-screen > div h4 {
-      color: white; }
-
-/* Scss Document */
-.block, o-base-container, o-page-container {
-  display: block;
-  min-height: 1px; }
-
-o-base-container, o-page-container {
-  height: auto;
-  width: 100%;
-  max-width: 980px;
-  margin-left: auto;
-  margin-right: auto;
-  position: relative; }
-
-/* full-height container for page content */
-o-page-container {
-  padding-top: 40px;
-  height: 100%;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; }
-
-/* Scss Document */
-ui-message, ui-message-dark, ui-message-light {
-  display: block;
-  width: 100%;
-  text-align: center;
-  font-size: 0.9em;
-  color: #BCBCBC;
-  padding: 3px; }
-
-ui-message-dark {
-  color: #313131; }
-
-ui-message-light {
-  color: #ffffff; }
-
 /* Modules */
-/* Scss Document */
 /* Widgets */
 /* Collapsible Panels */
 .collapsible {
   overflow-y: hidden;
   max-height: 0px;
   transition-property: all;
-  transition-duration: 0.3s;
+  transition-duration: 0.5s;
   transition-timing-function: cubic-bezier(0.465, 0.183, 0.153, 0.946); }
   .collapsible.visible {
     max-height: 10000px;
     transition-property: all;
-    transition-duration: 0.6s;
+    transition-duration: 0.5s;
     transition-timing-function: cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 /* Global */

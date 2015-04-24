@@ -1,33 +1,65 @@
-		
+
 		<!-- header -->
 		<header class="header" role="banner">
-			
-			<div id="header-inner" class="row" >
-				
-				<div class="col-md-2">
-					<img src="./assets/img/logo.png" class="logo" o-route="home"/>
+
+			<div class="row">
+
+				<div class="col-md-2"  o-model="App">
+					<img o-src="{{logo}}" class="logo" o-route="home"/>
 				</div>
-				
-				<div class="col-md-7">
-					<h1>
-						<span o-lang="tool-title"></span>
-						<span class="vertical">&nbsp;</span>
-						<span 
-							o-update='{"text":"App.viewTitle"}'
-						</span>	
-					</h1>
+
+				<div class="col-md-7" o-model="App">
+					<h1>{{viewTitle}}</h1>
 				</div>
-				
+
 				<div class="col-md-3">
-					
 					<!-- Translator dropdown-->
 					<o-control id="translator"></o-control>
-					
-				</div>	
-			
+				</div>
 			</div>
-			
-			<div class="row header-gradient">
-			</div>	
-			
+
+			<form class="form-horizontal">
+				<div class="form-group">
+					<label for="username" class="col-sm-2 control-label">
+						Email
+					</label>
+					<div class="col-sm-4">
+						<input
+							id="username"
+							type="text"
+							class="form-control"
+							placeholder="Username"
+							o-bind="User.username"/>
+					</div>
+					<div class="col-sm-4" o-model="User">
+						{{username}}
+					</div>
+				</div>
+
+				<div class="form-group">
+					<label for="userpass" class="col-sm-2 control-label">Password</label>
+					<div class="col-sm-4" >
+						<input
+							type="password"
+							class="form-control"
+							id="userpass"
+							placeholder="Password"
+							o-bind="User.userpass">
+					</div>
+					<div class="col-sm-offset-2 col-sm-10" o-model="User">
+						{{userpass @filter:hidePassword(*)}}
+					</div>
+				</div>
+
+				<div class="form-group">
+					<div class="col-sm-offset-2 col-sm-10">
+						<div class="checkbox">
+							<label>
+								<input type="checkbox" o-bind="User.showPassword"> Show Password
+							</label>
+						</div>
+					</div>
+				</div>
+			</form>
+
 		</header>

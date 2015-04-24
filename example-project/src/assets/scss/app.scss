@@ -1,6 +1,6 @@
 /* Framework */
 
-@import 'bourbon/_bourbon';
+//@import 'bourbon/_bourbon';
 @import '_theme';
 @import 'components/_css-reset';
 @import 'components/_constants';
@@ -46,7 +46,7 @@ div#application {
 
 
 .btn {
-    margin-top:15px;
+		margin-top:15px;
 }
 
 .stats {
