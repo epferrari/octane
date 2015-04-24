@@ -971,7 +971,27 @@
 												// apply filter if present
 												// filter is applied to this arg with val and model properties set
 												if(filter.length > 0){
-													value = (_octane.filters[filter] || function(){return this.input;}).apply( {input:value,model:data} , filterParams.split(','));
+													var paramsArray = filterParams.split(',');
+													switch(true){
+														case _octane.filters[filter]:
+															value = _octane.filters[filter].apply({input:value,model:data},paramsArray);
+															break;
+														case _.isFunction(''[filter]):
+															value = ''[filter].apply(value,paramsArray);
+															break;
+														case _.isFunction(__[filter]):
+															value = __[filter](value,params);
+															break;
+													}
+													/*
+													value = _octane.filters[filter] ?
+														_octane.filters[filter].apply({input:value,model:data},paramsArray) :
+															(_.isFunction(''[filter]) ? ''[filter].apply(value,paramsArray) :
+															(_.isFunction(__[filter]) ? __[filter](value,params) : value))
+													*/
+													/*
+													(_octane.filters[filter] || function(){return this.input;}).apply({input:value,model:data},paramsArray);
+													*/
 												}
 
 												// replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}}
@@ -1002,6 +1022,7 @@
 														elem.parentElement.removeChild(elem);
 												}
 											},
+
 
 					_render: 		function (template,elem,method){
 
@@ -1054,23 +1075,20 @@
 												this.content = Template.parse(this.markup,data);
 												return this; // chainable
 											},
-					replace: 		function(elem){
-												Template._render(this,elem,'replace');
+					mount: 			function(target){
+												Template._render(this,target,'replace');
 											},
-					renderTo: 	function(elem){
-												Template._render(this,elem,'elem');
+					prependTo: 	function(target){
+												Template._render(this,target,'prepend');
 											},
-					prependTo: 	function(elem){
-												Template._render(this,elem,'prepend');
-											},
-					appendTo: 	function(elem){
-												Template._render(this,elem,'append');
+					appendTo: 	function(target){
+												Template._render(this,target,'append');
 											},
 					save: 			function(){
 												if(!_octane.templates[this.id]){
-														_octane.templates[this.id] = this;
+													_octane.templates[this.id] = this;
 												}else{
-														Octane.log('Could not create template '+this.id+'. Already exists');
+													Octane.log('Could not create template '+this.id+'. Already exists');
 												}
 											},
 					append: 		function(){
@@ -1085,12 +1103,7 @@
 													 this.prependTo(parent);
 												}
 											},
-					render: 		function(){
-												var parent = this.parent;
-												if(parent instanceof HTMLElement){
-													 this.renderTo(parent);
-												}
-											}
+
 				});
 
 
@@ -1148,6 +1161,45 @@
 
 
 
+				/* experimental */
+
+				Octane.createElement = function(type,properties,children){
+					var el = document.createElement(type);
+					_.extend(el,properties);
+					_.each(children,function(child){
+						if(_.isString(child)){
+							el.innerHTML = el.innerHTML+child;
+						} else if(_.isObject(child)){
+							el.appendChild(child);
+						}
+					});
+					return el;
+				};
+
+
+				Octane.render = function(Component,attrs,container){
+					var guid = octane.guid(Component);
+					_.extend(Component,attrs);
+					var newRender = Component.render();
+					var lastRender = container.querySelector('[octaneID="'+guid+'"]');
+
+					newRender.setAttribute('octaneID',guid);
+					lastRender ? container.replaceChild(newRender,lastRender) : container.appendChild(newRender);
+				};
+
+
+				function OctaneComponent(obj){
+					this.model = {};
+					this.collection = [];
+					this.render = function(){};
+					_.extend(this,obj);
+				}
+
+
+				Octane.Component = function(obj){
+					return new OctaneComponent(obj);
+				};
+				/* end experimental */
 
 
 				var ViewModel = Object.create(OctaneBase.prototype);
@@ -1197,10 +1249,10 @@
 
 
 
-				var Conduit = Object.create(OctaneBase.prototype);
+				var Mediator = Object.create(OctaneBase.prototype);
 
 
-				Conduit.defineProp({
+				Mediator.defineProp({
 
 					init: 			function(){
 												this.registry = {};
@@ -1224,7 +1276,7 @@
 
 
 					// fire statechange on all bound models, updating the entire DOM
-					// fired once at Conduit initialization
+					// fired once at Mediator initialization
 					// expensive, should be avoided unless absolutely necessary
 					rescope: 		function(scope){
 												this.parse(scope);
@@ -1250,7 +1302,7 @@
 
 
 												// getter
-												if(!model.alias){
+												if(!model.hasOwnProperty('alias')){
 													Octane.defineGetter.apply(model,['alias',
 														function(){
 															return _alias;
@@ -1261,7 +1313,7 @@
 												// attach to an alias for data-binding to views
 												_.extend(model,{
 														become : function(alias){
-																this.detach();  // make sure we're detached from one Conduit reference before binding to another
+																this.detach();  // make sure we're detached from one Mediator reference before binding to another
 																_octane.models[alias] && _octane.models[alias].detach();
 																_octane.models[alias] = this;
 																_alias = alias;
@@ -1345,12 +1397,12 @@
 
 
 				Octane.defineProp({
-					Conduit: 		Conduit,
+					Mediator: 		Mediator,
 					link: 			function(){
-												Octane.Conduit.link.apply(Octane.Conduit,arguments);
+												Octane.Mediator.link.apply(Octane.Mediator,arguments);
 											},
 					unlink: 		function(){
-												Octane.Conduit.unlink.apply(Octane.Conduit,arguments);
+												Octane.Mediator.unlink.apply(Octane.Mediator,arguments);
 											}
 				});
 
@@ -1441,7 +1493,7 @@
 												return new this(data);
 											},
 
-					// set method for Backbone models bound with Octane.Conduit
+					// set method for Backbone models bound with Octane.Mediator
 					// very similar to OctaneModel.prototype._set, begging for a DRY refactor
 					set: 				function(key,val,options){
 
@@ -1750,11 +1802,11 @@
 
 												if(_.isString(data)){
 													var alias = data;
-													// only an alias was passed and it's currently occupied on the Conduit
+													// only an alias was passed and it's currently occupied on the Mediator
 													// return the model occupying that alias
 													if(_octane.models[alias]){
 														return _octane.models[alias];
-													// only an alias was passed and it's vacant on the Conduit
+													// only an alias was passed and it's vacant on the Mediator
 													// create new model, assign it to the alias, and return it
 													} else {
 														return new OctaneModel().become(alias);
@@ -2713,7 +2765,7 @@
 
 
 
-												Octane.Conduit.init();
+												Octane.Mediator.init();
 
 
 
