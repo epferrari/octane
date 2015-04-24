@@ -1,10 +1,8 @@
 // utility methods
 
-(function (__,window,jQuery){
+(function (__,window){
 
-
-	// intentionally global
-	var $fn = {
+	var du = {
 		// checks for a sting with no value
 		// [undefined, null, '', empty string]
 		isBlank	:		function (param){
@@ -64,8 +62,8 @@
 		// credit: Angus Croll
 		// http://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
 		typeOf : function(obj) {
-						return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
-				},
+					return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+		},
 
 		// create objects from query string in URL
 		// credit Cory LaViska, http://www.abeautifulsite.net/parsing-urls-in-javascript/
@@ -84,7 +82,7 @@
 			 for( var i = 0,n = queries.length; i < n; i++ ) {
 					param = queries[i].split('=');
 
-					if( !$fn.isBlank(param) ){
+					if( !du.isBlank(param) ){
 						var key = param[0],val = param[1];
 						searchObject[key] = val;
 					}
@@ -103,23 +101,27 @@
 
 		titleize : function(string){
 
-										if($fn.typeOf(string) == 'string'){
+										if(du.typeOf(string) == 'string'){
 												return string
-																.replace(/\-+|[_]+/,' ')
-																.replace(/^.|\s+?[a-z]/g,
-																		function(chr){
-																				return chr.toUpperCase();
-																});
+												.replace(/[-_]+/g,' ')
+												.trim()
+												.replace(/^.|\s+?[a-z]/g,
+													function(chr){
+														return chr.toUpperCase();
+												})
+												.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
+													return chr1+' '+chr2.toUpperCase();
+												})
 										}
 								},
 
 		camelize : function(string){
 
-										 if($fn.typeOf(string) == 'string'){
+										 if(du.typeOf(string) == 'string'){
 												return string
 												.replace(/\W+?[a-z]|\_+?[a-z]/g,
-														function(chr){
-																return chr.toUpperCase();
+													function(chr){
+														return chr.toUpperCase();
 												})
 												.replace(/\W+|\_+/g,'');
 										 }
@@ -127,14 +129,17 @@
 
 		dashify : function(string){
 
-										 if($fn.typeOf(string) == 'string'){
+										 if(du.typeOf(string) == 'string'){
 												return string
-																.replace(/\s+|[_]+/g,'-')
-																.replace(/[A-Z]/g,
-																		function(chr){
-																				return '-'+chr.toLowerCase();
-																})
-																.replace(/-{2}/g,'-');
+												.trim()
+												.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
+													return chr1+'-'+chr2.toLowerCase();
+												})
+												.replace(/[A-Z]/g,function(chr){
+													return chr.toLowerCase();
+												})
+												.replace(/\s+|[_]+/g,'-')
+												.replace(/-{2,}/g,'-');
 										 }
 								},
 
@@ -145,38 +150,6 @@
 
 	};
 
-	__.Switch = function (obj){
-		this.cases = {};
-		_.each(obj,this.addCase,this);
-		this.addCase = function addCase(func,key){
-
-			var cases = this.cases;
-			// ensure array
-			((_.isArray(cases[key]) && cases[key])||(cases[key] =[])).push(func);
-			return this; // chainable
-		};
-
-		// @param 0 _case[str]: the value you're trying to match
-		// @params 1+ arguments to pass to a matched function or functions
-		this.run = function run(test,params,thisArg){
-
-			var cases = this.cases;
-			var fns		= cases[test];
-			var def		= cases.default;
-
-			// ensure arrays
-			_.isArray(params)||(params=[params]);
-
-			if(fns){
-				return _.map(fns,function(fn){
-					return fn.apply(thisArg,params);
-				});
-			}else{
-				return def ? def.apply(thisArg,params) : false;
-			}
-		}
-};
-
-	window[__] = $fn;
+	window[__] = du;
 
 })('__',window);
