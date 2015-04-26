@@ -26,21 +26,26 @@ o-view {
   background-color: white; }
 
 .view-left {
-  transform: translateX(-100%); }
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 .view-right {
-  transform: translateX(100%); }
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 .view-top {
-  transform: translateY(-100%); }
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 .view-bottom {
-  transform: translateY(100%); }
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
 .view-fader {
-  opacity: 0; }
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.5s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
 
-.view-dismissed {
+.view-queued {
   opacity: 1;
   visibility: visible;
   display: block;
@@ -54,6 +59,12 @@ o-view {
   z-index: 100;
   transform: translateX(0) translateY(0);
   transition: transform 0.2s cubic-bezier(0.465, 0.183, 0.153, 0.946), opacity 0.2s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+
+.view-animating {
+  opacity: 1;
+  visibility: visible;
+  display: block;
+  z-index: 100; }
 
 o-control#translator {
   list-style: none;
@@ -215,6 +226,7 @@ octane-debugger {
   color: white;
   opacity: 0.6; }
   octane-debugger ul, octane-debugger li {
+    margin-top: 0px !important;
     margin-left: 10px;
     list-style: none;
     display: inline-block;
@@ -253,34 +265,28 @@ o-background {
   opacity: 0;
   will-change: opacity;
   transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+  o-background.active {
+    opacity: 1;
+    transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
+    o-background.active canvas {
+      width: 101%;
+      margin-left: -0.5%;
+      margin-top: -0.5%;
+      filter: blur(3px);
+      transform: translate-3d(0, 0, 0); }
 
-o-background.active {
-  opacity: 1;
-  transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
-  o-background.active canvas {
-    width: 101%;
-    margin-left: -0.5%;
-    margin-top: -0.5%;
-    filter: blur(3px);
-    /*
-        -webkit-filter:blur(3px);
-        -moz-filter:blur(3px);
-        -o-filter:blur(3px);
-        -ms-filter:blur(3px);
-    */
-    transform: translate-3d(0, 0, 0);
-    /*
-        -webkit-transform:translate-3d(0,0,0);
-        -moz-transform:translate-3d(0,0,0);
-    */ }
+[o-model] {
+  visibility: hidden; }
+  [o-model].compiled {
+    visibility: visible; }
 
 o-app-container {
-  overflow-x: hidden;
-  overflow-y: hidden;
   z-index: 1;
   float: left;
   height: auto;
   width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
   background-color: white;
   opacity: 1;
   transition: opacity 0.3s cubic-bezier(0.465, 0.183, 0.153, 0.946); }
