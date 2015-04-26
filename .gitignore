@@ -1,6 +1,10 @@
-build
-dist
 .brackets.json
-node_modules/**
-bower_components/**
+/node_modules/**
+/bower_components/**
+/build/**
+/dist/**
+/example-project/node_modules/**
+/example-project/build/**
+/example-project/bower_components/**
+/example-project/dist/**
 
