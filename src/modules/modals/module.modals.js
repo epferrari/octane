@@ -178,7 +178,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 						OctaneModal.load(m);
 					});
 				})
-				.compiler('[o-modal-dismiss]',function(elem){
+				.compiler('.o-modal-dismiss',function(elem){
 					octane.on('click',elem,function(e,el){
 						e.stopPropagation;
 						e.stopImmediatePropagation;
