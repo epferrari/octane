@@ -1153,9 +1153,15 @@
 
 
 				Octane.compiler('[o-bind]',function(elem,binding){
+
 					Octane.on('input click select',elem,uptake);
+
 					if(_.contains( ['file','checkbox'] ,elem.type)){
 						Octane.on('change',elem,uptake);
+					} else {
+						Octane.task(binding,function(value){
+							elem.value = value || '';
+						});
 					}
 				});
 
@@ -1440,7 +1446,7 @@
 												return model;
 											},
 					unlink: 		function(){
-												this.discard.apply(this,arguments);
+												return this.discard.apply(this,arguments);
 											},
 
 					// remove an assumed Backbone-type Model
@@ -1478,10 +1484,10 @@
 				Octane.defineProp({
 					Mediator: 		Mediator,
 					link: 			function(){
-												Octane.Mediator.link.apply(Octane.Mediator,arguments);
+												return Octane.Mediator.link.apply(Mediator,arguments);
 											},
 					unlink: 		function(){
-												Octane.Mediator.unlink.apply(Octane.Mediator,arguments);
+												return Octane.Mediator.unlink.apply(Mediator,arguments);
 											}
 				});
 
@@ -1832,7 +1838,7 @@
 												return this;
 											},
 
-					reset: 			function(defaults){
+					_reset: 		function(defaults){
 												this.clear().set(defaults || this.defaults);
 											}
 				});
@@ -1865,6 +1871,9 @@
 
 					destroy: 		function(){
 												this._destroy();
+											},
+					reset: 			function(){
+												this._reset.apply(this,arguments);
 											}
 				});
 
@@ -2895,7 +2904,7 @@
 
 												var debug = modules['Debug'];
 												if(debug){
-														_octane.moduleConfigs.Debug = {reflection : _octane};
+													_octane.moduleConfigs.Debug.reflection = _octane;
 												}
 
 
