@@ -47,17 +47,13 @@
 								 var loadingContainer = octane.loadingContainer;
 								 var view =  octane.defaultView || octane.Router.getUrlView()  || 'home';
 
-								 octane.appContainer.classList.remove('hidden');
-
-								 setTimeout(function(){
-										octane.route(view)
-										.then(function(){
-												return $.Velocity(loadingContainer,'fadeOut',{duration:500})
-										})
-										.then(function(){
-												document.body.removeChild(loadingContainer);
-										});
-
-								 },500);
+								octane.appContainer.classList.remove('hidden');
+								octane.route(view);
+								setTimeout(function(){
+									$.Velocity(loadingContainer,'fadeOut',{duration:500})
+									.then(function(){
+											document.body.removeChild(loadingContainer);
+									});
+								},500);
 						 }
 			});
