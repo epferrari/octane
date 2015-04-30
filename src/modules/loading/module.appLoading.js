@@ -17,13 +17,13 @@
 								}).become('appLoading');
 
 								octane
-										.hook('appLoading.progress',function($state){
-												$state.progress = $state.progress <= 100 ? $state.progress : 100;
-												$state.percent =$state.progress.toString()+"%";
-												$state.screenReader = $state.percent+' Loaded';
+										.hook('appLoading.progress',function(progress){
+												this.progress = this.progress <= 100 ? this.progress : 100;
+												this.percent = this.progress.toString()+"%";
+												this.screenReader = this.percent+' Loaded';
 										})
-										.hook('appLoading.message',function($state){
-												$state.message = _.isString($state.message) ? $state.message : 'Loading...';
+										.hook('appLoading.message',function(message,state){
+												this.message = _.isString(this.message) ? this.message : 'Loading...';
 										})
 										// update progress bar and message as modules load
 										.on('loaded:module',function(e) {

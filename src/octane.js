@@ -972,26 +972,14 @@
 												// filter is applied to this arg with val and model properties set
 												if(filter.length > 0){
 													var paramsArray = filterParams.split(',');
-													switch(true){
-														case _octane.filters[filter]:
+
+													if(_octane.filters[filter]){
 															value = _octane.filters[filter].apply({input:value,model:data},paramsArray);
-															break;
-														case _.isFunction(''[filter]):
+													} else if(_.isFunction(''[filter])){
 															value = ''[filter].apply(value,paramsArray);
-															break;
-														case _.isFunction(__[filter]):
+													} else if(_.isFunction(__[filter])){
 															value = __[filter](value,params);
-															break;
 													}
-													/*
-													value = _octane.filters[filter] ?
-														_octane.filters[filter].apply({input:value,model:data},paramsArray) :
-															(_.isFunction(''[filter]) ? ''[filter].apply(value,paramsArray) :
-															(_.isFunction(__[filter]) ? __[filter](value,params) : value))
-													*/
-													/*
-													(_octane.filters[filter] || function(){return this.input;}).apply({input:value,model:data},paramsArray);
-													*/
 												}
 
 												// replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}}
@@ -1130,24 +1118,24 @@
 
 					var model			= el.getAttribute('o-model');
 					var binding 	= el.getAttribute('o-bind');
+					var value;
 
 					// if o-bind is the only attribute, use it as binding,
 					// otherwise o-bind is a key of the o=model attribute
 					model && (binding = model + '.' + binding);
 
 					if(el.type === 'file'){
-						Octane.set(binding,el.files);
-						return;
+						value = el.files;
+					}else if(el.type === 'checkbox'){
+						value = el.checked;
+					}	else if(el.tagName === 'TEXT-AREA'){
+						value = el.innerHTML;
+					} else{
+						(value = el.value);
 					}
-					if(el.type === 'checkbox'){
-						Octane.set(binding,el.checked);
-						return;
-					}
-					if(el.tagName === 'TEXT-AREA'){
-						el.value = el.innerHTML;
-					}
-					if( el.value !== Octane.get(binding) ){
-						Octane.set(binding,el.value);
+
+					if( value !== Octane.get(binding) ){
+						Octane.set(binding,value);
 					}
 				};
 
@@ -1327,7 +1315,7 @@
 												this.elem.outerHTML = this.template.set(data).content;
 												this.elem = document.querySelector('[octane-id="'+this.octaneID+'"]');
 												this.elem.classList.add('compiled',"view-active");
-												Octane.recompile(this.elem);
+												Octane.recompile(this.elem.parentElement);
 											}
 				});
 
@@ -1696,7 +1684,7 @@
 													// re-measure in case there have been additional properties
 													// added to fresh via hooks
 													_.each(fresh,function(value,binding){
-															this._setState(binding,value);
+														this._setState(binding,value);
 													},this);
 													this.processing = false;
 													this.queue && this._set.apply(this,this.queue);
@@ -1736,11 +1724,27 @@
 
 												if(this.alias){
 														var hooks = _octane.hooks[this.alias+'.'+binding];
+														var input = _.get(fresh,binding);
+
 														if(_.isArray(hooks)){
 															_.each(hooks,function(hook){
-																_.extend(fresh,hook(fresh));
+																input && hook.apply(fresh,[input,binding]);
 															});
 														}
+														/*
+														if(_.isArray(hooks)){
+															_.each(hooks,function(hook){
+																//_.extend(fresh,hook(fresh));
+																binding.split('.').reduce(function(o,x,i){
+																	if(i===arr.length-1){
+																		_.extend(fresh,hook(x,fresh));
+																	} else {
+																		return _.isObject(o) ? o[x] : null;
+																	}
+																},fresh);
+															});
+														}
+														*/
 												}
 											},
 
@@ -2353,17 +2357,13 @@
 				// a function to be applied before the setting of data in the model
 				// if one model data value changes depending on another, a hook is the place for that logic
 				// key is the incoming data key to parse for, func is the function to apply
+				// a hook is applied at set time to a binding
 
 				 Octane.defineProp({
 
 					 hook: 			function hook(binding,fn){
 
-												try{
-														_octane.hooks[binding].push(fn);
-												} catch(ex){
-														_octane.hooks[binding] = [];
-														_octane.hooks[binding].push(fn);
-												}
+												(_octane.hooks[binding]||(_octane.hooks[binding]=[])).push(fn);
 
 												return this; // chainable
 											}
@@ -2460,14 +2460,16 @@
 											},
 
 					export: 		function(exports){
-
+												/*
 												_.isObject(_octane.moduleExports[this.name]) || (_octane.moduleExports[this.name] = {});
 
 												try{
-														_.extend(_octane.moduleExports[this.name],exports);
+													_.extend(_octane.moduleExports[this.name],exports);
 												}catch (ex){
-														Octane.log('Could not create exports for module '+this.name+'.',ex);
+													Octane.log('Could not create exports for module '+this.name+'.',ex);
 												}
+												*/
+												_octane.moduleExports[this.name] = exports;
 											},
 
 					controller: function(name,methods){
@@ -2508,7 +2510,7 @@
 														this.initialize(config);
 
 														Octane.App.set({
-																"loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
+															"loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
 														});
 														// hook-in for updating a loading screen
 														Octane.fire('loaded:module',{
@@ -2726,10 +2728,13 @@
 
 
 				Octane.designate('[o-src]',function(elem,value){
-					var pattern = /\{\{([^{^}]+)\}\}/g;
+					var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
 					if(!pattern.test(value)){
 						elem.src = value;
 						elem.removeAttribute('o-src');
+					} else {
+						elem.removeAttribute('src');
+						delete elem.src;
 					}
 
 				});
@@ -2880,10 +2885,10 @@
 
 
 												// hook for loading screens
-												Octane.hook('App.loadingProgress',function($state){
+												Octane.hook('App.loadingProgress',function(loadingProgress,binding){
 														var currentProgress = Octane.get('App.loadingProgress') || 0;
-														$state.loadingProgress = currentProgress + $state.loadingProgress;
-														return $state;
+														this.loadingProgress = currentProgress + this.loadingProgress;
+														//return $state;
 												});
 
 
