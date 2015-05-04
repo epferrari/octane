@@ -17,34 +17,63 @@
 								return reflection[property];
 						});
 
-						octane.defineGetter('errors',function(){
+						var Debugger = octane.controller("Debugger",{
+							getErrors : function(){
+								var log = reflection.logfile;
+								var l = log.length;
+								var i = 0;
 
-							 var log = reflection.logfile;
-							 var l = log.length;
-							 var i = 0;
-
-							 for(;i<l;i++){
+								for(;i<l;i++){
 									var line = log[i];
 									console.log(line[1]);
 									console.log('additional context:',line[0]);
-							 }
-						});
+								}
+							},
+							getBootlog : function(){
+								var log = reflection.bootlog;
+								var l = log.length;
+								var i = 0;
 
-						octane.defineGetter('bootlog',function(){
-
-							var log = reflection.bootlog;
-							var l = log.length;
-							var i = 0;
-
-							for(;i<l;i++){
-								 console.log(log[i]);
+								for(;i<l;i++){
+									console.log(log[i]);
+								}
+							},
+							getModels : function(){
+								console.log(octane.debug('models'));
+							},
+							getControllers : function(){
+								console.log(octane.debug('controllers'));
+							},
+							getEvents : function(){
+								console.log(octane.debug('events'));
+							},
+							getFilters : function(){
+								console.log(octane.debug('filters'));
+							},
+							getModules : function(){
+								console.log(octane.debug('modules'));
+							},
+							hideConsole: function(){
+								document.querySelector('body>octane-debugger').style.display = 'none';
+							},
+							showConsole: function(){
+								document.querySelector('body>octane-debugger').style.display = 'block';
 							}
 						});
 
+						octane.defineGetter('errors',function(){
+							Debugger.getErrors();
+						});
+
+						octane.defineGetter('bootlog',function(){
+							Debugger.getBootlog();
+						});
+
+
 
 						var bar = [
-							'<octane-debugger>',
-							'<span>Debugger</span>',
+							'<octane-debugger style="display:'+(cfg.isHidden ? 'none' : 'block')+'">',
+							'<span>Debug</span>',
 							'<ul>',
 								'<li o-control="(click)[Debugger.getErrors]" ><i class="fa fa-warning"></i>Errors</li>',
 								'<li o-control="(click)[Debugger.getBootlog]"><i class="fa fa-list"></i>Bootlog</li>',
@@ -53,35 +82,14 @@
 								'<li o-control="(click)[Debugger.getEvents]"><i class="fa fa-bolt"></i>Events</li>',
 								'<li o-control="(click)[Debugger.getFilters]"><i class="fa fa-filter"></i>Filters</li>',
 								'<li o-control="(click)[Debugger.getModules]"><i class="fa fa-plug"></i>Modules</li>',
+								'<li o-control="(click)[Debugger.hideConsole]"><i class="fa fa-remove"></i>Hide</li>',
 							'</ul>',
 							'</octane-debugger>'];
 						var font = '<link href="http://fonts.googleapis.com/css?family=Source+Code+Pro:500 rel="stylesheet" type="text/css">';
 						octane.Template.fromString(font).appendTo(document.head);
 						octane.Template.fromString(bar.join('')).appendTo(document.body);
+
 						bar = null;
 						font = null;
 				}
 		})
-		.controller("Debugger",{
-			getErrors : function(){
-				octane.errors;
-			},
-			getBootlog : function(){
-				octane.bootlog;
-			},
-			getModels : function(){
-				console.log(octane.debug('models'));
-			},
-			getControllers : function(){
-				console.log(octane.debug('controllers'));
-			},
-			getEvents : function(){
-				console.log(octane.debug('events'));
-			},
-			getFilters : function(){
-				console.log(octane.debug('filters'));
-			},
-			getModules : function(){
-				console.log(octane.debug('modules'));
-			}
-		});

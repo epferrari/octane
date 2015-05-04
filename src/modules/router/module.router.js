@@ -92,106 +92,117 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 				// the meat
 				function route(view,silent){
+					return new Promise(function(resolve,reject){
+						var V = octane.View.get(view);
+						var viewIsCurrent = (V === currentView);
+						var modal = octane.Modal.current;
 
-					var V = octane.View.get(view);
-					var viewIsCurrent = (V === currentView);
-					var modal = octane.Modal.current;
+						if(modal) modal.dismiss();
+						if(!V || viewIsCurrent) return resolve();
+						silent || (silent = V.silent || false);
 
-					if(modal) modal.dismiss();
-					if(!V || viewIsCurrent) return Promise.resolve();
-					silent || (silent = V.silent || false);
+						if(enRoute || routingBlocked){
+							var toQueue = {
+								view:view,
+								silent:silent,
+								resolver:resolve
+							};
+							if(!_.contains(queuedRoutes,toQueue)){
+								queuedRoutes.unshift(toQueue);
+							} else{
+								//return resolve();
+							}
+							return;
+						}
 
-					if(enRoute || routingBlocked){
-						var toQueue = {
-							view:view,
-							silent:silent
-						};
-						if(!_.contains(queuedRoutes,toQueue)) queuedRoutes.unshift(toQueue);
-						return;
-					}
+						var isPrevious = (V.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.view);
+						if( isPrevious ){
+							return V._runBeforeLoad()
+							.then(function(){
+									octane.fire('routing:begin');
+									enRoute = V;
+									return V._queue();
+							})
+							.then(function(){
+								if(currentView){
+									currentView.elem.classList.add('view-animating');
+									return currentView._exit();
+								}
+							})
+							.then(function(){
+								currentView && currentView.elem.classList.remove('view-animating');
+								return V._load();
+							})
+							.then(V._runOnload)
+							.then(function(){
+								octane.fire('view:loaded');
+								//previousView = currentView;
+								currentView = V;
+								enRoute = null;
+								//if(!silent)pushState({view:V.id});
+								octane.App.set({
+									viewID: 		V.id,
+									viewTitle: 	V.title
+								});
+							})
+							.then(function(){
 
-					var isPrevious = (V.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.view);
-					if( isPrevious ){
-						return V._runBeforeLoad()
-						.then(function(){
+								if(queuedRoutes.length >0){
+									var next = queuedRoutes.shift();
+									return route(next.view,next.silent).then(next.resolver);
+								}
+							})
+							.then(function(){
+								resolve();
+								octane.fire('routing:complete');
+							})
+							.catch(function(err){
+								octane.log(err);
+							});
+
+						} else {
+
+							return V._runBeforeLoad()
+							.then(function(){
 								octane.fire('routing:begin');
 								enRoute = V;
-								return V._queue();
-						})
-						.then(function(){
-							if(currentView){
-								currentView.elem.classList.add('view-animating');
-								return currentView._exit();
-							}
-						})
-						.then(function(){
-							currentView && currentView.elem.classList.remove('view-animating');
-							return V._load();
-						})
-						.then(V._runOnload)
-						.then(function(){
-							octane.fire('view:loaded');
-							//previousView = currentView;
-							currentView = V;
-							enRoute = null;
-							//if(!silent)pushState({view:V.id});
-							octane.App.set({
-								viewID: 		V.id,
-								viewTitle: 	V.title
-							});
-						})
-						.then(function(){
-							if(queuedRoutes.length >0){
-								var next = queuedRoutes.shift();
-								return route(next.view,next.silent);
-							}
-						})
-						.then(function(){
-							octane.fire('routing:complete');
-						})
-						.catch(function(err){
-							octane.log(err);
-						});
+								if(currentView) return currentView._queue();
+							})
+							.then(function(){
+								octane.fire('view:loading');
+								return V._load();
+							})
+							.then(V._runOnload)
+							.then(function(){
+								octane.fire('view:loaded');
+								var previousView = currentView;
+								currentView = V;
+								enRoute = null;
+								if(!silent)pushState({view:V.id});
+								octane.App.set({
+									viewID: 		V.id,
+									viewTitle: 	V.title
+								});
+								if(previousView) return previousView._exit();
+							})
+							.then(function(){
 
-					} else {
-
-						return V._runBeforeLoad()
-						.then(function(){
-							octane.fire('routing:begin');
-							enRoute = V;
-							if(currentView) return currentView._queue();
-						})
-						.then(function(){
-							octane.fire('view:loading');
-							return V._load();
-						})
-						.then(V._runOnload)
-						.then(function(){
-							octane.fire('view:loaded');
-							var previousView = currentView;
-							currentView = V;
-							enRoute = null;
-							if(!silent)pushState({view:V.id});
-							octane.App.set({
-								viewID: 		V.id,
-								viewTitle: 	V.title
+								if(queuedRoutes.length >0){
+									var next = queuedRoutes.shift();
+									return route(next.view,next.silent).then(next.resolver);
+								}
+							})
+							.then(function(){
+								resolve();
+								octane.fire('routing:complete');
+							})
+							.catch(function(err){
+								octane.log(err);
 							});
-							if(previousView) return previousView._exit();
-						})
-						.then(function(){
-							if(queuedRoutes.length >0){
-								var next = queuedRoutes.shift();
-								return route(next.view,next.silent);
-							}
-						})
-						.then(function(){
-							octane.fire('routing:complete');
-						})
-						.catch(function(err){
-							octane.log(err);
-						});
-					}
+						}
+					});
 				}
+
 
 
 
