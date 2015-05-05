@@ -1367,11 +1367,10 @@
 
 
 												// save original methods
-												model.__legacy__ = {
-														set 	: model.set,
-														get 	: model.get,
-														clear : model.clear
-												}
+												model.__legacy__ || (model.__legacy__ = {});
+												model.__legacy__.set 	= model.set;
+												model.__legacy__.get 	= model.get;
+												model.__legacy__.clear = model.clear;
 
 
 												// getter
@@ -1406,7 +1405,7 @@
 																OctaneModel.set.apply(this,arguments);
 														},
 														get : function(){
-																this.state = this.attributes;
+																if(this.attributes) this.state = this.attributes;
 																return OctaneModel.prototype._get.apply(this,arguments);
 														},
 														clear: function(options) {
@@ -1450,9 +1449,9 @@
 													model.alias && model.detach();
 
 													// remove all traces of the intregration
-													delete model.become;
-													delete model.detach;
-													delete model.__legacy__;
+													model.become = null;
+													model.detach = null;
+													model.__legacy__ = null;
 
 													return model;
 												}
@@ -2683,7 +2682,44 @@
 
 
 
+				Octane.designate('[o-delegate]',function(elem,attrVal){
 
+					// ex. <ul  o-delegate="(click) [ListViewController.refresh,li a]">..</li>
+					// elem: <ul>
+					// attrVal: '(click)[ListViewController.refresh,li a]
+
+					_((attrVal.match(/(\(.*?\])/g)||[]))
+					.chain()
+					.map(function(str){
+						var event 				= (str.match( /\((.*?)\)/ )||[])[0];
+						var handler				= (str.match( /\[(.*?)\]/ )||[])[0];
+						handler 					= handler.split(',');
+						var action 				= (handler.shift()||'').split('.');
+						var controller 		= action[0];
+						var method		 		= action[1];
+						// new zero index after shift
+						var delegate 		= handler[0];
+
+						elem.addEventListener(event,function(e){
+							console.log('o-delegate activated');
+							console.log(this);
+							var srcElement = (e.srcElement||e.target);
+							var ctrl = _octane.controllers[controller];
+							var thisBinding;
+							if(_.contains(this.querySelectorAll(delegate),srcElement)){
+								thisBinding = srcElement;
+							} else {
+								thisBinding = this;
+							}
+							try{
+								ctrl[method].apply(thisBinding);
+							}catch (ex){
+								Octane.log('o-delegate ' +controller+ '.' +method+ ' could not be applied',ex);
+							}
+
+						})
+					});
+				});
 
 
 
