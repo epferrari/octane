@@ -2175,7 +2175,7 @@
 				});
 				OctaneController.prototype.defineProp({
 					_destroy: 	function(){
-												delete _octane.controllers[this.name];
+												_octane.controllers[this.name] = null;
 											}
 				});
 
