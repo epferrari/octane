@@ -5,9 +5,9 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 
 				var _modals         = {};
 				var imports         = this.imports;
-				var ViewController  = imports.ViewController.Factory;
-				var animBy          = imports.ViewController.animations;
-				var Overlay         = imports.UiOverlay;
+				var ViewController  = this.import('ViewController');
+				var animBy          = octane.animateBy ||'css';
+				var Overlay         = this.import('UiOverlay');
 				var Velocity        = Velocity || $.Velocity;
 				var bg              = octane.modalContainer;
 				var modalQueue      = [];
@@ -41,7 +41,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 															octane.Router.lock();
 
 															if(!currentModal){                                // no modal onscreen, load this one
-																modalLoaded = Overlay.on()
+																modalLoaded = Overlay.add()
 																.bind(this)
 																.then(this._load);
 															} else if (currentModal && !this.isCurrent){      // another modal is onscreen, remove it
@@ -71,7 +71,7 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 																!routerWasLocked && octane.Router.unlock();
 																currentModal = false;
 															})
-															.then(Overlay.off);
+															.then(Overlay.remove);
 													}
 												},
 
@@ -173,13 +173,13 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 					OctaneModal.create(elem);
 				})
 				.compiler('[o-modal]',function(elem){
-					octane.on('click',elem,function(e,el){
+					octane.handle('click',elem,function(e,el){
 						var m = el.getAttribute('o-modal');
 						OctaneModal.load(m);
 					});
 				})
 				.compiler('.o-modal-dismiss',function(elem){
-					octane.on('click',elem,function(e,el){
+					octane.handle('click',elem,function(e,el){
 						e.stopPropagation;
 						e.stopImmediatePropagation;
 						OctaneModal.dismiss();

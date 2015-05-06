@@ -32,19 +32,6 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 							return key+'='+val;
 						}).join('&');
 
-						/*
-						var fragment = [];
-						var parsedKeys = Object.keys(parsed);
-						var k=parsedKeys.length;
-						var key;
-						while(k--){
-							key = parsedKeys[k];
-							fragment.push(key+'='+parsed[key]);
-						}
-						fragment = fragment.join('&');
-						fragment = '?'+fragment;
-						*/
-
 						History.pushState(
 								{
 									lang: language,
@@ -213,7 +200,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 						var stateChangeEvent = history ? 'popstate' : 'hashchange';
 
 						// change the view with browser's forward/back buttons
-						octane.on(stateChangeEvent,function(){
+						octane.handle(stateChangeEvent,function(e){
 							route(getRequestedView());
 						});
 				})();
@@ -324,7 +311,7 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 				// resize canvas to proper dimensions
 				octane
-						.on('translated resize orientationchange',function(){
+						.handle('translated resize orientationchange',function(){
 								currentView && currentView.setCanvasHeight();
 						})
 						.compiler('[o-route]',function(el){
@@ -334,23 +321,26 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 							el.addEventListener('click',function(e){
 									//e.stopPropagation();
 									//e.stopImmediatePropagation();
-									el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
+									//el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
+									octane.route(this.getAttribute('o-route'));
 							},false);
 
 							// set up the octane event mediator
 							// so event won't get a second listener
 							// if you call .compile() again after .initialize()
-							octane.on('octane:route',el,function(e,el){
-									var route = el.getAttribute('o-route');
-									octane.route(route);
+							/*octane.handle('octane:route',el,function(e,el){
+								var route = el.getAttribute('o-route');
+								octane.route(route);
 							});
+							*/
 						})
 						.compiler('.o-back',function(el){
 							el.addEventListener('click',function(e){
-									el.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
+									//el.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
+									History.go(-1);
 							},false);
 
-							octane.on('octane:routeback',el,function(){History.go(-1)});
+							//octane.handle('octane:routeback',el,function(){History.go(-1)});
 						});
 		} // end initialize
 }); // end module

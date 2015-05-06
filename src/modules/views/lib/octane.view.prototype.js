@@ -117,10 +117,7 @@ octane.module('ViewController').extend({
 											}
 			});
 
-			this.export({
-					Factory:    ViewController,
-					animations: (cfg.viewAnimations || 'css')
-			});
+			this.export(ViewController);
 
 		} // end initialize
 

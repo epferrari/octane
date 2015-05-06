@@ -5,7 +5,7 @@ octane.module('OctaneViews',['ViewController']).extend({
 		initialize : function(cfg){
 
 				var views          	= {};
-				var ViewController  = this.imports.ViewController.Factory;
+				var ViewController  = this.import('ViewController');
 				var OctaneView      = ViewController.extend({
 
 					// Instance Methods
