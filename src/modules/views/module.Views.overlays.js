@@ -194,7 +194,7 @@
 
 						// cache screenshot as soon as routing completes
 						if(hasCssFilterSupport){
-								octane.on('routing:complete',function(){
+								octane.handle('routing:complete',function(){
 										Background.getImage();
 								});
 						}

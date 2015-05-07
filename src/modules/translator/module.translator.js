@@ -323,7 +323,7 @@
 
 
 						(function(){
-								octane.on('view:routed',octane.Translator.translate);
+								octane.handle('view:routed',octane.Translator.translate);
 								findLang();
 								renderControls($M.langSupport);
 

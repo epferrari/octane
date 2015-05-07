@@ -4,7 +4,6 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 
 
 				var _modals         = {};
-				var imports         = this.imports;
 				var ViewController  = this.import('ViewController');
 				var animBy          = octane.animateBy ||'css';
 				var Overlay         = this.import('UiOverlay');
