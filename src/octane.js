@@ -1078,13 +1078,16 @@
 											// filter is applied to this arg with val and model properties set
 											if(filter.length > 0){
 												var paramsArray = filterParams.split(',');
-
-												if(_octane.filters[filter]){
-														value = _octane.filters[filter].apply({input:value,model:data},paramsArray);
-												} else if(_.isFunction(''[filter])){
-														value = ''[filter].apply(value,paramsArray);
-												} else if(_.isFunction(__[filter])){
-														value = __[filter](value,params);
+												try{
+													if(_octane.filters[filter]){
+															value = _octane.filters[filter].apply({input:value,model:data},paramsArray);
+													} else if(_.isFunction(''[filter])){
+															value = ''[filter].apply(value,paramsArray);
+													} else if(_.isFunction(__[filter])){
+															value = __[filter](value,params);
+													}
+												} catch (err){
+													octane.log('Could not filter data '+value,err);
 												}
 											}
 
