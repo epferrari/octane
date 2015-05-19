@@ -1,10 +1,13 @@
 {
-	"name": "Octane",
-	"version": "0.0.0",
+	"name": "octane",
+	"version": "0.0.9",
 	"authors": [
 		"Ethan Ferrari <ethan@ethanferrari.com>"
 	],
-	"main": "Octane.js",
+	"main": [
+		"dist/assets/octane.js",
+		"dist/assets/octane.css"
+	],
 	"license": "MIT",
 	"homepage": "www.onefiremedia.com",
 	"private": true,
@@ -24,7 +27,8 @@
 		"bluebird": "~2.9.2",
 		"fastclick": "~1.0.3",
 		"classlist": "~2014.7.23",
-		"bootstrap": "~3.3.1"
+		"bootstrap": "~3.3.1",
+		"html2canvas": "~0.4.1",
 	},
 	"resolutions": {
 		"bluebird": "~2.9.24"

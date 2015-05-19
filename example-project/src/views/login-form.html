@@ -1,0 +1,54 @@
+
+	<o-view id="login-form" title="Login Form Demo">
+
+		<form class="form-horizontal">
+			<div class="form-group">
+				<label for="username" class="col-sm-2 control-label">
+					Email
+				</label>
+				<div class="col-sm-4">
+					<input
+						id="username"
+						type="text"
+						class="form-control"
+						placeholder="Username"
+						o-bind="User.username"/>
+				</div>
+				<div class="col-sm-4" o-model="User">
+					{{username}}
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label for="userpass" class="col-sm-2 control-label">Password</label>
+				<div class="col-sm-4" >
+					<input
+						type="password"
+						class="form-control"
+						id="userpass"
+						placeholder="Password"
+						o-bind="User.userpass">
+				</div>
+				<div class="col-sm-offset-2 col-sm-10" o-model="User">
+					{{userpass @filter:hidePassword(*)}}
+				</div>
+			</div>
+
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" o-bind="User.showPassword"> Show Password
+						</label>
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<div class="row">
+			<div class="col-md-8 col-md-offset-2">
+				<button class="btn btn-default" o-route="home">Home</button>
+			</div>
+		</div>
+
+	</o-view>

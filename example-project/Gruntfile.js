@@ -64,8 +64,9 @@ module.exports = function(grunt) {
 					header		: [ assets+"/layout/_header.html"],
 					loading		: [ assets+"/layout/_loading.html"],
 					views			: [
+												'src/views/*.html',
 												assets+"/views/*.html",
-												modules+"/**/*/views/html"
+												modules+"/**/*/views/*.html"
 											],
 					modals 		: [ modules+"/**/*/modals/*.html"],
 					footer 		: [ assets+"/layout/_footer.html" ],
@@ -133,8 +134,7 @@ module.exports = function(grunt) {
 										assets+"/js/octane/doubleUnder.js",
 										assets+"/js/octane/octane.js",
 										assets+"/js/octane/*.js",
-										assets+"/js/modules/**/*.js",
-										assets+"/js/widgets/**/*.js",
+										assets+"/js/octane_modules/**/*.js",
 										"build/octane-initialize.js"
 									]
 			},
@@ -207,6 +207,7 @@ module.exports = function(grunt) {
 							},
 							dest		:	src.js.bower,
 							cssDest	:	src.css.bower,
+							/*
 							dependencies:{
 								"lodash"		:	"jquery",
 								"velocity"	:	"jquery",
@@ -216,6 +217,7 @@ module.exports = function(grunt) {
 								"velocity" : ["velocity.min.js","velocity.ui.min.js"],
 								"history.js":"scripts/bundled/html4+html5/jquery.history.js"
 							}
+							*/
 						}
 					},
 

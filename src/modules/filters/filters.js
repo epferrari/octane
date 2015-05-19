@@ -25,7 +25,7 @@
 
 						octane.filter('hidePassword',function(replacement){
 							if(!this.model.showPassword){
-								return this.input.replace(/\w/g,replacement);
+								return this.input.replace(/./g,replacement);
 							}
 							return this.input;
 						});

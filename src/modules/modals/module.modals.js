@@ -186,17 +186,17 @@ octane.module('OctaneModals',['ViewController','UiOverlay']).extend({
 					});
 				})
 				// dismiss modal automatically on route
-				.on('routing:begin',function(){
+				.handle('routing:begin',function(){
 					block = true;
 					OctaneModal.dismiss();
 				})
 				// re-enable modal calling after routing completes
-				.on('routing:complete',function(){
+				.handle('routing:complete',function(){
 					block = false;
 					OctaneModal.load(modalQueue.pop());
 				})
 				// resize canvas to proper dimensions
-				.on('load resize orientationchange',function(){
+				.handle('load resize orientationchange',function(){
 					currentModal && currentModal.adjustSize();
 				})
 				.defineProp({ Modal: OctaneModal });
