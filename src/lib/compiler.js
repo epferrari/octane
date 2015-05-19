@@ -1,7 +1,7 @@
 
 var Promise 	= require("bluebird");
 var _ 				= require("lodash");
-var OctaneBase = require('./octane-base.js');
+var OctaneBase = require('./factory.js');
 
 var Compiler = new OctaneBase();
 

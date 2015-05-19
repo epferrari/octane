@@ -13,6 +13,8 @@ _octane.modules       = {};
 _octane.moduleConfigs = {};
 _octane.moduleExports = {};
 _octane.bootlog 			= [];
+_octane.views         = {};
+_octane.modals        = {};
 
 
 module.exports = _octane;

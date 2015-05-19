@@ -5,11 +5,11 @@
 /*                 OCTANE MVC FRAMEWORK                    */
 /* ------------------------------------------------------- */
 
-									// @author Ethan Ferrari
-									// ethanferrari.com/octane
-									// onefiremedia.com
-									// version 0.0.8
-									// May 2015
+		// @author Ethan Ferrari
+		// ethanferrari.com/octane
+		// onefiremedia.com
+		// version 0.1.0
+		// May 2015
 
 
 
@@ -39,7 +39,7 @@
 			var extend 						= require('./lib/extend.js');
 			var utils 						= require('./lib/utils.js');
 			var Events 						= require('./lib/events.js');
-			var OctaneBase 				= require('./lib/octane-base.js');
+			var OctaneBase 				= require('./lib/factory.js');
 			var Compiler 					= require('./lib/compiler.js');
 			var Http 							= require('./lib/http.js');
 			var Dictionary 				= require('./lib/dictionaries.js');
@@ -49,6 +49,7 @@
 			var Mediator 					= require('./lib/mediator.js');
 			var OctaneController 	= require('./controller.js');
 			var OctaneModule  		= require('./lib/modules.js');
+			var DOM 							= require('./lib/dom.js');
 
 
 
@@ -471,33 +472,11 @@
 	/*                          DOM                            */
 	/* ------------------------------------------------------- */
 
-			Octane.defineGetter('loadingContainer',function(){
-					return document.getElementsByTagName('o-loading-container')[0] || document.createElement('o-loading-container');
-			});
-
-			Octane.defineGetter('bgContainer',function(){
-					return document.getElementsByTagName('o-background')[0] || document.createElement('o-background');
-			});
-
-			Octane.defineGetter('appContainer',function(){
-					return document.getElementsByTagName('o-app-container')[0] || document.createElement('o-app-container');
-			});
-
-			Octane.defineGetter('viewContainer',function(){
-					return document.getElementsByTagName('o-view-container')[0] || document.createElement('o-view-container');
-			});
-
-			Octane.defineGetter('modalContainer',function(){
-					return document.getElementsByTagName('o-modal-container')[0] || document.createElement('o-modal-container');
-			});
-
-			Octane.defineGetter('getViewElements',function(){
-					return document.getElementsByTagName('o-view');
-			});
-
-			Octane.defineGetter('getModalElements',function(){
-					return document.getElementsByTagName('o-modal');
-			});
+		define(Octane,'DOM',{
+			value: DOM,
+			writable: false,
+			configurable: false
+		});
 
 
 
