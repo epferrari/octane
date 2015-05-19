@@ -152,6 +152,10 @@ var OctaneModal     = Frame.extend({
 							}
 });
 
+OctaneModal.handle('routing:called',function(e){
+	this.dismiss();
+});
+
 				octane.defineGetter.apply(OctaneModal.prototype,[
 					'isCurrent',
 					function(){

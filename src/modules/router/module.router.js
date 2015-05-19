@@ -1,4 +1,14 @@
-// JavaScript Document
+var _ 					= require('lodash');
+var Promise 		= require('bluebird');
+var Velocity 		= require('velocity-animate');
+var uiPack 			= require('velocity-ui-pack');
+var OctaneBase 	= require('./factory.js');
+var DOM 				= require('./dom.js');
+var Controller  = require('./controller.js');
+var View 				= require('./view.js');
+var _octane			= require('./_octane.js');
+
+
 octane.module('OctaneRouter',['OctaneViews']).extend({
 
 		initialize : function (cfg) {
@@ -75,16 +85,16 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 				}
 
 
-
+				var Router = new OctaneBase();
 
 				// the meat
 				function route(view,silent){
 					return new Promise(function(resolve,reject){
 						var V = octane.View.get(view);
 						var viewIsCurrent = (V === currentView);
-						var modal = octane.Modal.current;
 
-						if(modal) modal.dismiss();
+						Router.fire('routing:called');
+
 						if(!V || viewIsCurrent) return resolve();
 						silent || (silent = V.silent || false);
 
@@ -104,9 +114,9 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 
 						var isPrevious = (V.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.view);
 						if( isPrevious ){
-							return V._runBeforeLoad()
+							return V.frameWillLoad()
 							.then(function(){
-									octane.fire('routing:begin');
+									Router.fire('routing:begin');
 									enRoute = V;
 									return V._queue();
 							})
@@ -120,9 +130,9 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 								currentView && currentView.elem.classList.remove('view-animating');
 								return V._load();
 							})
-							.then(V._runOnload)
+							.then(V.frameDidLoad)
 							.then(function(){
-								octane.fire('view:loaded');
+								Router.fire('view:loaded');
 								//previousView = currentView;
 								currentView = V;
 								enRoute = null;
@@ -141,25 +151,25 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 							})
 							.then(function(){
 								resolve();
-								octane.fire('routing:complete');
+								Router.fire('routing:complete');
 							})
 							.catch(function(err){
-								octane.log(err);
+								Router.log(err);
 							});
 
 						} else {
 
-							return V._runBeforeLoad()
+							return V.frameWillLoad()
 							.then(function(){
-								octane.fire('routing:begin');
+								Router.fire('routing:begin');
 								enRoute = V;
 								if(currentView) return currentView._queue();
 							})
 							.then(function(){
-								octane.fire('view:loading');
+								Router.fire('view:loading');
 								return V._load();
 							})
-							.then(V._runOnload)
+							.then(V.frameDidLoad)
 							.then(function(){
 								octane.fire('view:loaded');
 								var previousView = currentView;
@@ -181,10 +191,10 @@ octane.module('OctaneRouter',['OctaneViews']).extend({
 							})
 							.then(function(){
 								resolve();
-								octane.fire('routing:complete');
+								Router.fire('routing:complete');
 							})
 							.catch(function(err){
-								octane.log(err);
+								Router.log(err);
 							});
 						}
 					});
