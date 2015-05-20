@@ -4,7 +4,7 @@ var OctaneBase	= require('./factory.js');
 var utils 			= require('./utils/js');
 var extend 			= require('./extend.js');
 
-var log 				= OctaneBase.prototyle.log;
+var log 				= OctaneBase.prototype.log;
 
 
 // base Model factory
@@ -38,6 +38,7 @@ function OctaneModel(data){
 
 	this.extend({
 		become : function(alias){
+			if(alias === 'App' && _octane.models['App']) throw new Error('Cannot link to App model, choose another model');
 			var models = _octane.models;
 			models[alias] && models[alias].detach();
 			models[alias] = this;

@@ -13,6 +13,7 @@ Compiler.extend({
 								var guid = this.guid(task);
 								var ords = this.ordinances;
 								(ords[qselector]||(ords[qselector]={}))[guid] = task;
+								return this;
 							},
 
 	applyOrdinance:function(context,qselector){

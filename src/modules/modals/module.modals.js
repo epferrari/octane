@@ -21,7 +21,9 @@ var OctaneModal     = Frame.extend({
 
 	// Instance Methods
 
-	constructor:  function OctaneModal(){ return Controller.apply(this,arguments); },
+	constructor:  function OctaneModal(){
+		return Controller.apply(this,arguments);
+	},
 
 	initialize:   function(elem){
 

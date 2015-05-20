@@ -15,6 +15,8 @@ Mediator.defineProp({
 	// integrate a Backbone compatible Model into Octane's view binding circuit
 	link: 			function(model,alias){
 
+								if(alias === 'App' && _octane.models['App']) throw new Error('Cannot link to App model, choose another model');
+
 								// protected via closure
 								var _alias = null;
 
@@ -40,6 +42,7 @@ Mediator.defineProp({
 								// attach to an alias for data-binding to views
 								_.extend(model,{
 										become : function(alias){
+												if(alias === 'App' && _octane.models['App']) throw new Error('Cannot link to App model, choose another model');
 												this.detach();  // make sure we're detached from one Mediator reference before binding to another
 												_octane.models[alias] && _octane.models[alias].detach();
 												_octane.models[alias] = this;

@@ -39,17 +39,13 @@
 			var extend 						= require('./lib/extend.js');
 			var utils 						= require('./lib/utils.js');
 			var Events 						= require('./lib/events.js');
-			var OctaneBase 				= require('./lib/factory.js');
-			var Compiler 					= require('./lib/compiler.js');
-			var Http 							= require('./lib/http.js');
-			var Dictionary 				= require('./lib/dictionaries.js');
-			var Template 					= require('./lib/templates.js');
-			var OctaneModel 			= require('./lib/model.js');
-			var ViewModel 				= require('./lib/view-model.js');
-			var Mediator 					= require('./lib/mediator.js');
-			var OctaneController 	= require('./controller.js');
-			var OctaneModule  		= require('./lib/modules.js');
-			var DOM 							= require('./lib/dom.js');
+
+
+
+			var Router 						= require('./lib/router.js');
+			var View							= require('./lib/view.js');
+			var Modal 						= require('./lib/modal.js');
+
 
 
 
@@ -58,6 +54,8 @@
 	/* ------------------------------------------------------- */
 	/*								PUBLIC APPLICATION OBJECT								 */
 	/* ------------------------------------------------------- */
+
+			var OctaneBase = require('./lib/factory.js');
 
 			var Octane = new OctaneBase();
 
@@ -73,7 +71,7 @@
 				dispatch: 	function(type,detail){
 
 											if(_.isString(type)){
-												var e = Octane.Utils.customEvent(type,{bubbles:true,detail:detail});
+												var e = utils.customEvent(type,{bubbles:true,detail:detail});
 												window.dispatchEvent(e);
 											}
 										},
@@ -82,7 +80,7 @@
 				trip: 			function(node,eventType){
 
 												var rand = Math.random();
-												var	e = Octane.Utils.customEvent((eventType || 'input'),{bubbles:true,detail:rand});
+												var	e = utils.customEvent((eventType || 'input'),{bubbles:true,detail:rand});
 												node.dispatchEvent(e);
 										},
 			});
@@ -93,6 +91,8 @@
 	/* ------------------------------------------------------- */
 	/*       			COMPILER and ORDINANCE ASSIGNMENT         	 */
 	/* ------------------------------------------------------- */
+
+			var Compiler = require('./lib/compiler.js');
 
 			Octane.defineProp({
 
@@ -130,6 +130,8 @@
 	/*                     XMLHttpRequest                      */
 	/* ------------------------------------------------------- */
 
+			var Http = require('./lib/http.js');
+
 			Octane.defineProp({
 				http: function(url,headers){
 					return new Http(url,headers);
@@ -143,6 +145,8 @@
 	/*                       DICTIONARIES                      */
 	/* ------------------------------------------------------- */
 
+			var Dictionary = require('./lib/dictionaries.js');
+
 			Octane.defineProp({ Dictionary : Dictionary	});
 
 
@@ -151,6 +155,8 @@
 	/* ------------------------------------------------------- */
 	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
+
+			var Template = require('./lib/templates.js');
 
 			Octane.defineProp({ Template: Template });
 
@@ -161,6 +167,8 @@
 	/* ------------------------------------------------------- */
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
+
+			var OctaneModel 			= require('./lib/model.js');
 
 			Octane.defineProp({
 
@@ -260,7 +268,6 @@
 	/*           				DEEP MODEL MONITORING                  */
 	/* ------------------------------------------------------- */
 
-
 			define(OctaneBase.prototype,'watch',{
 				value: function(binding,fn,thisArg){
 					var cache ={};
@@ -271,7 +278,7 @@
 							var currentVal = Octane.get(watching);
 							if(currentVal !== cache[watching]){
 								cache[watching] = currentVal;
-								fn.apply((thisArg||Object.create(null)),[currentVal,watching]);
+								fn.apply((thisArg||this),[currentVal,watching]);
 							}
 						});
 						return subBinding;
@@ -287,6 +294,7 @@
 	/*                      VIEW MODEL                         */
 	/* ------------------------------------------------------- */
 
+			var ViewModel 				= require('./lib/view-model.js');
 
 			var uptake = function uptake(e,el){
 
@@ -313,12 +321,27 @@
 				}
 			};
 
+			Compiler.assign('[o-bind]',function(elem,binding){
+
+				Octane.handle('input click select',elem,uptake);
+
+				if(_.contains( ['file','checkbox'] ,elem.type)){
+					Octane.handle('change',elem,uptake);
+				} else {
+					Octane.watch(binding,function(value){
+						elem.value = value || '';
+					});
+				}
+			});
+
 
 
 
 	/* ------------------------------------------------------- */
 	/*                        MEDIATOR                         */
 	/* ------------------------------------------------------- */
+
+			var Mediator = require('./lib/mediator.js');
 
 			Octane.defineProp({
 				Mediator: 	Mediator,
@@ -345,6 +368,8 @@
 	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 
+			var OctaneController = require('./controller.js');
+
 			define(Octane,'controller',{
 				value: function (name,config){
 								if(!name){
@@ -364,6 +389,74 @@
 				value: OctaneController,
 				writable: false,
 				configurable: false
+			});
+
+			Compiler.assign('[o-control]',function(elem,attrVal){
+
+				// ex. <ul  o-control="(click) [ListViewController.refresh>" o-delegator="li"..</ul>
+				// elem: <ul>
+				// attrVal: '(click)[ListViewController.refresh,li a]
+
+				var isDelegator = elem.hasAttribute('o-delegator');
+				var delegates;
+
+				if(isDelegator) delegates = elem.getAttribute('o-delegator');
+
+				var vals = attrVal.match( /(\(.*?\])/g )||[];
+				_.each(vals,function(str){
+
+					var event,handler,params,action,ctrlName,controller,method;
+
+					event 				= (str.match( /\((.*?)\)/ )||[null,'click'])[1];
+					handler				= (str.match( /\[(.*?)\]/ )||[null,''])[1];
+					params 				= handler.split(',');
+					action 				= (params.shift()||'').split('.');
+					ctrlName      = action[0];
+					method		 		= action[1];
+
+					// new zero index after shift
+
+					if(isDelegator){
+						elem.addEventListener(event,function(e){
+
+							var src,el,controller;
+
+							src = (e.srcElement||e.target);
+							controller = _octane.controllers[ ctrlName ];
+
+							// if we've declared delegates AND
+							// the event is fired from an element we're delegating events for
+							// the Controller.method is called with *src* as the first arg
+							if(delegates && _.contains(this.querySelectorAll(delegates),src)){
+								try{
+									controller[method].apply(controller,[src].concat(params));
+								} catch(ex){
+									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
+								}
+
+							// if we've declared that this element listens for events on its children
+							// but did not define a querySelector pattern
+							// the Controller.method is called with *this* as the first arg
+							} else if(!delegates) {
+								try{
+									controller[method].apply(controller,[this].concat(params));
+								}catch (ex){
+									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
+								}
+							}
+						});
+					} else {
+						Octane.handle(event,elem,function(e,el){
+							var controller = _octane.controllers[ ctrlName ];
+							try{
+									controller[method].apply(controller,[el].concat(params));
+								} catch(ex){
+									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
+								}
+						});
+					}
+					elem = null;
+				});
 			});
 
 
@@ -450,6 +543,8 @@
 	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 
+			var OctaneModule  		= require('./lib/modules.js');
+
 			Octane.defineProp({
 
 				module: 		function(name,dependencies){
@@ -472,11 +567,25 @@
 	/*                          DOM                            */
 	/* ------------------------------------------------------- */
 
-		define(Octane,'DOM',{
-			value: DOM,
-			writable: false,
-			configurable: false
-		});
+			var DOM = require('./lib/dom.js');
+
+			define(Octane,'DOM',{
+				value: DOM,
+				writable: false,
+				configurable: false
+			});
+
+
+
+
+	/*-------------------------------------------------------	*/
+	/*                					ROUTER												*/
+	/*-------------------------------------------------------	*/
+
+			var Router = require('./lib/router.js');
+
+			Octane.defineProp({ Router : Router });
+
 
 
 
@@ -485,91 +594,10 @@
 	/*-------------------------------------------------------	*/
 
 
-			Octane.compiler('[o-bind]',function(elem,binding){
-
-				Octane.handle('input click select',elem,uptake);
-
-				if(_.contains( ['file','checkbox'] ,elem.type)){
-					Octane.handle('change',elem,uptake);
-				} else {
-					Octane.watch(binding,function(value){
-						elem.value = value || '';
-					});
-				}
-			});
-
-
-			Octane.compiler('[o-control]',function(elem,attrVal){
-
-				// ex. <ul  o-control="(click) [ListViewController.refresh>" o-delegator="li"..</ul>
-				// elem: <ul>
-				// attrVal: '(click)[ListViewController.refresh,li a]
-
-				var isDelegator = elem.hasAttribute('o-delegator');
-				var delegates;
-
-				if(isDelegator) delegates = elem.getAttribute('o-delegator');
-
-				var vals = attrVal.match( /(\(.*?\])/g )||[];
-				_.each(vals,function(str){
-
-					var event,handler,params,action,ctrlName,controller,method;
-
-					event 				= (str.match( /\((.*?)\)/ )||[null,'click'])[1];
-					handler				= (str.match( /\[(.*?)\]/ )||[null,''])[1];
-					params 				= handler.split(',');
-					action 				= (params.shift()||'').split('.');
-					ctrlName      = action[0];
-					method		 		= action[1];
-
-					// new zero index after shift
-
-					if(isDelegator){
-						elem.addEventListener(event,function(e){
-
-							var src,el,controller;
-
-							src = (e.srcElement||e.target);
-							controller = _octane.controllers[ ctrlName ];
-
-							// if we've declared delegates AND
-							// the event is fired from an element we're delegating events for
-							// the Controller.method is called with *src* as the first arg
-							if(delegates && _.contains(this.querySelectorAll(delegates),src)){
-								try{
-									controller[method].apply(controller,[src].concat(params));
-								} catch(ex){
-									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
-								}
-
-							// if we've declared that this element listens for events on its children
-							// but did not define a querySelector pattern
-							// the Controller.method is called with *this* as the first arg
-							} else if(!delegates) {
-								try{
-									controller[method].apply(controller,[this].concat(params));
-								}catch (ex){
-									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
-								}
-							}
-						});
-					} else {
-						Octane.handle(event,elem,function(e,el){
-							var controller = _octane.controllers[ ctrlName ];
-							try{
-									controller[method].apply(controller,[el].concat(params));
-								} catch(ex){
-									Octane.log('delegated ' +ctrlName+ '.' +method+ ' could not be applied',ex);
-								}
-						});
-					}
-					elem = null;
-				});
-			});
 
 
 
-			Octane.compiler('[o-src]',function(elem,value){
+			Compiler.assign('[o-src]',function(elem,value){
 				var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
 
 				if(!pattern.test(value)){
@@ -582,7 +610,7 @@
 			});
 
 
-			Octane.compiler('[o-bg-img]',function(elem,value){
+			Compiler.assign('[o-bg-img]',function(elem,value){
 
 				var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
 				if(!pattern.test(value)){
@@ -592,48 +620,19 @@
 			});
 
 
-			Octane.compiler('ui-message',function(elem){
-				var vm = new ViewModel(elem,'uiMessages');
-			});
-
-
-
-
-
-
-
-
 
 
 	/*-------------------------------------------------------	*/
 	/*                 			UI MESSAGES												*/
 	/*-------------------------------------------------------	*/
 
-			var UiMessages = OctaneModel.extend({
-				hint: 			function(){
+			var Hinter = require('./lib/hinter.js');
 
-											var setObject,toUnset,timeout;
+			Octane.defineProp({ uiMessages : new Hinter().become('uiMessages') });
 
-											// handle key,value and {key:value}
-											if(_.isString(arguments[0])){
-													setObject = {};
-													setObject[arguments[0]] = arguments[1];
-													timeout = arguments[2];
-											} else if(_.isObject(arguments[0])){
-													setObject = arguments[0];
-													timeout = arguments[1];
-											} else {
-													return {};
-											}
-											timeout || (timeout = 5000);
-
-											// automatically remove after 5 seconds or specified time
-											toUnset = Object.keys(setObject);
-											this._set(setObject);
-											this._unset(toUnset,timeout);
-										}
+			Compiler.assign('ui-message',function(elem){
+				var vm = new ViewModel(elem,'uiMessages');
 			});
-
 
 
 
@@ -652,8 +651,9 @@
 										},
 				set: 				function(cx){
 											var contexts = ['html4','html5','web','cordova'];
-											Octane.Utils.inArray(contexts,cx) && (_octane.environment = cx);
-										}
+											utils.inArray(contexts,cx) && (_octane.environment = cx);
+										},
+				configurable: false
 			});
 
 
@@ -695,7 +695,7 @@
 											_.each(_octane.modules,function(m,name){
 												if(!_octane.moduleConfigs[name]) _octane.moduleConfigs[name] = {};
 
-												_.assign(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
+												_.merge(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
 											});
 
 
@@ -705,15 +705,10 @@
 
 
 
-
+											var AppModel = require('./lib/app-model.js');
 
 											// parse the DOM initially to create virtual DOM model
-											Octane.defineProp({
-													// default application models
-													App         : new OctaneModel().become('App'),
-													uiMessages  : new UiMessages().become('uiMessages'),
-													uiStyles    : new OctaneModel().become('uiStyles')
-											});
+											Octane.defineProp({	App AppModel });
 
 
 
@@ -743,7 +738,7 @@
 
 
 											// compile DOM templates
-											Octane.Template.compile();
+											Template.compile();
 
 
 
@@ -807,11 +802,7 @@
 												})
 												.then(function(){
 													Mediator.forceRefresh();
-													define(OctaneBase,'appInitialized',{
-														value: true,
-														writable: false,
-														configurable: false
-													});
+													OctaneBase.defineProp('appInitialized',true);
 													Octane.fire('octane:ready');
 													/*if(document.readyState === 'complete'){
 														Octane.fire('octane:ready');
