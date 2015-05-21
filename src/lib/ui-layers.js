@@ -160,15 +160,15 @@ UiLayers.defineProp('supportsCssFilters',supportsCssFilters);
 
 // cache screenshot as soon as routing completes
 if(supportsCssFilter){
-		UiLayers.activateLayerEffect = function(){
-			var method = _octane.animationMethod || 'css';
+		UiLayers.addLayerEffect = function(){
+			var method = _octane.animateBy || 'css';
 			return new Promise(this.activateBackground[method])
 				.bind(this)
 				.then( this.activateModalContainer[method] )
 				.then( this.hideAppContainer[method] );
 		};
 		UiLayers.removeLayerEffect = function(){
-			var method = _octane.animationMethod || 'css';
+			var method = _octane.animateBy || 'css';
 			return  new Promise(this.deactivateModalContainer[method])
 				.bind(this)
 				.then( this.revealAppContainer[method] )
@@ -179,11 +179,11 @@ if(supportsCssFilter){
 		});
 } else {
 		UiLayers.activateLayerEffect = function(){
-			var method = _octane.animationMethod || 'css';
+			var method = _octane.animateBy || 'css';
 			return new Promise(this.activateModalContainer[method]);
 		};
 		UiLayers.removeLayerEffect = function(){
-			var method = _octane.animationMethod || 'css';
+			var method = _octane.animateBy || 'css';
 			return  new Promise(this.deactivateModalContainer[method]);
 		};
 }

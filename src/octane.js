@@ -55,7 +55,7 @@
 	/*								PUBLIC APPLICATION OBJECT								 */
 	/* ------------------------------------------------------- */
 
-			var OctaneBase = require('./lib/factory.js');
+			var OctaneBase = require('./lib/base.js');
 
 			var Octane = new OctaneBase();
 
@@ -577,6 +577,16 @@
 
 
 
+	/* ------------------------------------------------------- */
+	/*                          VIEWS                          */
+	/* ------------------------------------------------------- */
+
+			var View = require('./lib/view.js');
+
+			Octane.defineProp('View',View);
+
+
+
 
 	/*-------------------------------------------------------	*/
 	/*                					ROUTER												*/
@@ -586,16 +596,25 @@
 
 			Octane.defineProp({ Router : Router });
 
+			//add Router methods to Application Object
+			Octane.extend(Router);
+
+
+
+	/* ------------------------------------------------------- */
+	/*                          MODALS                         */
+	/* ------------------------------------------------------- */
+
+			var Modal = require('./lib/modal.js');
+
+			Octane.defineProp('Modal',Modal);
+
 
 
 
 	/*-------------------------------------------------------	*/
 	/*                 NATIVE APP ORDINANCES									*/
 	/*-------------------------------------------------------	*/
-
-
-
-
 
 			Compiler.assign('[o-src]',function(elem,value){
 				var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
@@ -637,9 +656,9 @@
 
 
 
-/* -------------------------------------------------------*/
-/*                        INIT                            */
-/* -------------------------------------------------------*/
+	/* -------------------------------------------------------*/
+	/*                        INIT                            */
+	/* -------------------------------------------------------*/
 
 			// getter and setter for context
 			// used for feature detection
@@ -708,7 +727,7 @@
 											var AppModel = require('./lib/app-model.js');
 
 											// parse the DOM initially to create virtual DOM model
-											Octane.defineProp({	App AppModel });
+											Octane.defineProp('App',AppModel);
 
 
 

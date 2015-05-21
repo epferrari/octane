@@ -2,7 +2,7 @@ var _ 					= require('lodash');
 var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
 var uiPack 			= require('velocity-ui-pack');
-var Factory  		= require('./factory.js');
+var Factory  		= require('./base.js');
 
 
 var Frame = Factory.extend({

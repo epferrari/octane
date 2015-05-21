@@ -1,6 +1,6 @@
 var _ 					= require('lodash');
 var Promise 		= require('bluebird');
-var OctaneBase 	= require('./factory.js');
+var OctaneBase 	= require('./base.js');
 var _octane 		= require('./_octane.js');
 
 var Dictionary = OctaneBase.extend({
