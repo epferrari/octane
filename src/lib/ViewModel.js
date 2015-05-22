@@ -1,11 +1,11 @@
 var _ 						= require('lodash');
-var OctaneBase 		= require('./base.js');
+var OctaneBase 		= require('./OctaneBase.js');
 var _octane 			= require('./_octane.js');
 var utils 				= require('./utils.js');
-var Events 				= require('./events.js');
-var OctaneModel 	= require('./model.js');
-var Template 			= require('./templates.js');
-var Compiler 			= require('./compiler.js');
+var Events 				= require('./Events.js');
+var OctaneModel 	= require('./OctaneModel.js');
+var Template 			= require('./Template.js');
+var Compiler 			= require('./Compiler.js');
 
 
 

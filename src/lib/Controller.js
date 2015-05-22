@@ -1,5 +1,5 @@
 var _ 					= require('lodash');
-var OctaneBase 	= require('./base.js');
+var OctaneBase 	= require('./OctaneBase.js');
 var _octane 		= require('./_octane.js');
 var extend 			= require('./extend.js');
 

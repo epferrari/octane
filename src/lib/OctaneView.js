@@ -2,10 +2,10 @@ var _ 					= require('lodash');
 var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
 var uiPack 			= require('velocity-ui-pack');
-var Factory 		= require('./base.js');
-var DOM 				= require('./dom.js');
-var Controller  = require('./controller.js');
-var Frame 			= require('./frame.js');
+var Factory 		= require('./OctaneBase.js');
+var DOM 				= require('./DOM.js');
+var Controller  = require('./Controller.js');
+var Frame 			= require('./ViewFrame.js');
 var _octane			= require('./_octane.js');
 
 var OctaneView = Frame.extend({
@@ -50,12 +50,7 @@ var OctaneView = Frame.extend({
 									this.elem.classList.remove('view-active');
 									this.elem.classList.remove('view-queued');
 									return this.frameDidExit().delay(805);
-								},
-
-	destroy: 			function(){
-									this._destroy();
-									_octane.views[this.name] = null;
-								},
+								}
 },{
 	// Static Methods
 
@@ -64,8 +59,14 @@ var OctaneView = Frame.extend({
 								},
 
 	destroy: 			function(id){
-									var view = this.get(id);
-									view && view.destroy();
+									var toDestroy = _octane.views[id];
+									if(toDestroy){
+										toDestroy._exit();
+										_.each(toDestroy,function(prop){
+											prop = null;
+										});
+										_octane.views[id] = null;
+									}
 								},
 
 	get: 					function(id){

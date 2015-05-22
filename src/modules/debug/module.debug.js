@@ -1,4 +1,4 @@
-
+		var octane = require('../octane.js');
 		octane.module('Debug').extend({
 
 				initialize : function(cfg){

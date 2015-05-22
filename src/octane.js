@@ -35,16 +35,18 @@
 			var define 						= Object.defineProperty;
 			var _ 								= require('lodash');
 			var Promise 					= require('bluebird');
-			var _octane 					= require('./_octane.js');
+			var FastClick 				= require('fastclick');
+			var classlist 				= require('classlist');
+			var _octane 					= require('./lib/_octane.js');
 			var extend 						= require('./lib/extend.js');
 			var utils 						= require('./lib/utils.js');
-			var Events 						= require('./lib/events.js');
+			var Events 						= require('./lib/Events.js');
 
 
 
-			var Router 						= require('./lib/router.js');
-			var View							= require('./lib/view.js');
-			var Modal 						= require('./lib/modal.js');
+			var Router 						= require('./lib/Router.js');
+			var View							= require('./lib/OctaneView.js');
+			var Modal 						= require('./lib/OctaneModal.js');
 
 
 
@@ -55,7 +57,7 @@
 	/*								PUBLIC APPLICATION OBJECT								 */
 	/* ------------------------------------------------------- */
 
-			var OctaneBase = require('./lib/base.js');
+			var OctaneBase = require('./lib/OctaneBase.js');
 
 			var Octane = new OctaneBase();
 
@@ -92,7 +94,7 @@
 	/*       			COMPILER and ORDINANCE ASSIGNMENT         	 */
 	/* ------------------------------------------------------- */
 
-			var Compiler = require('./lib/compiler.js');
+			var Compiler = require('./lib/Compiler.js');
 
 			Octane.defineProp({
 
@@ -145,7 +147,7 @@
 	/*                       DICTIONARIES                      */
 	/* ------------------------------------------------------- */
 
-			var Dictionary = require('./lib/dictionaries.js');
+			var Dictionary = require('./lib/Dictionary.js');
 
 			Octane.defineProp({ Dictionary : Dictionary	});
 
@@ -156,7 +158,7 @@
 	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
 
-			var Template = require('./lib/templates.js');
+			var Template = require('./lib/Template.js');
 
 			Octane.defineProp({ Template: Template });
 
@@ -168,7 +170,7 @@
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 
-			var OctaneModel 			= require('./lib/model.js');
+			var OctaneModel 			= require('./lib/OctaneModel.js');
 
 			Octane.defineProp({
 
@@ -294,7 +296,7 @@
 	/*                      VIEW MODEL                         */
 	/* ------------------------------------------------------- */
 
-			var ViewModel 				= require('./lib/view-model.js');
+			var ViewModel 				= require('./lib/ViewModel.js');
 
 			var uptake = function uptake(e,el){
 
@@ -341,7 +343,7 @@
 	/*                        MEDIATOR                         */
 	/* ------------------------------------------------------- */
 
-			var Mediator = require('./lib/mediator.js');
+			var Mediator = require('./lib/Mediator.js');
 
 			Octane.defineProp({
 				Mediator: 	Mediator,
@@ -368,7 +370,7 @@
 	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 
-			var OctaneController = require('./controller.js');
+			var OctaneController = require('./lib/Controller.js');
 
 			define(Octane,'controller',{
 				value: function (name,config){
@@ -466,12 +468,12 @@
 	/*                       FILTERS                           */
 	/* ------------------------------------------------------- */
 
+			var filter = require('./lib/filters.js');
 			// filterFunction as -> function([params])
 			define(Octane,'filter',{
 				value: function(name,filterFunction){
-									_octane.filters[name] = filterFunction;
-
-									return Octane;
+								filter.apply(Object.create(null),arguments);
+								return Octane;
 							},
 				writable: false,
 				configurable: false
@@ -526,14 +528,14 @@
 			// binding is the incoming data model.key to parse for, func is the function to apply
 			// a hook is applied at set time to a binding
 
-			Octane.defineProp({
+			define(Octane,'hook',{
 
-				hook: 			function hook(binding,fn){
-
-											(_octane.hooks[binding]||(_octane.hooks[binding]=[])).push(fn);
-
-											return this; // chainable
-										}
+				value: 	function(binding,fn){
+									(_octane.hooks[binding]||(_octane.hooks[binding]=[])).push(fn);
+									return this; // chainable
+								},
+				writable: false,
+				configurable: false
 			});
 
 
@@ -543,7 +545,7 @@
 	/*                         MODULES                         */
 	/* ------------------------------------------------------- */
 
-			var OctaneModule  		= require('./lib/modules.js');
+			var OctaneModule  		= require('./lib/OctaneModule.js');
 
 			Octane.defineProp({
 
@@ -567,7 +569,7 @@
 	/*                          DOM                            */
 	/* ------------------------------------------------------- */
 
-			var DOM = require('./lib/dom.js');
+			var DOM = require('./lib/DOM.js');
 
 			define(Octane,'DOM',{
 				value: DOM,
@@ -581,7 +583,7 @@
 	/*                          VIEWS                          */
 	/* ------------------------------------------------------- */
 
-			var View = require('./lib/view.js');
+			var View = require('./lib/OctaneView.js');
 
 			Octane.defineProp('View',View);
 
@@ -592,7 +594,7 @@
 	/*                					ROUTER												*/
 	/*-------------------------------------------------------	*/
 
-			var Router = require('./lib/router.js');
+			var Router = require('./lib/Router.js');
 
 			Octane.defineProp({ Router : Router });
 
@@ -605,7 +607,7 @@
 	/*                          MODALS                         */
 	/* ------------------------------------------------------- */
 
-			var Modal = require('./lib/modal.js');
+			var Modal = require('./lib/OctaneModal.js');
 
 			Octane.defineProp('Modal',Modal);
 
@@ -645,7 +647,7 @@
 	/*                 			UI MESSAGES												*/
 	/*-------------------------------------------------------	*/
 
-			var Hinter = require('./lib/hinter.js');
+			var Hinter = require('./lib/Hinter.js');
 
 			Octane.defineProp({ uiMessages : new Hinter().become('uiMessages') });
 
@@ -670,7 +672,7 @@
 										},
 				set: 				function(cx){
 											var contexts = ['html4','html5','web','cordova'];
-											utils.inArray(contexts,cx) && (_octane.environment = cx);
+											_.inArray(contexts,cx) && (_octane.environment = cx);
 										},
 				configurable: false
 			});
@@ -692,7 +694,7 @@
 											// attach fastclick.js for mobile touch
 											if ('addEventListener' in document) {
 													document.addEventListener('DOMContentLoaded', function() {
-															FastClick.attach(document.body);
+														FastClick.attach(document.body);
 													}, false);
 											}
 

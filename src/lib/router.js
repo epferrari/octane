@@ -3,12 +3,13 @@
 	var modernizr 	= require('modernizr');
 	var Velocity 		= require('velocity-animate');
 	var uiPack 			= require('velocity-ui-pack');
-	var OctaneBase 	= require('./base.js');
-	var DOM 				= require('./dom.js');
-	var Controller  = require('./controller.js');
-	var View 				= require('./view.js');
-	var Translator  = require('./translator.js');
-	var Mediator    = require('./mediator.js');
+	var History 		= require('history.js');
+	var OctaneBase 	= require('./OctaneBase.js');
+	var DOM 				= require('./DOM.js');
+	var Controller  = require('./Controller.js');
+	var View 				= require('./OctaneView.js');
+	var Translator  = require('./Translator.js');
+	var Mediator    = require('./Mediator.js');
 	var _octane			= require('./_octane.js');
 	var App			    = require('./app-model.js');
 	var utils 			= require('./utils.js');
@@ -272,7 +273,7 @@
 	Router
 	.handle(stateChangeEvent,function(e){
 		this.route(this.parseUrl());
-	});
+	})
 	// ensure onscreen view keeps proper dimensions to proper dimensions
 	.handle('translated resize orientationchange',function(){
 		currentView && currentView.setCanvasHeight();

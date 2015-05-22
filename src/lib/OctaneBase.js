@@ -2,9 +2,9 @@
 var define 				= Object.defineProperty;
 var _ 						= require('lodash');
 var Promise 			= require('bluebird');
-var utils 				= require('./lib/utils.js');
-var log 					= require('./lib/logger.js').log;
-var Events 				= require('./lib/events.js');
+var utils 				= require('./utils.js');
+var log 					= require('./logger.js').log;
+var Events 				= require('./Events.js');
 
 
 

@@ -1,4 +1,4 @@
-var OctaneModel = require('./model.js');
+var OctaneModel = require('./OctaneModel.js');
 
 var AppModel = new OctaneModel().become('App');
 

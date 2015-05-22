@@ -1,6 +1,6 @@
 var _ 					= require('lodash');
 var Promise 		= require('bluebird');
-var OctaneBase 	= require('./base.js');
+var OctaneBase 	= require('./OctaneBase.js');
 var _octane 		= require('./_octane.js');
 
 var Dictionary = OctaneBase.extend({
@@ -11,7 +11,7 @@ var Dictionary = OctaneBase.extend({
 				this.fire('created:dictionary:'+name);
 				return this;
 			} else {
-				this.log('could not create dictionary '+name+'.')
+				this.log('could not create dictionary '+name+'.');
 			}
 		}
 	},{
@@ -20,7 +20,7 @@ var Dictionary = OctaneBase.extend({
 				var dict = _octane.dicts[name];
 
 				if(dict){
-					resolve(dict)
+					resolve(dict);
 				} else {
 					this.handle('created:dictionary:'+name, function(e){
 						resolve(_octane.dicts[name]);
@@ -28,7 +28,6 @@ var Dictionary = OctaneBase.extend({
 				}
 			});
 		}
-	}
 });
 
 module.exports = Dictionary;

@@ -1,6 +1,6 @@
 var _ 					= require("lodash");
 var utils   		= require("./utils.js");
-var Quarterback = require('./quarterback.js');
+var Quarterback = require('./Quarterback.js');
 
 
 

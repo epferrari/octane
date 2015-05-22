@@ -1,7 +1,7 @@
 var _ = require('lodash');
 var _octane 		= require('./_octane.js');
-var OctaneBase	= require('./base.js');
-var utils 			= require('./utils/js');
+var OctaneBase	= require('./OctaneBase.js');
+var utils 			= require('./utils.js');
 var extend 			= require('./extend.js');
 
 

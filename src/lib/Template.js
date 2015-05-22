@@ -1,8 +1,8 @@
 var _ 					= require('lodash');
 var filters 		= require('./_octane.js').filters;
 var utils 			= require('./utils.js');
-var Compiler 		= require('./compiler.js');
-var OctaneBase 	= require('./base.js');
+var Compiler 		= require('./Compiler.js');
+var OctaneBase 	= require('./OctaneBase.js');
 
 var log = OctaneBase.prototype.log;
 var templates = {};

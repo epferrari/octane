@@ -1,4 +1,4 @@
-var OctaneBase = require('./base.js');
+var OctaneBase = require('./OctaneBase.js');
 var getByTag = document.getElementsByTagName.bind(document);
 var createElement = document.createElement.bind(document);
 

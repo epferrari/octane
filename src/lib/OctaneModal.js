@@ -3,12 +3,12 @@ var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
 var uiPack 			= require('velocity-ui-pack');
 var _octane 		= require('./_octane.js');
-var Controller 	= require('./controller.js');
-var Frame 			= require('./frame.js');
-var DOM 				= require('./dom.js');
-var Router 			= require('./router.js');
+var Controller 	= require('./Controller.js');
+var Frame 			= require('./ViewFrame.js');
+var DOM 				= require('./DOM.js');
+var Router 			= require('./Router.js');
 var UiLayers 		= require('./ui-layers.js');
-var Compiler 		= require('./compiler.js');
+var Compiler 		= require('./Compiler.js');
 
 
 var bg              = DOM.modalContainer;
@@ -93,12 +93,6 @@ var OctaneModal     = Frame.extend({
 									});
 								},
 
-	destroy:      function(){
-									this._destroy();
-									this.elem = null;
-									_octane.modals[this.id] = null;
-								},
-
 	_load:        function (){
 
 									this.adjustSize();
@@ -138,7 +132,14 @@ var OctaneModal     = Frame.extend({
 							},
 
 	destroy:    function(id){
-								_octane.modals[id] && _octane.modals[id].destroy();
+								var toDestroy = _octane.modals[id];
+								if(toDestroy){
+									toDestroy.dismiss();
+									_.each(toDestroy,function(prop){
+										prop = null;
+									});
+									_octane.modals[id] = null;
+								}
 							},
 
 	get:        function(id){
@@ -154,23 +155,26 @@ var OctaneModal     = Frame.extend({
 							}
 });
 
-OctaneModal.defineGetter.apply(OctaneModal.prototype,[
-	'isCurrent',
-	function(){
+Object.defineProperty(OctaneModal.prototype,'isCurrent',{
+	get: function(){
 		return (this === currentModal);
-}]);
+	},
+	configurable: false
+});
 
-OctaneModal.defineGetter.apply(OctaneModal,[
-	'current',
-	function(){
+Object.defineProperty(OctaneModal,'current',{
+	get: function(){
 		return currentModal;
-}]);
+	},
+	configurable: false
+});
 
-OctaneModal.defineGetter.apply(OctaneModal,[
-	'isLocked',
-	function(){
+Object.defineProperty(OctaneModal,'isLocked',{
+	get: function(){
 		return block;
-}]);
+	},
+	configurable: false
+});
 
 
 

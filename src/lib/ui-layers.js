@@ -1,14 +1,10 @@
-var _ 					= require('lodash');
-var Promise 		= require('bluebird');
-var Velocity 		= require('velocity-animate');
-var html2canvas = require('html2canvas');
-var _octane 		= require('./_octane.js');
-var Controller 	= require('./controller.js');
-var DOM 				= require('./dom.js');
-
-		octane.module('UiOverlay').extend({
-
-				initialize :function(cfg){
+	var _ 					= require('lodash');
+	var Promise 		= require('bluebird');
+	var Velocity 		= require('velocity-animate');
+	var html2canvas = require('html2canvas');
+	var _octane 		= require('./_octane.js');
+	var Controller 	= require('./Controller.js');
+	var DOM 				= require('./DOM.js');
 
 		var
 		bgContainer = DOM.bgContainer,
@@ -112,7 +108,7 @@ UiLayers = new Controller('UiLayerController',{
 							return resolve();
 						});
 			}
-		}
+		},
 		// swap out the app container with a static image of itself
 		activateBackground: {
 			css: function(resolve,reject){
@@ -153,7 +149,7 @@ UiLayers = new Controller('UiLayerController',{
 					resolve(canvas);
 				}
 			});
-		},
+		}
 });
 
 UiLayers.defineProp('supportsCssFilters',supportsCssFilters);
@@ -173,7 +169,7 @@ if(supportsCssFilter){
 				.bind(this)
 				.then( this.revealAppContainer[method] )
 				.then( this.deactivateBackground[method] );
-		}
+		};
 		UiLayers.handle('routing:complete',function(){
 			if(_octane.useBackgroundFilterEffects) this.getBackgroundImage();
 		});

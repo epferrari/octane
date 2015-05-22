@@ -1,5 +1,5 @@
 var _ = require('lodash');
-var OctaneModel = require('./model.js');
+var OctaneModel = require('./OctaneModel.js');
 
 var Hinter = OctaneModel.extend({
 	hint: 			function(){

@@ -1,10 +1,10 @@
 var _ 						= require('lodash');
-var OctaneBase 		= require('./base.js');
+var OctaneBase 		= require('./OctaneBase.js');
 var _octane 			= require('./_octane.js');
 var utils 				= require('./utils.js');
-var Events 				= require('./events.js');
-var OctaneModel 	= require('./model.js');
-var ViewModel 		= require('./view-model.js');
+var Events 				= require('./Events.js');
+var OctaneModel 	= require('./OctaneModel.js');
+var ViewModel 		= require('./ViewModel.js');
 
 
 var Mediator = new OctaneBase();

@@ -3,11 +3,11 @@ var selectAll 		= document.querySelectorAll.bind(document);
 var define 				= Object.defineProperty;
 var _ 						= require('lodash');
 var Promise 			= require('bluebird');
-var OctaneBase 		= require('./lib/base.js');
+var OctaneBase 		= require('./OctaneBase.js');
 var _octane 			= require('./_octane.js');
-var utils 				= require('./lib/utils.js');
-var Mediator 			= require('./lib/mediator.js');
-var OctaneController = require('./controller.js');
+var utils 				= require('./utils.js');
+var Mediator 			= require('./Mediator.js');
+var OctaneController = require('./Controller.js');
 
 
 
