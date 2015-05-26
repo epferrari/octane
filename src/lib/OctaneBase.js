@@ -3,8 +3,10 @@ var define 				= Object.defineProperty;
 var _ 						= require('lodash');
 var Promise 			= require('bluebird');
 var utils 				= require('./utils.js');
-var log 					= require('./logger.js').log;
+var _octane 			= require('./_octane.js');
+var logger 				= require('./logger.js').log;
 var Events 				= require('./Events.js');
+var extend 			  = require('./extend.js');
 
 
 
@@ -30,8 +32,6 @@ function OctaneBase(){
 	this.initialize.apply(this,arguments);
 }
 
-OctaneBase.appInitialized = false;
-OctaneBase.debugMode = true;
 
 // class extension method, from required
 define(OctaneBase,'extend',{
@@ -124,37 +124,37 @@ define(OctaneBase.prototype,'defineProp',{
 });
 
 define(OctaneBase.prototype,'defineGetter',{
-		value : 	function(name,getter){
-								define(this,name,{
-									get: getter,
-									configurable : false
-								})
-							},
-		writable: false,
-		configurable: false
+	value : 	function(name,getter){
+							define(this,name,{
+								get: getter,
+								configurable : false
+							})
+						},
+	writable: false,
+	configurable: false
 });
 
 define(OctaneBase.prototype,'defineSetter',{
-		value: 		function(name,setter){
-								define(this,name,{
-									set: setter,
-									configurable : false
-								})
-							},
-		writable: false,
-		configurable: false
+	value: 		function(name,setter){
+							define(this,name,{
+								set: setter,
+								configurable : false
+							})
+						},
+	writable: false,
+	configurable: false
 });
 
 define(OctaneBase.prototype,'accessors',{
-		value: 		function(name,pair){
-								define(this,name,{
-									get : pair.get,
-									set : pair.set,
-									configurable: false
-								})
-							},
-		writable: false,
-		configurable: false
+	value: 		function(name,pair){
+							define(this,name,{
+								get : pair.get,
+								set : pair.set,
+								configurable: false
+							})
+						},
+	writable: false,
+	configurable: false
 });
 
 
@@ -163,32 +163,40 @@ define(OctaneBase.prototype,'accessors',{
 // pass an object or object will be set to `this`
 // returns the object's unique id if already assigned
 define(OctaneBase.prototype,'guid',{
-		value: 		function(obj){
+	value: 		function(obj){
 
-								if(obj && !_.isObject(obj)) return;
-								if(!obj) obj = this;
-								if(obj.octane_id) return obj.octane_id;
+							if(obj && !_.isObject(obj)) return;
+							if(!obj) obj = this;
+							if(obj.octane_id) return obj.octane_id;
 
-								var random4 = function() {
-									return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
-								};
+							var random4 = function() {
+								return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
+							};
 
-								Object.defineProperty(obj,'octane_id',{
-									value : random4() +'-'+ random4() +'-'+ random4() + random4(),
-									writable : false,
-									configurable : false,
-									enumerable : false
-								});
-								if(obj.setAttribute) obj.setAttribute('octane-id',obj.octane_id);
-								return obj.octane_id;
-							},
-		writable: false,
-		configurable: false
+							Object.defineProperty(obj,'octane_id',{
+								value : random4() +'-'+ random4() +'-'+ random4() + random4(),
+								writable : false,
+								configurable : false,
+								enumerable : false
+							});
+							if(obj.setAttribute) obj.setAttribute('octane-id',obj.octane_id);
+							return obj.octane_id;
+						},
+	writable: false,
+	configurable: false
 });
 
 define(OctaneBase.prototype,'log',{
 	value: function(message,error){
-		if(OctaneBase.debugMode) log.apply(this,[message,error]);
+		logger.apply(this,[message,error]);
+	},
+	writable: false,
+	configurable: false
+});
+
+define(OctaneBase,'log',{
+	value: function(message,error){
+		logger.apply(this,[message,error]);
 	},
 	writable: false,
 	configurable: false

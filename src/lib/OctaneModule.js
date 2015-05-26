@@ -1,13 +1,13 @@
-var select 				= document.querySelector.bind(document);
-var selectAll 		= document.querySelectorAll.bind(document);
-var define 				= Object.defineProperty;
-var _ 						= require('lodash');
-var Promise 			= require('bluebird');
-var OctaneBase 		= require('./OctaneBase.js');
-var _octane 			= require('./_octane.js');
-var utils 				= require('./utils.js');
-var Mediator 			= require('./Mediator.js');
-var OctaneController = require('./Controller.js');
+var select 						= document.querySelector.bind(document);
+var selectAll 				= document.querySelectorAll.bind(document);
+var define 						= Object.defineProperty;
+var _ 								= require('lodash');
+var Promise 					= require('bluebird');
+var OctaneBase 				= require('./OctaneBase.js');
+var _octane 					= require('./_octane.js');
+var utils 						= require('./utils.js');
+var ViewModel 				= require('./ViewModel.js');
+var OctaneController 	= require('./Controller.js');
 
 
 
@@ -125,8 +125,10 @@ OctaneModule.prototype.defineProp({
 											this.initialize(config);
 											this.defineProp('initialized',true);
 
-											Mediator.get('App').set({
-												"loadingProgress" : (Math.ceil(100 / Object.keys(_octane.modules).length))
+											// update progress bar and message as modules load
+											ViewModel.get('App').set({
+												"loadingProgress": (Math.ceil(100 / Object.keys(_octane.modules).length)),
+												"loadingMessage":  "Loading module "+ utils.titleize(name)
 											});
 
 											// hook-in for updating a loading screen

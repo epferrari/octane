@@ -1,0 +1,17 @@
+{
+	"env": {
+		"browser": true,
+		"node": true,
+		"mocha": true
+	},
+	"rules": {
+		"quotes": 0,
+		"no-underscore-dangle": 0,
+		"key-spacing": 0,
+		"comma-spacing": 0,
+		"curly": 1,
+		"no-unused-expressions": 1,
+		"space-infix-ops": 1,
+		"new-cap": 0
+	}
+}

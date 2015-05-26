@@ -1,20 +1,18 @@
 
-$transition : 0.465,0.183,0.153,0.946;
+$transition: cubic-bezier(0.465,0.183,0.153,0.946);
+$loaderImage:  url(../img/loader-light.gif);
 
 @import '_mixins';
-@import '../../modules/views/scss/_views';
-@import '../../modules/translator/scss/_translator';
-@import '../../modules/modals/scss/_modal';
-@import '../../modules/loading/scss/_loading';
-@import '../../modules/debug/scss/_debug';
+@import '_views';
+@import '_modal';
+@import '_loading';
+@import '_debug';
 
 
-html,body
-{
-		height:100%;
+html,body{
+	height:100%;
 }
-body.octane
-{
+body.octane{
 		overflow-x:hidden;
 		padding-left:0px !important;
 		padding-right:0px !important;
@@ -22,12 +20,15 @@ body.octane
 // override bootstrap
 header.row,
 footer.row,
-div.row
-{
+div.row {
 	margin-left:0px !important;
 	margin-right:0px !important;
 }
-o-background{
+
+
+/* App Layers */
+
+o-background {
 	z-index:-1;
 	position:fixed;
 	height:100%;
@@ -36,13 +37,11 @@ o-background{
 	left:0;
 	opacity:0;
 	will-change: opacity;
-	transition: opacity 0.3s cubic-bezier($transition);
-	&.active
-	{
+	transition: opacity 0.3s $transition;
+	&.active {
 		opacity:1;
-		transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
-		canvas
-		{
+		transition: opacity 0.3s $transition;
+		canvas {
 			width:101%;
 			margin-left:-0.5%;
 			margin-top:-0.5%;
@@ -51,14 +50,8 @@ o-background{
 		}
 	}
 }
-// hide pre-compiled {{templating}}
-[o-model]
-{
-	visibility:hidden;
-	&.compiled { visibility:visible }
-}
-o-app-container
-{
+
+o-app-container {
 	z-index: 1;
 	float:left;
 	height:auto;
@@ -68,49 +61,24 @@ o-app-container
 	background-color:white;
 	opacity:1;
 	transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
-	&.hidden
-	{
+	&.hidden {
 		opacity:0;
 		transition: opacity 0.3s cubic-bezier(0.465,0.183,0.153,0.946);
 	}
 }
-.o-btn
-{
+
+.o-btn {
 	cursor:pointer;
 	min-height:30px;
 	min-width:30px;
 }
-.o-back
-{
-	@extend .o-btn;
-}
-[o-route]
-{
-	cursor:pointer;
-}
-.hidden
-{
-	visibility:hidden !important;
-}
-.display-none
-{
-	display:none;
-}
-.loading
-{
-	&:after
-	{
-		content:"";
-		position:absolute;
-		top:0;
-		bottom:0;
-		left:0;
-		right:0;
-		width:100%;
-		height:100%;
-		background-image:url(../img/loader-light.gif);
-		background-size:100px auto;
-		background-position:center;
-		background-repeat:no-repeat;
-	}
+
+.o-back { @extend .o-btn; }
+[o-route] { cursor:pointer; }
+.hidden { visibility:hidden !important;}
+.display-none { display:none; }
+// hide pre-compiled {{templating}}
+[o-model]{
+	visibility:hidden;
+	&.compiled { visibility:visible }
 }

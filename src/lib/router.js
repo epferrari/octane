@@ -1,16 +1,10 @@
+
+	require('modernizr');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
-	var modernizr 	= require('modernizr');
-	var Velocity 		= require('velocity-animate');
-	var uiPack 			= require('velocity-ui-pack');
 	var History 		= require('history.js');
 	var OctaneBase 	= require('./OctaneBase.js');
-	var DOM 				= require('./DOM.js');
-	var Controller  = require('./Controller.js');
 	var View 				= require('./OctaneView.js');
-	var Translator  = require('./Translator.js');
-	var Mediator    = require('./Mediator.js');
-	var _octane			= require('./_octane.js');
 	var App			    = require('./app-model.js');
 	var utils 			= require('./utils.js');
 
@@ -30,8 +24,10 @@
 	})();
 
 	var stateChangeEvent = historyEnabled ? 'popstate' : 'hashchange';
-
 	var Router = new OctaneBase();
+
+
+
 
 	// helper to maintain appstate, uses History.pushState
 	Router.defineProp('pushState',function(params){
@@ -41,7 +37,7 @@
 		_.isObject(params) || (params = {});
 		// update the language in the url
 		parsed 		= utils.urlObject().searchObject;
-		language 	= Translator.getLang();
+		//language 	= Translator.getLang();
 		title 		= utils.titleize(params.view) || currentView.title;
 		appName 	= App.get('name');
 
@@ -65,18 +61,17 @@
 	Router.defineProp('parseUrl',function(){
 
 		if(historyEnabled){
-			return utils.urlObject().searchObject.view || false;
+			return utils.urlObject().searchObject;
 		} else {
-			var hash,param,parsed = {};
+			var hash = window.location.hash
+			.replace('#?','')
+			.split('&');
 
-			hash = window.location.hash
-			hash = hash.replace('#?','');
-			hash = hash.split('&');
-			for(var i=0,n=hash.length;i<n;i++){
-				param = hash[i].split('=');
-				parsed[param[0]] = param[1];
-			}
-			return parsed.view || false;
+			return _.reduce(hash,function(result,n){
+				var param = n.split('=');
+				result[param[0]] = param[1];
+				return result;
+			},{});
 		}
 	});
 
@@ -271,8 +266,8 @@
 
 	// change the view with browser's forward/back buttons
 	Router
-	.handle(stateChangeEvent,function(e){
-		this.route(this.parseUrl());
+	.handle(stateChangeEvent,function(){
+		this.route(this.parseUrl().view);
 	})
 	// ensure onscreen view keeps proper dimensions to proper dimensions
 	.handle('translated resize orientationchange',function(){
@@ -281,14 +276,14 @@
 
 
 	Compiler
-	.assign('[o-route]',function(el){
+	.assign('[o-route]',function(el,routeName){
 
 		// catch a click event from a child node
 		el.addEventListener('click',function(e){
 				//e.stopPropagation();
 				//e.stopImmediatePropagation();
 				//el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
-				Router.route(this.getAttribute('o-route'));
+				Router.route(routeName);
 		},false);
 
 		// set up the octane event mediator

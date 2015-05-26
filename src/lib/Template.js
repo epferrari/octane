@@ -1,11 +1,10 @@
 var _ 					= require('lodash');
-var filters 		= require('./_octane.js').filters;
+var appFilters 	= require('./_octane.js').filters;
 var utils 			= require('./utils.js');
+var _octane			= require('./_octane.js');
 var Compiler 		= require('./Compiler.js');
 var OctaneBase 	= require('./OctaneBase.js');
 
-var log = OctaneBase.prototype.log;
-var templates = {};
 var Template = OctaneBase.extend({
 
 	/* Proto Methods */
@@ -35,7 +34,7 @@ var Template = OctaneBase.extend({
 							},
 	save: 			function(){
 								if(!_octane.templates[this.name]){
-									templates[this.name] = this;
+									_octane.templates[this.name] = this;
 								}else{
 									this.log('Could not create template '+this.name+'. Already exists');
 								}
@@ -47,9 +46,9 @@ var Template = OctaneBase.extend({
 	get: 				function(name){
 
 								if(_octane.templates[name]){
-									return templates[name];
+									return _octane.templates[name];
 								} else {
-									log.call(this,'Template ' +name+ ' does not exist');
+									this.log('Template '+name+' does not exist');
 								}
 							},
 
@@ -132,15 +131,15 @@ var Template = OctaneBase.extend({
 								var n = nested.length;
 
 								var value = nested.reduce(function (prev,curr,index){
-										if(index == (n-1) && _.isObject(prev)){ 								// last iteration
+										if(index === (n-1) && _.isObject(prev)){ 							// last iteration
 											return prev[curr]; 																	// return value
 										}
 										if(_.isObject(prev)){
-												return prev[curr]; 																	// go one level deeper
+											return prev[curr]; 																	// go one level deeper
 										} else {
-												return null; 																				// no further nesting, value defined in key does not exist
+											return null; 																				// no further nesting, value defined in key does not exist
 										}
-								},data) ||''; 																							// start with data object passed to template
+								},data) ||''; 																						// start with data object passed to template
 
 								if(!value && defaultValue.length >0){
 									value = defaultValue;
@@ -150,15 +149,15 @@ var Template = OctaneBase.extend({
 								if(filter.length > 0){
 									var paramsArray = filterParams.split(',');
 									try{
-										if(filters[filter]){
-												value = filters[filter].apply({input:value,model:data},paramsArray);
+										if(appFilters[filter]){
+											value = appFilters[filter].apply({input:value,model:data},paramsArray);
 										} else if(_.isFunction(''[filter])){
-												value = ''[filter].apply(value,paramsArray);
-										} else if(_.isFunction(__[filter])){
-												value = utils[filter](value,params);
+											value = ''[filter].apply(value,paramsArray);
+										} else if(_.isFunction(utils[filter])){
+											value = utils[filter](value,params);
 										}
 									} catch (err){
-										log.call(this,'Could not filter data '+value,err);
+										this.log('Could not filter data '+value,err);
 									}
 								}
 
@@ -209,7 +208,7 @@ var Template = OctaneBase.extend({
 									dest.innerHTML = template.content;
 								}
 								template.content = '';
-								if(OctaneBase.appInitialized) Compiler.run(dest);
+								if(_octane.initialized) Compiler.complileAll(dest);
 								return returnNode;
 							},
 

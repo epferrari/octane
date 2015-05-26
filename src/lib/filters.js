@@ -1,10 +1,10 @@
 
 	var _octane = require('./_octane.js');
-	var utils = require('./utils.js');
+	var utils 	= require('./utils.js');
 
 	// filterFunction as -> function([params])
 	var filter = function(name,filterFunction){
-			_octane.filters[name] = filterFunction;
+		_octane.filters[name] = filterFunction;
 	};
 
 	filter('round',function(decimalPlaces){

@@ -1,7 +1,7 @@
 
-var Promise 	= require("bluebird");
-var _ 				= require("lodash");
-var OctaneBase = require('./OctaneBase.js');
+var Promise 		= require("bluebird");
+var _ 					= require("lodash");
+var OctaneBase 	= require('./OctaneBase.js');
 
 var Compiler = new OctaneBase();
 
@@ -16,7 +16,7 @@ Compiler.extend({
 								return this;
 							},
 
-	applyOrdinance:function(context,qselector){
+	compile: 		function(context,qselector){
 
 								if(!qselector){
 										qselector = context;
@@ -52,7 +52,7 @@ Compiler.extend({
 												// set hashed taskId to true so it doesn't re-run on the same element
 												(map[guid]||(map[guid]={}))[taskId] = true;
 											} catch (ex){
-												this.log(ex);
+												Compiler.log(ex);
 											}
 											elem = null;
 										},Compiler);
@@ -61,14 +61,14 @@ Compiler.extend({
 								});
 							},
 
-	run: 				function(context){
+	compileAll: function(context){
 								context || (context = document);
 
-								var tasksCompleted = (Object.keys(this.ordinances)).map(function(qselector){
-									return this.applyOrdinance(context,qselector);
-								}.bind(this));
+								var compilationTasks = _.map(this.ordinances,function(ord,qselector){
+									return this.compile(context,qselector);
+								},this);
 
-								return Promise.all(tasksCompleted);
+								return Promise.all(compilationTasks);
 							}
 });
 

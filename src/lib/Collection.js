@@ -1,4 +1,4 @@
-var _ = require('lodash');
+var _ 					= require('lodash');
 var _octane 		= require('./_octane.js');
 var OctaneBase	= require('./OctaneBase.js');
 var utils 			= require('./utils.js');
@@ -143,3 +143,4 @@ var extend 			= require('./extend.js');
 			});
 
 */
+module.exports = {};

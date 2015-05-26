@@ -24,7 +24,7 @@
 				//  @config defaultLang [string]: a default language or (default:English)
 				//  @config langSupport [array]: supported languages for the translator (default:['English'])
 
-		var octane = require('../octane.js');
+		//var octane = require('../octane.js');
 
 		octane.module('Translator').extend({
 

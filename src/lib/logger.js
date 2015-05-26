@@ -1,10 +1,12 @@
-var _ = require('lodash');
+var _ 			= require('lodash');
 var _octane = require('./_octane.js');
 
 
 module.exports = {
 
 	log: 				function(message,error){
+
+								if(!_octane.debugMode) return;
 
 								if(arguments.length === 1 && _.isObject(message)){
 									error = message;

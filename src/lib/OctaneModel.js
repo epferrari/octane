@@ -8,11 +8,11 @@ var log 				= OctaneBase.prototype.log;
 
 
 // base Model factory
-function OctaneModel(data){
+function OctaneModel(dataset){
 
 	// private
 	var _alias	= null;
-	var state = {};
+	var data = {};
 	var queue = [];
 	this.className = this.className || 'OctaneModel';
 	this.guid();
@@ -31,19 +31,19 @@ function OctaneModel(data){
 			return _alias;
 	});
 
-	this.defineGetter('state',
+	this.defineGetter('data',
 		function(){
-			return state;
+			return data;
 	});
 
 	this.extend({
 		become : function(alias){
-			if(alias === 'App' && _octane.models['App']) throw new Error('Cannot link to App model, choose another model');
+			if(alias === 'App' && _octane.models['App']) throw new Error('Cannot replace App model, choose another model');
 			var models = _octane.models;
 			models[alias] && models[alias].detach();
 			models[alias] = this;
 			_alias = alias;
-			this.fire('statechange:'+alias);
+			this.fire('modelchange:'+alias);
 			return this;
 		},
 		detach : function(){
@@ -51,7 +51,7 @@ function OctaneModel(data){
 			if( alias ){
 				_octane.models[alias] = null;
 				_alias = null;
-				this.fire('statechange:'+alias);
+				this.fire('modelchange:'+alias);
 			}
 			return this;
 		}
@@ -78,7 +78,7 @@ function OctaneModel(data){
 	// set defaults from prototype
 	this.set(this.defaults);
 	// overwrite with data passed to constructor
-	this.set(data);
+	this.set(dataset);
 	this.initialize && this.initialize.apply(this,arguments);
 }
 
@@ -90,12 +90,13 @@ function OctaneModel(data){
 OctaneBase.prototype.defineProp.call(OctaneModel,{
 
 	extend:  		extend,
-	// static factory
-	create: 		function(data){
-								return new this(data);
+	log: 				function(message,err){
+								logger.apply(this,[message,error]);
 							},
-
-
+	// static factory
+	create: 		function(dataset){
+								return new this(dataset);
+							},
 
 	// get the model name from a keystring, ex "App.loading.message" would return "App"
 	_parseName: function(binding){
@@ -140,92 +141,80 @@ OctaneModel.prototype.defineProp({
 
 									var alias = this.alias;
 									var tk = utils.typeOf(key);
-									var fresh,n,keys;
+									var inbound,n,keys;
 
 									// handle key,value and {key:value}
 									if(tk === 'object'){
-										fresh = key;
+										inbound = key;
 									}else if(tk === 'string'){
-										(fresh = {})[key] = val;
+										(inbound = {})[key] = val;
 									}else {
-										fresh = {};
+										inbound = {};
 									}
 
 									// array for state properties changed
-									keys = Object.keys(fresh);
+									keys = Object.keys(inbound);
 									n = keys.length;
 
 									// apply any hooks
 									if( alias ){
 										while(n--){
-											_octane.hooks[alias+'.'+keys[n]] && this._applyHooks(keys[n],fresh);
+											_octane.hooks[alias+'.'+keys[n]] && this._applyHooks(keys[n],inbound);
 										}
 									}
 
 									// re-measure in case there have been additional properties
 									// added to fresh via hooks
-									_.each(fresh,function(value,binding){
-										this._setState(binding,value);
+									_.each(inbound,function(value,path){
+										//this._setData(binding,value);
+										_.set(this.data,path,value);
+										this.alias && this.fire('modelchange:'+path);
 									},this);
 									this.processing = false;
 									this.queue && this._set.apply(this,this.queue);
 								}
 								// alert any subscribers
-								alias && this.fire('statechange:'+alias);
-								return fresh;
+								alias && this.fire('modelchange:'+alias);
+								return this.data;
 							},
 
 	// use reduce to set a value using a nested key, ex "App.loading.message" would set {App:{loading:{message:value}}}
-	_setState: 	function(binding,value){
+	_setData: 	function(path,value){
 
-								var state = this.state;
+								var data = this.data;
 								var alias = this.alias;
-								var keyArray = binding.split('.');
+								var keyArray = path.split('.');
 								var k = keyArray.length;
 								var modelUpdated;
 
 								try{
 									keyArray.reduce(function(o,x,index){
-										if(index == (k-1)){ // last iteration
-												return o[x] = value;
+										if(index === (k-1)){ // last iteration
+											return o[x] = value;
 										}else{
-												return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create if object if not already
+											return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create object if not already
 										}
-									},state);
+									},data);
+
 									modelUpdated = true;
 								}catch(ex){
 									modelUpdated = false;
-									this.log('Unable to set model data "'+binding+'"',ex);
+									this.log('Unable to set model data at "'+path+'"',ex);
 								}
-								modelUpdated && alias && this.fire('statechange:'+alias+'.'+binding);
+								modelUpdated && alias && this.fire('modelchange:'+alias+'.'+path);
 							},
 
 	// helper, applies hooks on changed model state attributes before they get set
-	_applyHooks:function(binding,fresh){
+	_applyHooks:function(path,inbound){
 
 								if(this.alias){
-										var hooks = _octane.hooks[this.alias+'.'+binding];
-										var input = _.get(fresh,binding);
+									var hooks = _octane.hooks[this.alias+'.'+path];
+									var fresh = _.get(inbound,path);
+									var current = this.data;
 
-										if(_.isArray(hooks)){
-											_.each(hooks,function(hook){
-												input && hook.apply(fresh,[input,binding]);
-											});
-										}
-										/*
-										if(_.isArray(hooks)){
-											_.each(hooks,function(hook){
-												//_.extend(fresh,hook(fresh));
-												binding.split('.').reduce(function(o,x,i){
-													if(i===arr.length-1){
-														_.extend(fresh,hook(x,fresh));
-													} else {
-														return _.isObject(o) ? o[x] : null;
-													}
-												},fresh);
-											});
-										}
-										*/
+									_.each(hooks,function(hook){
+										fresh && hook(fresh,inbound,current);
+									});
 								}
 							},
 
@@ -238,43 +227,47 @@ OctaneModel.prototype.defineProp({
 								if(timeout && (utils.typeOf(timeout) == 'number')){ // timout the unset
 
 									if(throttle){                                // throttle the unsets
-										_.each(toUnset,function(keystring,i){
+										_.each(toUnset,function(path,i){
 												setTimeout(function(){
-														this.set( keystring,void(0) );
+													this.set( path, void(0) );
 												}.bind(this),timeout*(i+1));                   // make sure we timeout the 0 index
 										},this);
 									}else{                                      // unset all together after timeout
 										setTimeout(function(){
-											_.each(toUnset,function(keystring){
-												this.set( keystring, void(0) );
+											_.each(toUnset,function(path){
+												this.set( path, void(0) );
 											},this);
 										}.bind(this),timeout);
 									}
 								} else {
-									_.each(toUnset,function(keystring){         // unset all immediately
-										this.set( keystring, void(0) );
+									_.each(toUnset,function(path){         // unset all immediately
+										this.set( path, void(0) );
 									},this);
 								}
 							},
 
 	_destroy: 	function(){
 
-								var  keys = Object.keys(this.state);
+								var  keys = Object.keys(this.data);
 								var n = keys.length;
 
 								while(n--){
-									this.state[keys[n]] = null;
+									this.data[keys[n]] = null;
 								}
 								this.clearEventCache();
 
 								this.alias && this.detach();
 							},
 
-	_get: 			function(binding){
+	_get: 			function(path){
 
-								//var $this = this;
+								if(_.isString(path)){
+									return _.get(this.data,path);
+								} else {
+									return this.data;
+								}
+								/*
 								var data;
-
 								if(_.isString(binding)){
 
 										var keyArray = binding.split('.');
@@ -292,15 +285,16 @@ OctaneModel.prototype.defineProp({
 								} else {
 										return this.state;
 								}
+								*/
 							},
 
-	_getAt: 		function(binding,index){
+	_getAt: 		function(path,index){
 
-								var data = this._get(binding);
-								if(_.isArray(data)){
-									return data[index];
+								var prop = this._get(path);
+								if(_.isArray(prop)){
+									return prop[index];
 								}else{
-									return data;
+									return prop;
 								}
 
 							},
@@ -309,12 +303,12 @@ OctaneModel.prototype.defineProp({
 
 								var alias = this.alias;
 
-								_.forOwn(this.state,function(value,key){
-									this.state[key] = null;
-									alias && this.fire('statechange:'+alias+'.'+key);
-								})
+								_.forOwn(this.data,function(value,key){
+									this.data[key] = null;
+									alias && this.fire('modelchange:'+alias+'.'+key);
+								});
 								// alert any subscribers
-								if(alias) this.fire( 'statechange:'+alias );
+								if(alias) this.fire('modelchange:'+alias );
 
 								return this;
 							},
