@@ -1,5 +1,5 @@
 var _ 					= require('lodash');
-var Promise 		= require('bluebird');
+//var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
 var uiPack 			= require('velocity-ui-pack');
 var Factory 		= require('./OctaneBase.js');

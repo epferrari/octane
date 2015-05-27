@@ -14,6 +14,7 @@ function OctaneController(name,config){
 
 	// set up to handle events
 	// functionality added with Events decorator object
+	/*
 	var events = {ANY:{}};
 	var listening = [];
 
@@ -27,6 +28,7 @@ function OctaneController(name,config){
 	this.clearEventCache = function(){
 		events = {ANY:{}};
 	};
+	*/
 
 	this.initialize && this.initialize.apply(this,arguments);
 	// add this Controller instance to the _octane's controllers object
@@ -36,7 +38,7 @@ function OctaneController(name,config){
 
 
 
-OctaneController.prototype = new OctaneBase;
+OctaneController.prototype = Object.create(OctaneBase.prototype);
 
 _.extend(OctaneController.prototype,
 {

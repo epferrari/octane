@@ -4,32 +4,87 @@ var Quarterback = require('./Quarterback.js');
 
 
 
+
 // decorator for objects to interface with the Quarterback
 module.exports = {
 
-		// add a callback to be executed when this object fires an event
-		on: 				function(event,handler){
-									this.handle(event,this,handler);
+		// 2 args: add a callback to be executed when THIS object fires an event
+		// 3 args: add a callback to be executed when SRC object fires an event
+		on: 				function(event,src,handler){
+									this._ensureEventInterface();
+									if(arguments.length === 2){
+										handler = src;
+										src = this;
+									}
+									this._registerHandler(event,src,handler);
 									return this;
 									// chainable
 								},
 
-		// add a callback to be executed when the src object fires an event
-		// if no src object is passed, the event is registered in the Application scope
-		// and the callback is executed whenever the event is fired, from any object
-		handle: 		function(event,src,handler){
+		// add a callback to execute whenever event is fired, from any object
+		any: 				function(event,handler){
+									this._ensureEventInterface();
+									this._registerHandler(event,null,handler);
+									return this;
+									//chainable
+		},
 
+		// handle a callback from an event one time
+		once: 			function(eventType,src,handler){
+									this._ensureEventInterface();
+									if(arguments.length === 2){
+										handler = src;
+										src = this;
+									}
+									var events = this._events_;
+									var srcId = this.guid(src);
+									var wrapper = function(){
+										_.pull(events[srcId][eventType],wrapper);
+										handler.apply(this,arguments);
+									};
+									this._registerHandler(eventType,src,wrapper);
+								},
+
+		// stop listening for event on THIS
+		off: 				function(eventType){
+									this._ensureEventInterface();
+									var events = this._events_;
+									var thisId = this.guid();
+									if(events[thisId]){
+										events[thisId][eventType] = [];
+									}
+								},
+
+		// call with eventType and src: stop listening for event on SRC
+		// call with only eventType: stop listening for an event anywhere
+		forget: 		function(eventType,src){
+									this._ensureEventInterface();
+									var events = this._events_;
+									if(arguments.length === 2){
+										var srcId = this.guid(src);
+										if(events[srcId]){
+											delete events[srcId][eventType];
+										}
+									}else{
+										_.forOwn(events,function(src){
+											delete src[eventType];
+										});
+										Quarterback.unregister(this.guid(),eventType);
+									}
+								},
+
+		// fire an interal event from this object
+		fire: 			function(event){
+									this._ensureEventInterface();
+									Quarterback.normalizeOctaneEvent(event,this);
+								},
+
+		_registerHandler: function(event,src,handler){
+									this._ensureEventInterface();
 									var eventTypes = event ? event.split(' ') : [];
-									var n			= eventTypes.length;
-									var a 		= arguments.length;
 									var src_id;
 
-									if(a === 2){
-										handler = src;
-										src = null;
-									}
-
-									src_id = src ? this.guid(src) : 'ANY';
+									src_id = src ? utils.guid(src) : 'ANY';
 
 									_.each(eventTypes,function(eventType){
 										var events = this._events_;
@@ -50,42 +105,57 @@ module.exports = {
 										}
 									},this);
 									return this;
-									// chainable
 								},
 
-		// remove a callback
-		unhandle: 	function(eventType,src,handler){
+		// initialize Event interface instance properties on an implementing object
+		// invoked the first time an implementor uses an iterface method
+		_ensureEventInterface: function(){
 
-										var n = arguments.length;
-										var events = this._events_;
-										if(n === 3){																									// targeted removal of a single event handler from an object
-											try{
-												_.pull(events[src.octane_id][eventType],handler);
-											}catch(ex){
-												this.log && this.log('Error removing handler for '+eventType+' from object '+ src,ex);
-											}
-										} else if (n === 2){																					// remove all handlers for a single event type from an object
-											try{
-												events[src.octane_id][eventType] = null;
-											}catch(ex){
-												this.log && this.log('Error removing handlers for '+eventType+' from object '+ src,ex);
-											}
-										} else if (n === 1){
-											switch( true ){
-												case (utils.typeOf(eventType) == 'string'):												// remove all event handlers of a type from the global scope
-													events[window.octane_id][eventType] = null;
-													break;
-
-												case (_.isObject(eventType) && eventType.octane_id):									// remove all event handlers from an object
-													events[eventType.octane_id] = null;
-													break;
-											}
+									if(this.eventsInitialized) return;
+									if(!this.guid){
+										Object.defineProperty(this,'guid',{
+											value: function(obj){
+												utils.guid.apply(this,[obj]);
+											},
+											writable: false,
+											configurable:false
+										});
+										this.guid();
+									}
+									Object.defineProperty(this,'__listening__',{
+										value: [],
+										writable: false,
+										configurable: false,
+										enumerable: false
+									});
+									Object.defineProperty(this,'__events__',{
+										value: {ANY:{}},
+										writable: false,
+										configurable: false,
+										enumerable: false
+									});
+									Object.defineProperty(this,'_events_',{
+										get: function(){
+											return this.__events__;
 										}
-										return this;
-								},
-
-		// fire an interal event from this object
-		fire: 			function(event){
-									Quarterback.normalizeOctaneEvent(event,this);
+									});
+									Object.defineProperty(this,'_listening_',{
+										get: function(){
+											return this.__listening__;
+										}
+									});
+									this.clearEventCache = function(){
+										var events = this.__events__;
+										_.forOwn(events,function(prop,key){
+											delete events[key];
+										},this);
+										events.ANY = {};
+										Quarterback.unregister(this.guid());
+									};
+									Object.defineProperty(this,'eventsInitialized',{
+										value: true,
+										writable: false,
+										configurable: false
+									});
 								}
 };

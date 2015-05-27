@@ -1,5 +1,5 @@
 var _ 						= require('lodash');
-var OctaneBase 		= require('./OctaneBase.js');
+var Factory 			= require('./Factory.js');
 var _octane 			= require('./_octane.js');
 var utils 				= require('./utils.js');
 var Events 				= require('./Events.js');
@@ -11,7 +11,7 @@ var Compiler 			= require('./Compiler.js');
 
 
 
-var ViewModel = OctaneBase.extend({
+var ViewModel = Factory({
 
 	initialize: function(elem,binding){
 								this.DOM_Element = elem;
@@ -145,7 +145,7 @@ var ViewModel = OctaneBase.extend({
 												},this);
 												return this.attributes;
 										},
-										get : function(){
+										get: function(){
 												if(this.attributes) this.data = this.attributes;
 												return OctaneModel.prototype._get.apply(this,arguments);
 										},
@@ -218,3 +218,5 @@ var ViewModel = OctaneBase.extend({
 							}
 
 });
+
+module.exports = ViewModel;

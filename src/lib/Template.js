@@ -3,9 +3,9 @@ var appFilters 	= require('./_octane.js').filters;
 var utils 			= require('./utils.js');
 var _octane			= require('./_octane.js');
 var Compiler 		= require('./Compiler.js');
-var OctaneBase 	= require('./OctaneBase.js');
+var Factory 		= require('./Factory.js');
 
-var Template = OctaneBase.extend({
+var Template = Factory({
 
 	/* Proto Methods */
 

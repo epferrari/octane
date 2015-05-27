@@ -145,8 +145,27 @@ var utils = {
 		return new Promise(function(resolve,reject){
 			deferred.apply(deferred,args).then(resolve,reject);
 		});
-	}
+	},
 
+	guid: function(obj){
+
+		if(obj && !(obj instanceof Object)) return;
+		if(!obj) obj = this;
+		if(obj.octane_id) return obj.octane_id;
+
+		var random4 = function() {
+			return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
+		};
+
+		Object.defineProperty(obj,'octane_id',{
+			value : random4() +'-'+ random4() +'-'+ random4() + random4(),
+			writable : false,
+			configurable : false,
+			enumerable : false
+		});
+		if(obj.setAttribute) obj.setAttribute('octane-id',obj.octane_id);
+		return obj.octane_id;
+	}
 };
 
 module.exports = utils;

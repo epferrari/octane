@@ -1,4 +1,4 @@
-(function(module){
+(function(module,exports){
 	'use strict';
 
 	/* ------------------------------------------------------- */
@@ -33,15 +33,16 @@
 			//var select 						= document.querySelector.bind(document);
 			//var selectAll 				= document.querySelectorAll.bind(document);
 			var define 						= Object.defineProperty;
-			var _ 								= require('lodash');
+			var _ 								= global._ = require('lodash');
 			var Promise 					= require('bluebird');
 			var FastClick 				= require('fastclick');
 			var Velocity 					= require('velocity-animate');
 			var _octane 					= require('./lib/_octane.js');
 			var utils 						= require('./lib/utils.js');
 			var debug 						= require('./lib/debug.js');
+			var AppModel 					= require('./lib/app-model.js');
 
-			require('classlist');
+			//require('classlist');
 			require('velocity-ui-pack');
 
 
@@ -211,22 +212,22 @@
 				// access a bound model's set method from the application object
 				set: 				function(key,val){
 
-											var fresh;
+											var inbound;
 											var tk = utils.typeOf(key);
 
 											if(tk === 'object'){
-												fresh = key;
+												inbound = key;
 											}
 											else if(tk === 'string'){
-												(fresh = {})[key] = val;
+												(inbound = {})[key] = val;
 											}
 											else {
-												fresh = {};
+												inbound = {};
 											}
 
-											_.each(fresh,function(value,binding){
-												var name 	= OctaneModel._parseName(binding);
-												var _key 	= OctaneModel._parseKey(binding);
+											_.forOwn(inbound,function(value,path){
+												var name 	= OctaneModel._parseName(path);
+												var _key 	= OctaneModel._parseKey(path);
 												var model = _octane.models[name] || ( Octane.Model.create().become(name) );
 												if(model){
 													(_key !== '') ? model.set(_key,value) : model.reset(value);
@@ -276,19 +277,19 @@
 	/* ------------------------------------------------------- */
 
 			define(OctaneBase.prototype,'watch',{
-				value: function(binding,fn,thisArg){
-					var cache ={};
+				value: function(path,fn,thisArg){
+					//var cache ={};
 					var watching;
 
-					binding.split('.').reduce(function(o,x,i){
+					path.split('.').reduce(function(o,x,i){
 						watching = (i === 0) ? x : o + '.' + x;
 						// set handler for each state change in a subBinding
-						this.handle('modelchange:' + watching,function(){
+						this.any('modelchange:' + watching,function(){
 							var currentVal = Octane.get(watching);
-							if(currentVal !== cache[watching]){
-								cache[watching] = currentVal;
+							//if(currentVal !== cache[watching]){
+								//cache[watching] = currentVal;
 								fn.apply((thisArg || this),[currentVal,watching]);
-							}
+							//}
 						});
 						return watching;
 					}.bind(this));
@@ -332,10 +333,10 @@
 
 			Compiler.assign('[o-bind]',function(elem,binding){
 
-				Octane.handle('input click select',elem,uptake);
+				Octane.on('input click select',elem,uptake);
 
 				if(_.contains( ['file','checkbox'] ,elem.type)){
-					Octane.handle('change',elem,uptake);
+					Octane.on('change',elem,uptake);
 				} else {
 					Octane.watch(binding,function(value){
 						elem.value = value || '';
@@ -451,7 +452,7 @@
 							}
 						});
 					} else {
-						Octane.handle(event,elem,function(e,el){
+						Octane.on(event,elem,function(e,el){
 							var controller = _octane.controllers[ ctrlName ];
 							try{
 									controller[method].apply(controller,[el].concat(params));
@@ -503,7 +504,7 @@
 									}else{
 										watch = o+'.'+x;
 									}
-									Octane.handle('modelchange:'+watch,function(){
+									Octane.any('modelchange:'+watch,function(){
 										var currentVal = Octane.get(watching);
 										if(currentVal !== cache[watching]){
 											cache[watching] = currentVal;
@@ -600,7 +601,8 @@
 
 			var Router = require('./lib/Router.js');
 
-			Octane.defineProp({ Router : Router });
+			console.log(Router);
+			Octane.defineProp({ Router: Router });
 
 			//add Router methods to Application Object
 			Octane.extend(Router);
@@ -677,7 +679,7 @@
 										},
 				set: 				function(cx){
 											var contexts = ['html4','html5','web','cordova'];
-											_.inArray(contexts,cx) && (_octane.environment = cx);
+											_.contains(contexts,cx) && (_octane.environment = cx);
 										},
 				configurable: false
 			});
@@ -754,7 +756,7 @@
 
 
 
-											var AppModel = require('./lib/app-model.js');
+
 
 											// parse the DOM initially to create virtual DOM model
 											Octane.defineProp('App',AppModel);
@@ -856,6 +858,6 @@
 
 
 
-module.exports = Octane;
+module.exports = global.octane = Octane;
 
-})(module);
+})(module,module.exports);

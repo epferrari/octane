@@ -14,6 +14,7 @@ function OctaneBase(){
 
 	// set up to handle events
 	// functionality added with Events decorator object
+	/*
 	var events = {ANY:{}};
 	var listening = [];
 
@@ -27,6 +28,7 @@ function OctaneBase(){
 	this.clearEventCache = function(){
 		events = {ANY:{}};
 	};
+	*/
 
 	this.guid();
 	this.initialize.apply(this,arguments);
@@ -51,44 +53,32 @@ OctaneBase.prototype = {
 };
 
 
-define(OctaneBase.prototype,'Base',{
+define(OctaneBase.prototype,'Proto',{
 	value: 			function(){
-		return OctaneBase;
+		return new OctaneBase();
 	},
 	writable: 	false,
 	configurable: false
 });
 
-
-define(OctaneBase.prototype,'Factory',{
-	value: 			function(){
-		return OctaneBase.extend.apply(OctaneBase,arguments);
-	},
-	writable: 	false,
-	configurable: false
-});
 
 
 // shortcut method to define immutable properties
 define(OctaneBase.prototype,'defineProp',{
 	value: 			function (isWritable,prop,val){
 
-								if(_.isBoolean(arguments[0])){
-									isWritable = arguments[0];
-									prop = arguments[1];
-									val = arguments[2];
-								} else {
+								if(!_.isBoolean(isWritable)){
 									// if no writable definition is passed, read first argument as prop
-									prop = arguments[0];
-									val = arguments[1];
+									val = prop;
+									prop = isWritable;
 									// default to non-writable
 									isWritable = false;
 								}
 
 								switch(true){
-									case _.isObject(prop):
+									case _.isPlainObject(prop):
 										var keys = Object.keys(prop);
-																			var key;
+										var key;
 
 										for (var i=0,n = keys.length; i<n; i++){
 											key = keys[i];
@@ -100,7 +90,7 @@ define(OctaneBase.prototype,'defineProp',{
 													enumerable: true
 												});
 											} catch(ex){
-												Octane.log(ex)
+												this.log(ex)
 											}
 										}
 										break;
@@ -113,7 +103,7 @@ define(OctaneBase.prototype,'defineProp',{
 												enumerable:true
 											});
 										} catch(ex){
-											Octane.log(ex);
+											this.log(ex);
 										}
 										break;
 								}
@@ -163,25 +153,17 @@ define(OctaneBase.prototype,'accessors',{
 // pass an object or object will be set to `this`
 // returns the object's unique id if already assigned
 define(OctaneBase.prototype,'guid',{
-	value: 		function(obj){
+	value:  function(obj){
+						return utils.guid.apply(this,[obj]);
+					},
+	writable: false,
+	configurable: false
+});
 
-							if(obj && !_.isObject(obj)) return;
-							if(!obj) obj = this;
-							if(obj.octane_id) return obj.octane_id;
-
-							var random4 = function() {
-								return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
-							};
-
-							Object.defineProperty(obj,'octane_id',{
-								value : random4() +'-'+ random4() +'-'+ random4() + random4(),
-								writable : false,
-								configurable : false,
-								enumerable : false
-							});
-							if(obj.setAttribute) obj.setAttribute('octane-id',obj.octane_id);
-							return obj.octane_id;
-						},
+define(OctaneBase,'guid',{
+	value:  function(obj){
+						return utils.guid.apply(this,[obj]);
+					},
 	writable: false,
 	configurable: false
 });
@@ -202,6 +184,7 @@ define(OctaneBase,'log',{
 	configurable: false
 });
 
+_.extend(OctaneBase,Events);
 // set up event interface with the Quarterback
 _.extend(OctaneBase.prototype,Events);
 

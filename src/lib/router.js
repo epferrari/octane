@@ -1,12 +1,13 @@
 
-	require('modernizr');
+	//require('modernizr');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
-	var History 		= require('history.js');
+	//var History 		= require('history.js');
 	var OctaneBase 	= require('./OctaneBase.js');
 	var View 				= require('./OctaneView.js');
 	var App			    = require('./app-model.js');
 	var utils 			= require('./utils.js');
+	var Compiler		= require('./Compiler.js');
 
 
 	var enRoute = null;
@@ -257,8 +258,11 @@
 		return queuedRoutes;
 	});
 
-	View.defineGetter('current',function(){
-		return currentView;
+	Object.defineProperty(View,'current',{
+		get: function(){
+			return currentView;
+		},
+		configurable:false
 	});
 
 
@@ -266,11 +270,11 @@
 
 	// change the view with browser's forward/back buttons
 	Router
-	.handle(stateChangeEvent,function(){
+	.any(stateChangeEvent,function(){
 		this.route(this.parseUrl().view);
 	})
 	// ensure onscreen view keeps proper dimensions to proper dimensions
-	.handle('translated resize orientationchange',function(){
+	.any('translated resize orientationchange',function(){
 		currentView && currentView.setCanvasHeight();
 	});
 
@@ -286,14 +290,6 @@
 				Router.route(routeName);
 		},false);
 
-		// set up the octane event mediator
-		// so event won't get a second listener
-		// if you call .compile() again after .initialize()
-		/*octane.handle('octane:route',el,function(e,el){
-			var route = el.getAttribute('o-route');
-			octane.route(route);
-		});
-		*/
 	})
 	.assign('.o-back',function(el){
 		el.addEventListener('click',function(e){

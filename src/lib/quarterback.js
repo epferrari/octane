@@ -41,20 +41,20 @@ var Quarterback = {
 	// register an object that invokes delegateEvent when event comes in
 	register: function(eventType,delegate){
 			var map = this.delegateMap;
-			(map[eventType]||(map[eventType]={}))[delegate.guid()] = delegate;
+			(map[eventType]||(map[eventType]={}))[utils.guid(delegate)] = delegate;
 	},
 
 	unregister: function(delegateId,eventType){
 			var map = this.delegateMap;
-			if(eventType){
-					map[eventType] && (map[eventType][delegateId] = null);
+			if(eventType && map[eventType]){
+					delete map[eventType][delegateId];
 					return;
 			} else {
-					// only delegate id was passed, remove it from all events
-					_.forOwn(map,function(delegates,eventType){
-							// an object where keys = delegateIds
-							delegates[delegateId] = null;
-					});
+				// only delegate id was passed, remove it from all events
+				_.forOwn(map,function(delegateGroup){
+						// an object where keys = delegateIds
+						delete delegateGroup[delegateId];
+				});
 			}
 	},
 
@@ -62,9 +62,14 @@ var Quarterback = {
 			var eventType = e.type;
 			var delegates = this.delegateMap[eventType];
 			if(delegates){
-				_.each(delegates,function(delegate,id){
-						this.delegateEvent.apply(delegate,[e]);
-				},this);
+				Promise.all(
+					_.map(delegates,function(delegate,id){
+						return this.delegateEvent.apply(delegate,[e]);
+					},this)
+				)
+				.catch(function(err){
+					log.apply(this,[err.detail,err.error]);
+				}.bind(this));
 			}
 	},
 
@@ -77,29 +82,41 @@ var Quarterback = {
 			var eventType = e.type;
 			var src = e.target;
 			var src_id = src.octane_id;
-			var handlers = (events[src_id]&&events[src_id][eventType]) ? events[src_id][eventType] : [];
+			var handlers = (events[src_id] && events[src_id][eventType]) ? events[src_id][eventType] : [];
+			var errDetail = 'A handler function failed for event '+eventType+' at dispatch to '+utils.guid(this)+'. Check event map.';
 
 			// concat event handlers that are called regardless of event src
 			handlers = handlers.concat(events.ANY[eventType]);
 			// execute handlers with "this" binding as the delegate (applied at .dispatch);
-			_.each(handlers,function(handler){
-					var h = utils.typeOf(handler);
-					if(h === 'function'){
-						try{
-							handler.apply(this,[e,src]);
+			return Promise.all(_.map(handlers,function(handler){
+
+				return new Promise(function(resolve,reject){
+					var toh = utils.typeOf(handler);
+					var result;
+
+					if(toh === 'function'){
+						try {
+							result = handler.apply(this,[e,src]);
+						} catch(exc){
+							return reject({
+								error:exc,
+								detail:detail
+							});
 						}
-						catch(ex){
-							log('Error calling handler on "'+eventType+'" during event delegation',ex)
-						}
-					}else if(h==='object'){
-						try{
-							handler.handleEvent(e,src);
-						}
-						catch(ex){
-							log('Error calling handleEvent on "'+eventType+'" during event delegation',ex);
+					}else if(toh === 'object'){
+						try {
+							result = handler.handleEvent(e,src);
+						}catch(exc){
+							return reject({
+								error:exc,
+								detail:detail
+							});
 						}
 					}
-			},this);
+					return resolve(result);
+				}.bind(this));
+
+			},this));
 	}
 };
 

@@ -26,4 +26,4 @@ var Hinter = OctaneModel.extend({
 							}
 });
 
-return Hinter;
+module.exports = Hinter;

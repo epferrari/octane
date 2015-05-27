@@ -2,7 +2,7 @@ var select 						= document.querySelector.bind(document);
 var selectAll 				= document.querySelectorAll.bind(document);
 var define 						= Object.defineProperty;
 var _ 								= require('lodash');
-var Promise 					= require('bluebird');
+//var Promise 					= require('bluebird');
 var OctaneBase 				= require('./OctaneBase.js');
 var _octane 					= require('./_octane.js');
 var utils 						= require('./utils.js');
@@ -61,7 +61,7 @@ function OctaneModule (name,dependencies){
 
 
 
-OctaneModule.prototype = new OctaneBase;
+OctaneModule.prototype = Object.create(OctaneBase.prototype);
 OctaneModule.prototype.extend({
 	initialize: function(){},
 	constructor: OctaneModule

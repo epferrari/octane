@@ -20,7 +20,7 @@ module.exports = function extend(){
 
 	P = this;
 
-	if(config.constructor != Object && _.isFunction(config.constructor)){
+	if(config.constructor !== Object && _.isFunction(config.constructor)){
 		o = config.constructor;
 	} else {
 		o = function(){

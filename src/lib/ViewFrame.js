@@ -20,10 +20,7 @@ var ViewFrame = Factory.extend({
 
 									var isClassed = false;
 									var viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'];
-									var n;
-
-									_.isArray(cfg.extraViewClasses) && viewClasses.concat(cfg.extraViewClasses);
-									n = viewClasses.length;
+									var n = viewClasses.length;
 
 									while(n--){
 										if(this.elem.classList.contains(viewClasses[n]) ){

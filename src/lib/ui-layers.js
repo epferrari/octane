@@ -4,13 +4,14 @@
 	var html2canvas = require('html2canvas');
 	var _octane 		= require('./_octane.js');
 	var Controller 	= require('./Controller.js');
+	var Router 			= require('./Router.js');
 	var DOM 				= require('./DOM.js');
 
-		var
-		bgContainer = DOM.bgContainer,
-		appContainer = DOM.appContainer,
-		viewContainer = DOM.viewContainer,
-		modalContainer = DOM.modalContainer;
+	var
+	bgContainer = DOM.bgContainer,
+	appContainer = DOM.appContainer,
+	viewContainer = DOM.viewContainer,
+	modalContainer = DOM.modalContainer;
 
 /* ------------------------------------------------------------------- */
 /*                            UTILITY                                  */
@@ -155,7 +156,7 @@ UiLayers = new Controller('UiLayerController',{
 UiLayers.defineProp('supportsCssFilters',supportsCssFilters);
 
 // cache screenshot as soon as routing completes
-if(supportsCssFilter){
+if(supportsCssFilters){
 		UiLayers.addLayerEffect = function(){
 			var method = _octane.animateBy || 'css';
 			return new Promise(this.activateBackground[method])
@@ -170,7 +171,7 @@ if(supportsCssFilter){
 				.then( this.revealAppContainer[method] )
 				.then( this.deactivateBackground[method] );
 		};
-		UiLayers.handle('routing:complete',function(){
+		UiLayers.on('routing:complete',Router,function(){
 			if(_octane.useBackgroundFilterEffects) this.getBackgroundImage();
 		});
 } else {

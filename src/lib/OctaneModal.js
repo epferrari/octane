@@ -1,7 +1,7 @@
 var _ 					= require('lodash');
 var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
-var uiPack 			= require('velocity-ui-pack');
+require('velocity-ui-pack');
 var _octane 		= require('./_octane.js');
 var Controller 	= require('./Controller.js');
 var Frame 			= require('./ViewFrame.js');
@@ -19,10 +19,12 @@ var block           = false;
 var OctaneModal     = Frame.extend({
 
 	// Instance Methods
-
+	/*
 	constructor:  function OctaneModal(){
 		return Controller.apply(this,arguments);
 	},
+	*/
+	constructor: OctaneModal,
 
 	initialize:   function(elem){
 
@@ -182,30 +184,30 @@ Compiler.assign('o-modal',function(elem){
 	OctaneModal.create(elem);
 })
 .assign('[o-modal]',function(elem){
-	OctaneModal.handle('click',elem,function(e,el){
+	OctaneModal.on('click',elem,function(e,el){
 		var m = el.getAttribute('o-modal');
 		this.load(m);
 	});
 })
 .assign('.o-modal-dismiss',function(elem){
-	OctaneModal.handle('click',elem,function(e,el){
+	OctaneModal.on('click',elem,function(e,el){
 		this.dismiss();
 		return false;
 	});
 });
 
 // dismiss modal automatically on route
-OctaneModal.handle('routing:begin routing:called',function(){
+OctaneModal.on('routing:begin routing:called',Router,function(){
 	block = true;
 	this.dismiss();
 })
 // re-enable modal calling after routing completes
-.handle('routing:complete',function(){
+.on('routing:complete',Router,function(){
 	block = false;
 	this.load(modalQueue.pop());
 })
 // resize canvas to proper dimensions
-.handle('load resize orientationchange',function(){
+.any('load resize orientationchange',function(){
 	currentModal && currentModal.adjustSize();
 });
 

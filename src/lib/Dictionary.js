@@ -1,5 +1,5 @@
 var _ 					= require('lodash');
-var Promise 		= require('bluebird');
+//var Promise 		= require('bluebird');
 var OctaneBase 	= require('./OctaneBase.js');
 var _octane 		= require('./_octane.js');
 
@@ -22,7 +22,7 @@ var Dictionary = OctaneBase.extend({
 				if(dict){
 					resolve(dict);
 				} else {
-					this.handle('created:dictionary:'+name, function(e){
+					this.any('created:dictionary:'+name, function(e){
 						resolve(_octane.dicts[name]);
 					});
 				}

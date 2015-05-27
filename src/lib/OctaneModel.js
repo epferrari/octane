@@ -4,7 +4,7 @@ var OctaneBase	= require('./OctaneBase.js');
 var utils 			= require('./utils.js');
 var extend 			= require('./extend.js');
 
-var log 				= OctaneBase.prototype.log;
+var logger 			= OctaneBase.prototype.log;
 
 
 // base Model factory
@@ -59,6 +59,7 @@ function OctaneModel(dataset){
 
 	// set up to handle events
 	// functionality added with Events decorator object
+	/*
 	var events = {ANY:{}};
 	var listening = [];
 
@@ -72,6 +73,7 @@ function OctaneModel(dataset){
 	this.clearEventCache = function(){
 		events = {ANY:{}};
 	};
+	*/
 
 
 	this.initialize.apply(this,arguments);
@@ -95,7 +97,7 @@ OctaneBase.prototype.defineProp.call(OctaneModel,{
 							},
 	// static factory
 	create: 		function(dataset){
-								return new this(dataset);
+								return new OctaneModel(dataset);
 							},
 
 	// get the model name from a keystring, ex "App.loading.message" would return "App"
@@ -103,7 +105,7 @@ OctaneBase.prototype.defineProp.call(OctaneModel,{
 								try {
 									return (binding || '').split('.')[0];
 								} catch (ex){
-									log.call(this,'could not parse model name from '+binding+': '+ex.message);
+									this.log('Could not parse model name from '+binding+': '+ex.message);
 									return false;
 								}
 							},
@@ -113,7 +115,7 @@ OctaneBase.prototype.defineProp.call(OctaneModel,{
 								try{
 									return (binding || '').split('.').slice(1).join('.');
 								} catch (ex){
-									log.call(this,'could not parse model key from '+binding+': '+ex.message);
+									this.log('Could not parse model key from '+binding+': '+ex.message);
 									return false;
 								}
 							}
@@ -127,11 +129,11 @@ define(OctaneModel,'extend',{
 });
 */
 
-OctaneModel.prototype = new OctaneBase;
+OctaneModel.prototype = Object.create(OctaneBase.prototype);
 
 OctaneModel.prototype.defineProp({
 
-	_set: 			function(key,val){
+	_set: 			function(key,val,options){
 
 								if(this.processing){
 									this.queue = [key,val];
@@ -146,12 +148,13 @@ OctaneModel.prototype.defineProp({
 									// handle key,value and {key:value}
 									if(tk === 'object'){
 										inbound = key;
+										options = val;
 									}else if(tk === 'string'){
 										(inbound = {})[key] = val;
 									}else {
 										inbound = {};
 									}
-
+									options || (options = {});
 									// array for state properties changed
 									keys = Object.keys(inbound);
 									n = keys.length;
@@ -183,16 +186,22 @@ OctaneModel.prototype.defineProp({
 
 								var data = this.data;
 								var alias = this.alias;
-								var keyArray = path.split('.');
+								var keyArray = path.replace(/\[\]/g,'.').split('.');
+								path = path.replace(/(\]\[)/g,'.')
+									.replace(/^(\[)/,'')
+									.replace(/(\])$/,'')
+									.replace(/([\[\]])/g,'.')
+									.split('.');
 								var k = keyArray.length;
 								var modelUpdated;
 
 								try{
-									keyArray.reduce(function(o,x,index){
+									keyArray.reduce(function(res,cur,index){
 										if(index === (k-1)){ // last iteration
-											return o[x] = value;
+											return res[cur] = value;
 										}else{
-											return o[x] = _.isPlainObject(o[x]) ? o[x] : {}; // create object if not already
+											
+											return res[cur] = _.isPlainObject(res[cur]) ? res[cur] : {}; // create object if not already
 										}
 									},data);
 
