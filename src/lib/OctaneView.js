@@ -1,5 +1,5 @@
 var _ 					= require('lodash');
-//var Promise 		= require('bluebird');
+var Promise 		= require('bluebird');
 var Velocity 		= require('velocity-animate');
 var uiPack 			= require('velocity-ui-pack');
 var Factory 		= require('./OctaneBase.js');
@@ -10,7 +10,7 @@ var _octane			= require('./_octane.js');
 
 var OctaneView = Frame.extend({
 
-	initialize: 	function(name,elem){
+	initialize: 	function(elem){
 
 									if(!elem) throw new Error('Must pass an HTMLElement to OctaneView');
 

@@ -22,13 +22,20 @@
 
 			<o-view-container>
 
-				<o-view id="home" class="view-left">
+				<o-view id="home" class="view-left" style="background-color:blue">
 					<h1>Welcome to Octane</h1>
+					<input o-bind="App.input1"/>
+
+					<textarea o-bind="App.input2">Enter some text</textarea>
+					<div o-model="App">
+						<p>{{input1}}</p>
+						<p>{{input2}}</p>
+					</div>
 				</o-view>
-				<o-view id="view-2" class="view-bottom">
+				<o-view id="view-2" class="view-bottom" style="background-color:green">
 					<h1>Another View!</h1>
 				</o-view>
-				<o-view id="view-3" class="view-right">
+				<o-view id="view-3" class="view-right" style="background-color:yellow">
 					<h1>A Third View</h1>
 				</o-view>
 			</o-view-container>
@@ -36,12 +43,25 @@
 		</o-app-container>
 
 		<o-modal-container>
-
+				<o-modal name="modal1" style="background-color:turquoise">
+					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
+					<h1>Modal</h1>
+				</o-modal>
+				<o-modal name="modal2" style="background-color:orange">
+					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
+					<h1>Modal 2</h1>
+				</o-modal>
 		</o-modal-container>
 
 		<o-background>
 		</o-background>
-		
+
 		<script type="text/javascript" src="assets/js/octane.js"></script>
+		<script tyle="text/javascript">
+			octane.initialize({
+				name:'Octane Application',
+				debugMode:true
+			});
+		</script>
 	</body>
 </html>

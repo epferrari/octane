@@ -282,19 +282,23 @@
 					var watching;
 
 					path.split('.').reduce(function(o,x,i){
+						console.log(path);
 						watching = (i === 0) ? x : o + '.' + x;
 						// set handler for each state change in a subBinding
 						this.any('modelchange:' + watching,function(){
 							var currentVal = Octane.get(watching);
 							//if(currentVal !== cache[watching]){
 								//cache[watching] = currentVal;
+								console.log(watching,currentVal);
 								fn.apply((thisArg || this),[currentVal,watching]);
 							//}
 						});
 						return watching;
 					}.bind(this));
 					return this;
-				}
+				},
+				writable:false,
+				configurable:false
 			});
 
 
@@ -592,7 +596,10 @@
 
 			Octane.defineProp('View',View);
 
-
+			Compiler.assign('o-view',function(elem){
+				var view = new View(elem);
+				view;
+			});
 
 
 	/*-------------------------------------------------------	*/
@@ -601,7 +608,6 @@
 
 			var Router = require('./lib/Router.js');
 
-			console.log(Router);
 			Octane.defineProp({ Router: Router });
 
 			//add Router methods to Application Object
@@ -724,7 +730,7 @@
 											// attach fastclick.js for mobile touch
 											if (document.addEventListener) {
 												document.addEventListener('DOMContentLoaded', function() {
-													FastClick.attach(document.body);
+													FastClick(document.body);
 												}, false);
 											}
 
@@ -808,7 +814,7 @@
 												Octane.defineGetter('bootlog',function(){
 													debug.getBootlog();
 												});
-
+												Octane.Reflection = _octane;
 												debug.showConsole();
 
 											} else {

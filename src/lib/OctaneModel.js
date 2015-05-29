@@ -48,6 +48,7 @@ function OctaneModel(dataset){
 		},
 		detach : function(){
 			var alias = this.alias;
+			if(alias === 'App') throw new Error('Cannot detach App model');
 			if( alias ){
 				_octane.models[alias] = null;
 				_alias = null;
@@ -200,7 +201,7 @@ OctaneModel.prototype.defineProp({
 										if(index === (k-1)){ // last iteration
 											return res[cur] = value;
 										}else{
-											
+
 											return res[cur] = _.isPlainObject(res[cur]) ? res[cur] : {}; // create object if not already
 										}
 									},data);

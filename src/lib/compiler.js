@@ -26,16 +26,14 @@ Compiler.extend({
 
 								return new Promise(function(resolve,reject){
 									_.each(context.querySelectorAll(qselector),function(elem,index){
-										//console.log(selector);
-										//console.log(elem);
-
-										var guid 		= this.guid(elem);
-										var tasks	 	= this.ordinances[qselector];
+										
+										var guid 		= Compiler.guid(elem);
+										var tasks	 	= Compiler.ordinances[qselector];
 
 										_.each(tasks,function(task,taskId){
 
 											var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
-											var map = this.nodeMap;
+											var map = Compiler.nodeMap;
 
 											// task has already been run, return early
 											if((map[guid]||{})[taskId]) return;
@@ -55,8 +53,8 @@ Compiler.extend({
 												Compiler.log(ex);
 											}
 											elem = null;
-										},Compiler);
-									},Compiler);
+										});
+									});
 									resolve();
 								});
 							},

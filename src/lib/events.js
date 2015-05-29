@@ -6,7 +6,7 @@ var Quarterback = require('./Quarterback.js');
 
 
 // decorator for objects to interface with the Quarterback
-module.exports = {
+var Events = {
 
 		// 2 args: add a callback to be executed when THIS object fires an event
 		// 3 args: add a callback to be executed when SRC object fires an event
@@ -78,7 +78,6 @@ module.exports = {
 									this._ensureEventInterface();
 									Quarterback.normalizeOctaneEvent(event,this);
 								},
-
 		_registerHandler: function(event,src,handler){
 									this._ensureEventInterface();
 									var eventTypes = event ? event.split(' ') : [];
@@ -159,3 +158,5 @@ module.exports = {
 									});
 								}
 };
+
+module.exports = Events;

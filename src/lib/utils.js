@@ -70,7 +70,7 @@ var utils = {
 		for( var i = 0,n = queries.length; i < n; i++ ) {
 			param = queries[i].split('=');
 
-			if( !du.isBlank(param) ){
+			if( !utils.isBlank(param) ){
 				var key = param[0],val = param[1];
 				searchObject[key] = val;
 			}

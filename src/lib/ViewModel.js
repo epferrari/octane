@@ -34,7 +34,7 @@ var ViewModel = Factory({
 	render: 		function(data){
 
 								var lastRender,newRender,markup,span;
-
+								data || (data = _octane.models[this.modelRef] && _octane.models[this.modelRef].get());
 								//var currentRender = select('[octane-id="'+this.octane_id+'"]');
 								this.DOM_Element.classList.remove("view-active");
 								lastRender = this.DOM_Element;
@@ -89,6 +89,7 @@ var ViewModel = Factory({
 										},
 										detach : function(){
 												var alias = this.alias;
+												if(alias === 'App') throw new Error('Cannot detach App model');
 												if( alias ){
 													_octane.models[alias] = null;
 													_alias = null;

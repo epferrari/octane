@@ -8,11 +8,13 @@
 
 		var debug = new Controller("Debug",{
 			getErrors : function(){
+				var log = _octane.logfile;
+				if(log.length ===0) console.log('no errors');
 
-				_.each(_octane.logfile,function(line){
-					console.log(line[1]);
-					console.log('additional context:',line[0]);
-					console.log('logged by: '+line[2]);
+				_.each(_octane.logfile,function(entry){
+					console.log(entry.error);
+					console.log('additional details:',entry.message);
+					console.log('logged by: '+entry.caller);
 				});
 			},
 			getBootlog : function(){
@@ -51,14 +53,14 @@
 			'<octane-debugger style="display:none">',
 				'<span>Debug</span>',
 				'<ul>',
-					'<li o-control="(click)[Debugger.getErrors]" ><i class="fa fa-warning"></i>Errors</li>',
-					'<li o-control="(click)[Debugger.getBootlog]"><i class="fa fa-list"></i>Bootlog</li>',
-					'<li o-control="(click)[Debugger.getModels]"><i class="fa fa-database"></i>Models</li>',
-					'<li o-control="(click)[Debugger.getControllers]"><i class="fa fa-shield"></i>Controllers</li>',
-					'<li o-control="(click)[Debugger.getEvents]"><i class="fa fa-bolt"></i>Events</li>',
-					'<li o-control="(click)[Debugger.getFilters]"><i class="fa fa-filter"></i>Filters</li>',
-					'<li o-control="(click)[Debugger.getModules]"><i class="fa fa-plug"></i>Modules</li>',
-					'<li o-control="(click)[Debugger.hideConsole]"><i class="fa fa-remove"></i>Hide</li>',
+					'<li o-control="(click)[Debug.getErrors]" ><i class="fa fa-warning"></i>Errors</li>',
+					'<li o-control="(click)[Debug.getBootlog]"><i class="fa fa-list"></i>Bootlog</li>',
+					'<li o-control="(click)[Debug.getModels]"><i class="fa fa-database"></i>Models</li>',
+					'<li o-control="(click)[Debug.getControllers]"><i class="fa fa-shield"></i>Controllers</li>',
+					'<li o-control="(click)[Debug.getEvents]"><i class="fa fa-bolt"></i>Events</li>',
+					'<li o-control="(click)[Debug.getFilters]"><i class="fa fa-filter"></i>Filters</li>',
+					'<li o-control="(click)[Debug.getModules]"><i class="fa fa-plug"></i>Modules</li>',
+					'<li o-control="(click)[Debug.hideConsole]"><i class="fa fa-remove"></i>Hide</li>',
 				'</ul>',
 			'</octane-debugger>'];
 		var font = '<link href="http://fonts.googleapis.com/css?family=Source+Code+Pro:500 rel="stylesheet" type="text/css">';

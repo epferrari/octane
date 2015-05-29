@@ -1,7 +1,6 @@
 var _ 			= require('lodash');
 var _octane = require('./_octane.js');
 
-
 module.exports = {
 
 	log: 				function(message,error){
@@ -15,7 +14,7 @@ module.exports = {
 								_octane.logfile.push({
 									message: message,
 									error: (error||{}),
-									caller: this
+									caller: this.name || this.id || this.guid()
 								});
 							},
 

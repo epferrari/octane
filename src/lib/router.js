@@ -1,8 +1,10 @@
+	// reveal Modernizr on the global namespace
+	require('../assets/vendor/modernizr.js');
 
-	//require('modernizr');
+	var History			= require('html5-history');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
-	//var History 		= require('history.js');
+
 	var OctaneBase 	= require('./OctaneBase.js');
 	var View 				= require('./OctaneView.js');
 	var App			    = require('./app-model.js');
@@ -14,22 +16,14 @@
 	var routingBlocked = false;
 	var currentView;                // pointer
 	var queuedRoutes = [];          // store routes called while another route is executing its loading animation
-	//var routeConditions = {};       // conditions under which a route should be called, added with .routeIf()
 	var routerKeys = [];
 
 	// for HTML5 vs. HTML4 browsers
-	// detect with modernizr
-	var historyEnabled = (function(){
-		var html = document.getElementsByTagName('html')[0];
-		return  html && html.classList.contains('history');
-	})();
-
-	var stateChangeEvent = historyEnabled ? 'popstate' : 'hashchange';
+	var stateChangeEvent = Modernizr.history ? 'popstate' : 'hashchange';
 	var Router = new OctaneBase();
 
-
-
-
+	console.log(History);
+	History.init();
 	// helper to maintain appstate, uses History.pushState
 	Router.defineProp('pushState',function(params){
 
@@ -61,7 +55,7 @@
 	// helper to parse URL for a view
 	Router.defineProp('parseUrl',function(){
 
-		if(historyEnabled){
+		if(Modernizr.history){
 			return utils.urlObject().searchObject;
 		} else {
 			var hash = window.location.hash
@@ -125,7 +119,6 @@
 					//previousView = currentView;
 					currentView = V;
 					enRoute = null;
-					//if(!silent)pushState({view:V.id});
 					App.set({
 						viewID: 		V.id,
 						viewTitle: 	V.title
@@ -164,7 +157,7 @@
 					var previousView = currentView;
 					currentView = V;
 					enRoute = null;
-					if(!silent)pushState({view:V.id});
+					if(!silent)Router.pushState({view:V.id});
 					App.set({
 						viewID: 		V.id,
 						viewTitle: 	V.title
@@ -229,11 +222,12 @@
 									},
 		lock: 				function(){
 										routingBlocked = true;
-										routerKeys.push(this.guid({}));
+										var key = this.guid({});
+										routerKeys.push(key);
 										return key;
 		},
 		unlock: 			function(key){
-										_.remove(routerKeys,key);
+										_.pull(routerKeys,key);
 										if(routerKeys.length === 0){
 											routingBlocked = false;
 											if(queuedRoutes.length > 0){

@@ -8,7 +8,7 @@ var _octane = {
 	environment:    'web',
 	filters:        {},
 	hooks:          {},
-	logfile:        {},
+	logfile:        [],
 	modals:         {},
 	models:         {},
 	modules:        {},

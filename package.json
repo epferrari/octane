@@ -7,7 +7,9 @@
     "bluebird": "^2.9.26",
     "fastclick": "^1.0.6",
     "html2canvas": "^0.5.0-alpha2",
+    "html5-history": "^0.1.5",
     "lodash": "^3.9.1",
+    "modernizr": "^3.0.0-alpha.4",
     "velocity-animate": "^1.2.2",
     "velocity-ui-pack": "^1.2.2"
   },
@@ -35,7 +37,7 @@
     "build:css": "autoprefixer ./build/assets/css/octane.css",
     "build:html": "cp ./src/index.html ./build/index.html",
     "prebuild": "eslint ./src/octane.js && npm run clean:build",
-    "build": "npm run build:browserify && npm run build:sass && npm run build:css && npm run build:html",
+    "build": "npm run build:browserify -d && npm run build:sass && npm run build:css && npm run build:html",
     "postbuild": "npm run dist",
     "predist": "rm -rf ./dist/*",
     "dist": "mkdir -p ./dist/assets/js && uglifyjs --compress --mangle -o ./dist/assets/js/octane-min.js ./build/assets/js/octane.js"
