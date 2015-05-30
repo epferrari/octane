@@ -12,7 +12,7 @@ var Compiler 		= require('./Compiler.js');
 
 
 var bg              = DOM.modalContainer;
-var modalQueue      = [];
+var modalQueue      = null;
 var currentModal    = false;
 var block           = false;
 
@@ -39,7 +39,6 @@ var OctaneModal     = Frame.extend({
 
 	load:         function(){
 
-									var routerWasLocked = Router.isLocked;
 									var modalLoaded;
 
 									if(!block){
@@ -58,18 +57,17 @@ var OctaneModal     = Frame.extend({
 												modalLoaded = Promise.resolve();
 											}
 
-											modalLoaded.then(function(){
+											return modalLoaded.then(function(){
 												Router.unlock(key);
 											});
 
 									} else {
-										modalQueue.push(this.id);                           // modal animations are blocked, send to queue
+										modalQueue = this.id;                           		// modal animations are blocked, send to queue
 									}
 								},
 
 	dismiss:      function(){
 
-									var routerWasLocked = Router.isLocked;
 									if(this.isCurrent){
 										var key = Router.lock();
 										this._exit()
@@ -179,6 +177,13 @@ Object.defineProperty(OctaneModal,'isLocked',{
 	configurable: false
 });
 
+Object.defineProperty(OctaneModal,'queue',{
+	get: function(){
+		return modalQueue;
+	},
+	configurable: false
+});
+
 
 
 Compiler.assign('o-modal',function(elem){
@@ -205,7 +210,8 @@ OctaneModal.on('routing:begin routing:called',Router,function(){
 // re-enable modal calling after routing completes
 .on('routing:complete',Router,function(){
 	block = false;
-	this.load(modalQueue.pop());
+	this.load(modalQueue)
+	modalQueue = null;
 })
 // resize canvas to proper dimensions
 .any('load resize orientationchange',_.throttle(function(){

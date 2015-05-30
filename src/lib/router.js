@@ -77,7 +77,10 @@
 
 			Router.fire('routing:called');
 
-			if(!P || pageIsCurrent) return resolve();
+			if(!P || pageIsCurrent) {
+				Router.fire('routing:complete');
+				return resolve();
+			}
 			silent || (silent = P.silent || false);
 
 			if(enRoute || routingBlocked){
@@ -116,7 +119,7 @@
 				.then(function(){
 					Router.fire('page:loaded');
 					//previousPage = currentPage;
-					currentPage = V;
+					currentPage = P;
 					enRoute = null;
 					App.set({
 						pageID: 		P.id,
@@ -273,12 +276,15 @@
 
 
 	Compiler
-	.assign('[o-route]',function(el,routeName){
-
+	.assign('a.route',function(el){
+		console.log(el.href);
 		// catch a click event from a child node
 		el.addEventListener('click',function(e){
-				//e.stopPropagation();
-				//e.stopImmediatePropagation();
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				var fullpath = window.location.href;
+				var routeName = this.href.replace(fullpath+'#','');
 				//el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
 				Router.route(routeName);
 		},false);
