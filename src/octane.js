@@ -236,10 +236,10 @@
 										},
 
 				// access a bound model's unset method from the application object
-				unset: 			function(toUnset,timeout,throttle){
+				unset: 			function(toUnset,options){
 
 											if(!toUnset) return;
-
+											_.isPlainObject(options) || (options = {});
 											_.isArray(toUnset) || (toUnset = toUnset.split(','));
 
 											var unset = function(binding){
@@ -249,22 +249,24 @@
 													var model = _octane.models[name];
 													model && model.unset(key);
 											};
+											var timeout = options.timeout;
+											var throttle = options.throttle;
 
-											if(timeout && (utils.typeOf(timeout) === 'number')){ 		// timout the unset
+											if(timeout && (utils.typeOf(timeout) === 'number')){ 			// timout the unset
 
-													if(throttle){                                				// throttle the unsets
+													if(throttle){                                					// throttle the unsets
 														_.each(toUnset,function(binding,i){
-																setTimeout(function(){
-																		unset(binding);
-																},timeout*(i+1));                   				// make sure we timeout the 0 index
+															setTimeout(function(){
+																	unset(binding);
+															},timeout*(i+1));                   							// make sure we timeout the 0 index
 														});
-													}else{                                      				// unset all together after timeout
+													}else{                                      					// unset all together after timeout
 														setTimeout(function(){
-																_.each(toUnset,unset);
+															_.each(toUnset,unset);
 														},timeout);
 													}
 											} else {
-													_.each(toUnset,unset);                      				// unset all immediately
+													_.each(toUnset,unset);                      					// unset all immediately
 											}
 										}
 			});
@@ -278,23 +280,17 @@
 
 			define(OctaneBase.prototype,'watch',{
 				value: function(path,fn,thisArg){
-					//var cache ={};
 					var watching;
 
 					path.split('.').reduce(function(o,x,i){
-						console.log(path);
 						watching = (i === 0) ? x : o + '.' + x;
 						// set handler for each state change in a subBinding
 						this.any('modelchange:' + watching,function(){
 							var currentVal = Octane.get(watching);
-							//if(currentVal !== cache[watching]){
-								//cache[watching] = currentVal;
-								console.log(watching,currentVal);
-								fn.apply((thisArg || this),[currentVal,watching]);
-							//}
+							fn.apply((thisArg || this),[currentVal,watching]);
 						});
 						return watching;
-					}.bind(this));
+					}.bind(this),path[0]);
 					return this;
 				},
 				writable:false,
@@ -343,7 +339,10 @@
 					Octane.on('change',elem,uptake);
 				} else {
 					Octane.watch(binding,function(value){
-						elem.value = value || '';
+						if(value === undefined || value === null){
+							value = '';
+						}
+						elem.value = value;
 					});
 				}
 			});

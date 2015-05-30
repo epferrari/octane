@@ -22,7 +22,6 @@
 	var stateChangeEvent = Modernizr.history ? 'popstate' : 'hashchange';
 	var Router = new OctaneBase();
 
-	console.log(History);
 	History.init();
 	// helper to maintain appstate, uses History.pushState
 	Router.defineProp('pushState',function(params){
@@ -157,7 +156,7 @@
 					var previousView = currentView;
 					currentView = V;
 					enRoute = null;
-					if(!silent)Router.pushState({view:V.id});
+					if(!silent) Router.pushState({view:V.id});
 					App.set({
 						viewID: 		V.id,
 						viewTitle: 	V.title

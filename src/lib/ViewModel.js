@@ -34,7 +34,7 @@ var ViewModel = Factory({
 	render: 		function(data){
 
 								var lastRender,newRender,markup,span;
-								data || (data = _octane.models[this.modelRef] && _octane.models[this.modelRef].get());
+								//data || (data = _octane.models[this.modelRef] && _octane.models[this.modelRef].get());
 								//var currentRender = select('[octane-id="'+this.octane_id+'"]');
 								this.DOM_Element.classList.remove("view-active");
 								lastRender = this.DOM_Element;
@@ -66,7 +66,7 @@ var ViewModel = Factory({
 
 
 								// getter
-								if(!model.hasOwnProperty('alias')){
+								if(!Object.hasOwnProperty(model,'alias')){
 									Object.defineProperty(model,'alias',{
 										get: function(){
 											return _alias;
@@ -75,6 +75,15 @@ var ViewModel = Factory({
 									});
 								}
 
+								if(!Object.hasOwnProperty(model,'queue')){
+									var queue = {};
+									model.defineGetter('queue',function(){
+										return queue;
+									});
+									model._resetQueue = function(){
+										queue = {};
+									};
+								}
 
 								// attach to an alias for data-binding to views
 								_.extend(model,{

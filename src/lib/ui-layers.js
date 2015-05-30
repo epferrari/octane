@@ -158,30 +158,30 @@ UiLayers.defineProp('supportsCssFilters',supportsCssFilters);
 // cache screenshot as soon as routing completes
 if(supportsCssFilters){
 		UiLayers.addLayerEffect = function(){
-			var method = _octane.animateBy || 'css';
-			return new Promise(this.activateBackground[method])
+			var by = _octane.animateBy || 'css';
+			return new Promise(this.activateBackground[by])
 				.bind(this)
-				.then( this.activateModalContainer[method] )
-				.then( this.hideAppContainer[method] );
+				.then( new Promise(this.activateModalContainer[by]) )
+				.then( new Promise(this.hideAppContainer[by]) );
 		};
 		UiLayers.removeLayerEffect = function(){
-			var method = _octane.animateBy || 'css';
-			return  new Promise(this.deactivateModalContainer[method])
+			var by = _octane.animateBy || 'css';
+			return  new Promise(this.deactivateModalContainer[by])
 				.bind(this)
-				.then( this.revealAppContainer[method] )
-				.then( this.deactivateBackground[method] );
+				.then( new Promise(this.revealAppContainer[by]) )
+				.then( new Promise(this.deactivateBackground[by]) );
 		};
 		UiLayers.on('routing:complete',Router,function(){
 			if(_octane.useBackgroundFilterEffects) this.getBackgroundImage();
 		});
 } else {
 		UiLayers.activateLayerEffect = function(){
-			var method = _octane.animateBy || 'css';
-			return new Promise(this.activateModalContainer[method]);
+			var by = _octane.animateBy || 'css';
+			return new Promise(this.activateModalContainer[by]);
 		};
 		UiLayers.removeLayerEffect = function(){
-			var method = _octane.animateBy || 'css';
-			return  new Promise(this.deactivateModalContainer[method]);
+			var by = _octane.animateBy || 'css';
+			return  new Promise(this.deactivateModalContainer[by]);
 		};
 }
 

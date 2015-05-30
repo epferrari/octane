@@ -22,7 +22,7 @@ var Hinter = OctaneModel.extend({
 								// automatically remove after 5 seconds or specified time
 								toUnset = Object.keys(setObject);
 								this._set(setObject);
-								this._unset(toUnset,timeout);
+								this._unset(toUnset,{timeout:timeout});
 							}
 });
 

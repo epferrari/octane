@@ -139,11 +139,13 @@ var Template = Factory({
 										} else {
 											return null; 																				// no further nesting, value defined in key does not exist
 										}
-								},data) ||''; 																						// start with data object passed to template
+								},data); 																									// start with data object passed to template
 
-								if(!value && defaultValue.length >0){
-									value = defaultValue;
+								if(value === undefined || value === null){
+									if(defaultValue.length >0) value = defaultValue;
+									else value = ''
 								}
+
 								// apply filter if present
 								// filter is applied to this arg with val and model properties set
 								if(filter.length > 0){
@@ -164,7 +166,7 @@ var Template = Factory({
 								// replace all occurences of {{postedBy.firstName @filter:myFilter @param:myParam}}
 								// in template with filtered value of data.postedBy.firstName,
 								// or data.postedBy.firstName if "myFilter" didn't exist
-								return  markup.replace(match,(value || ' '));
+								return  markup.replace(match,value);
 							},
 
 	_render: 		function (template,dest,method){

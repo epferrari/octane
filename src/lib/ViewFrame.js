@@ -6,8 +6,8 @@ var Factory  		= require('./OctaneBase.js');
 
 
 var ViewFrame = Factory.extend({
-
-	prepareFrame:    function(elem){
+	defaultPos: 		'left',
+	prepareFrame: 	function(elem){
 
 									_.extend(this,{
 											id              : elem.id,
@@ -21,14 +21,9 @@ var ViewFrame = Factory.extend({
 									var isClassed = false;
 									var viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'];
 									var n = viewClasses.length;
+									var isClassed = _.intersection(this.elem.classList,viewClasses).length > 0;
 
-									while(n--){
-										if(this.elem.classList.contains(viewClasses[n]) ){
-											isClassed = true;
-											break;
-										}
-									}
-									!isClassed && this.elem.classList.add('view-left');
+									if(!isClassed) this.elem.classList.add('view-'+this.defaultPos);
 								},
 	beforeLoad:   function(deferred){
 									try{

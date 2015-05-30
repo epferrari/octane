@@ -60,30 +60,33 @@ var utils = {
 	/* --------------------------------------------------------------------- */
 	urlObject: 	function (){
 		var parser = document.createElement('a'),
-				searchObject = {},
-				queries, param;
+				searchObject = {},queries, param, n, key, val;
+
 		// Let the browser do the work
 		parser.href = window.location;
 		// Convert query string to object
-		queries = parser.search.replace(/^\?/, '').split('&');
+		queries = parser.search.replace(/^\?/,'').split('&');
 
-		for( var i = 0,n = queries.length; i < n; i++ ) {
-			param = queries[i].split('=');
+		n = queries.length;
 
-			if( !utils.isBlank(param) ){
-				var key = param[0],val = param[1];
-				searchObject[key] = val;
+		while(n--){
+			param = queries[n].split('=');
+
+			if(param){
+				key = param[0];
+				val = param[1];
+				if(!utils.isBlank(key)) searchObject[key] = val;
 			}
 		}
 		return {
-			protocol		: parser.protocol,
-			host			: parser.host,
-			hostname		: parser.hostname,
-			port			: parser.port,
-			pathname		: parser.pathname,
+			protocol			: parser.protocol,
+			host					: parser.host,
+			hostname			: parser.hostname,
+			port					: parser.port,
+			pathname			: parser.pathname,
 			searchString	: parser.search,
 			searchObject	: searchObject,
-			hash			: parser.hash
+			hash					: parser.hash
 		};
 	},
 

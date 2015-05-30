@@ -14,42 +14,84 @@
 
 	<body class="container-fluid octane">
 
-		<o-loading-container>
-
+		<o-loading-container style="color:grey">
+			<p>Loading</p>
 		</o-loading-container>
 
 		<o-app-container class="hidden">
 
 			<o-view-container>
 
-				<o-view id="home" class="view-left" style="background-color:blue">
-					<h1>Welcome to Octane</h1>
-					<input o-bind="App.input1"/>
+				<o-view id="home" style="border:black thin solid">
 
-					<textarea o-bind="App.input2">Enter some text</textarea>
+					<h1>Welcome to Octane</h1>
+
+					<p><input o-bind="App.input1"/></p>
+					<p><textarea o-bind="App.input2">Enter some text</textarea></p>
+
 					<div o-model="App">
 						<p>{{input1}}</p>
 						<p>{{input2}}</p>
 					</div>
+
+					<button o-route="view1">View 1</button>
+					<button o-route="view2">View 2</button>
+					<button o-route="view3">View 3</button>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+
 				</o-view>
-				<o-view id="view-2" class="view-bottom" style="background-color:green">
-					<h1>Another View!</h1>
+
+				<o-view id="view1" style="border:black thin solid">
+					<h1>View 1</h1>
+					<button o-route="home">Home</button>
+					<button o-route="view2">View 2</button>
+					<button o-route="view3">View 3</button>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
 				</o-view>
-				<o-view id="view-3" class="view-right" style="background-color:yellow">
-					<h1>A Third View</h1>
+
+				<o-view id="view2" style="border:black thin solid">
+					<h1>View 2</h1>
+					<button o-route="home">Home</button>
+					<button o-route="view1">View 1</button>
+					<button o-route="view3">View 3</button>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
 				</o-view>
+
+				<o-view id="view3" style="border:black thin solid">
+					<h1>View 3</h1>
+					<button o-route="home">Home</button>
+					<button o-route="view1">View 1</button>
+					<button o-route="view2">View 2</button>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+				</o-view>
+
 			</o-view-container>
 
 		</o-app-container>
 
 		<o-modal-container>
-				<o-modal name="modal1" style="background-color:turquoise">
+				<o-modal id="modal1" style="color:white">
 					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
-					<h1>Modal</h1>
+					<h1>Modal 1</h1>
+
+					<button o-route="home">Home</button>
+					<button o-route="view1">View 1</button>
+					<button o-route="view2">View 2</button>
+					<button o-route="view3">View 3</button>
+					<button o-modal="modal2">Modal 2</button>
 				</o-modal>
-				<o-modal name="modal2" style="background-color:orange">
+				<o-modal id="modal2" style="color:white">
 					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
 					<h1>Modal 2</h1>
+
+					<button o-route="view1">View 1</button>
+					<button o-route="view2">View 2</button>
+					<button o-route="view3">View 3</button>
+					<button o-modal="modal1">Modal 1</button>
 				</o-modal>
 		</o-modal-container>
 
@@ -59,8 +101,9 @@
 		<script type="text/javascript" src="assets/js/octane.js"></script>
 		<script tyle="text/javascript">
 			octane.initialize({
-				name:'Octane Application',
-				debugMode:true
+				appName:'Octane Application',
+				debugMode:true,
+				animateBy: 'js'
 			});
 		</script>
 	</body>

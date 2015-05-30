@@ -13,18 +13,17 @@ function OctaneModel(dataset){
 	// private
 	var _alias	= null;
 	var data = {};
-	var queue = [];
+	var queue = {};
 	this.className = this.className || 'OctaneModel';
 	this.guid();
 
-	this.accessors('queue',{
-		set:function(pair){
-			queue.push(pair);
-		},
-		get:function(){
-			return queue.shift();
-		}
+	this.defineGetter('queue',function(){
+		return queue;
 	});
+
+	this._resetQueue = function(){
+		queue = {};
+	};
 
 	this.defineGetter('alias',
 		function(){
@@ -57,25 +56,6 @@ function OctaneModel(dataset){
 			return this;
 		}
 	});
-
-	// set up to handle events
-	// functionality added with Events decorator object
-	/*
-	var events = {ANY:{}};
-	var listening = [];
-
-	this.defineGetter('_events_',function(){
-		return events;
-	});
-	this.defineGetter('_listening_',function(){
-		return listening;
-	});
-
-	this.clearEventCache = function(){
-		events = {ANY:{}};
-	};
-	*/
-
 
 	this.initialize.apply(this,arguments);
 	// set defaults from prototype
@@ -134,51 +114,53 @@ OctaneModel.prototype = Object.create(OctaneBase.prototype);
 
 OctaneModel.prototype.defineProp({
 
-	_set: 			function(key,val,options){
+	_ensureSetObject: function(key,value){
+								var tk = utils.typeOf(key);
+								var inbound;
+
+								// handle key,value and {key:value}
+								if(tk === 'object'){
+									inbound = key;
+								}else if(tk === 'string'){
+									(inbound = {})[key] = value;
+								}else {
+									inbound = {};
+								}
+								return inbound;
+							},
+
+	_set: 			function(key,val){
+
+								var inbound = this._ensureSetObject(key,val);
 
 								if(this.processing){
-									this.queue = [key,val];
-								}else{
+									_.merge(this.queue,inbound);
+								} else {
 									this.processing = true;
 
-
-									var alias = this.alias;
-									var tk = utils.typeOf(key);
-									var inbound,n,keys;
-
-									// handle key,value and {key:value}
-									if(tk === 'object'){
-										inbound = key;
-										options = val;
-									}else if(tk === 'string'){
-										(inbound = {})[key] = val;
-									}else {
-										inbound = {};
-									}
-									options || (options = {});
-									// array for state properties changed
-									keys = Object.keys(inbound);
-									n = keys.length;
-
+										var alias = this.alias;
 									// apply any hooks
-									if( alias ){
-										while(n--){
-											_octane.hooks[alias+'.'+keys[n]] && this._applyHooks(keys[n],inbound);
-										}
+									if(alias){
+										_.forOwn(inbound,function(value,path){
+											_octane.hooks[alias+'.'+path] && this._applyHooks(path,inbound);
+										},this);
+										//while(n--){
+										//	_octane.hooks[alias+'.'+keys[n]] && this._applyHooks(keys[n],inbound);
+										//}
 									}
 
-									// re-measure in case there have been additional properties
-									// added to fresh via hooks
-									_.each(inbound,function(value,path){
-										//this._setData(binding,value);
+									// re-iterate in case there have been additional properties
+									// added to inbound via hooks
+									_.forOwn(inbound,function(value,path){
 										_.set(this.data,path,value);
 										this.alias && this.fire('modelchange:'+path);
 									},this);
 									this.processing = false;
-									this.queue && this._set.apply(this,this.queue);
+									if(!_.isEmpty(this.queue)) this._set(this.queue);
+									this._resetQueue();
+									// alert any subscribers
+									alias && this.fire('modelchange:'+alias);
 								}
-								// alert any subscribers
-								alias && this.fire('modelchange:'+alias);
 								return this.data;
 							},
 
@@ -228,11 +210,14 @@ OctaneModel.prototype.defineProp({
 								}
 							},
 
-	_unset: 		function(toUnset,timeout,throttle){
+	_unset: 		function(toUnset,options){
 
 								if(!toUnset) return;
-
+								_.isPlainObject(options) || (options = {});
 								_.isArray(toUnset) || (toUnset = toUnset.split(','));
+
+								var timeout = options.timeout;
+								var throttle = options.throttle;
 
 								if(timeout && (utils.typeOf(timeout) == 'number')){ // timout the unset
 

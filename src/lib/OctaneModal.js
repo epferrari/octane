@@ -24,12 +24,12 @@ var OctaneModal     = Frame.extend({
 		return Controller.apply(this,arguments);
 	},
 	*/
-	constructor: OctaneModal,
-
+	constructor: 	OctaneModal,
+	defaultPos: 	'bottom',
 	initialize:   function(elem){
 
 									if(!elem) throw new Error('Must pass an HTMLElement to OctaneModal');
-
+									
 									this.prepareFrame(elem);
 									this.adjustSize();
 									this.name = _.capitalize(_.camelCase(this.title))+'ModalController';
@@ -77,6 +77,7 @@ var OctaneModal     = Frame.extend({
 											Router.unlock(key);
 											currentModal = false;
 										})
+										.bind(UiLayers)
 										.then(UiLayers.removeLayerEffect);
 									}
 								},
