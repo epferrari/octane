@@ -8,7 +8,7 @@ var Controller  = require('./Controller.js');
 var Frame 			= require('./ViewFrame.js');
 var _octane			= require('./_octane.js');
 
-var OctaneView = Frame.extend({
+var OctanePage = Frame.extend({
 
 	initialize: 	function(elem){
 
@@ -16,8 +16,8 @@ var OctaneView = Frame.extend({
 
 									this.prepareFrame(elem);
 									this.view = this.elem;
-									this.name = _.capitalize(_.camelCase(this.title))+'ViewFrameController';
-									_octane.views[this.id] = this;
+									this.name = _.capitalize(_.camelCase(this.title))+'FrameController';
+									_octane.pages[this.id] = this;
 								},
 
 	constructor: 	function OctaneView(){
@@ -27,12 +27,12 @@ var OctaneView = Frame.extend({
 	setCanvasHeight:function(){
 
 									var windowHeight = window.document.body.offsetHeight;
-									this.elem.style.height = DOM.viewContainer.style.height = windowHeight+'px';
+									this.elem.style.height = DOM.pageContainer.style.height = windowHeight+'px';
 								},
 
 	_load:        function(){
 									this.setCanvasHeight();
-									this.elem.classList.add('view-active');
+									this.elem.classList.add('frame-active');
 									Velocity(this.elem,'scroll',{duration:100});
 									return Promise.delay(405)
 									.bind(this)
@@ -41,14 +41,14 @@ var OctaneView = Frame.extend({
 
 	_queue:   		function(){
 
-									this.elem.classList.add('view-queued');
-									this.elem.classList.remove('view-active');
+									this.elem.classList.add('frame-queued');
+									this.elem.classList.remove('frame-active');
 									return Promise.delay(405);
 								},
 
 	_exit:        function (){
-									this.elem.classList.remove('view-active');
-									this.elem.classList.remove('view-queued');
+									this.elem.classList.remove('frame-active');
+									this.elem.classList.remove('frame-queued');
 									return this.frameDidExit().delay(805);
 								}
 },{
@@ -59,19 +59,19 @@ var OctaneView = Frame.extend({
 								},
 
 	destroy: 			function(id){
-									var toDestroy = _octane.views[id];
+									var toDestroy = _octane.pages[id];
 									if(toDestroy){
 										toDestroy._exit();
 										_.each(toDestroy,function(prop){
 											prop = null;
 										});
-										_octane.views[id] = null;
+										_octane.pages[id] = null;
 									}
 								},
 
 	get: 					function(id){
-									return _octane.views[id];
+									return _octane.pages[id];
 								}
 });
 
-module.exports = OctaneView;
+module.exports = OctanePage;

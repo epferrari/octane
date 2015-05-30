@@ -29,7 +29,7 @@ var OctaneModal     = Frame.extend({
 	initialize:   function(elem){
 
 									if(!elem) throw new Error('Must pass an HTMLElement to OctaneModal');
-									
+
 									this.prepareFrame(elem);
 									this.adjustSize();
 									this.name = _.capitalize(_.camelCase(this.title))+'ModalController';
@@ -208,8 +208,8 @@ OctaneModal.on('routing:begin routing:called',Router,function(){
 	this.load(modalQueue.pop());
 })
 // resize canvas to proper dimensions
-.any('load resize orientationchange',function(){
+.any('load resize orientationchange',_.throttle(function(){
 	currentModal && currentModal.adjustSize();
-});
+},200));
 
 module.exports = OctaneModal;

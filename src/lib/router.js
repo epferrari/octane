@@ -1,12 +1,12 @@
 	// reveal Modernizr on the global namespace
-	require('../assets/vendor/modernizr.js');
+	require('../../vendor/modernizr.js');
 
 	var History			= require('html5-history');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
 
 	var OctaneBase 	= require('./OctaneBase.js');
-	var View 				= require('./OctaneView.js');
+	var Page 				= require('./OctanePage.js');
 	var App			    = require('./app-model.js');
 	var utils 			= require('./utils.js');
 	var Compiler		= require('./Compiler.js');
@@ -14,7 +14,7 @@
 
 	var enRoute = null;
 	var routingBlocked = false;
-	var currentView;                // pointer
+	var currentPage;                // pointer
 	var queuedRoutes = [];          // store routes called while another route is executing its loading animation
 	var routerKeys = [];
 
@@ -32,7 +32,7 @@
 		// update the language in the url
 		parsed 		= utils.urlObject().searchObject;
 		//language 	= Translator.getLang();
-		title 		= utils.titleize(params.view) || currentView.title;
+		title 		= utils.titleize(params.page) || currentPage.title;
 		appName 	= App.get('name');
 
 		_.extend(parsed,params);
@@ -43,7 +43,7 @@
 
 		History.pushState({
 				lang: language,
-				view: params.view
+				page: params.page
 			},
 			appName +' | '+ title,
 			fragment
@@ -52,7 +52,7 @@
 	});
 
 	// helper to parse URL for a view
-	Router.defineProp('parseUrl',function(){
+	Router.defineProp('parseUrlQueryString',function(){
 
 		if(Modernizr.history){
 			return utils.urlObject().searchObject;
@@ -70,21 +70,21 @@
 	});
 
 	// the meat
-	Router.defineProp('route',function(view,silent){
+	Router.defineProp('route',function(page,silent){
 		return new Promise(function(resolve,reject){
-			var V = View.get(view);
-			var viewIsCurrent = (V === currentView);
+			var P = Page.get(page);
+			var pageIsCurrent = (P === currentPage);
 
 			Router.fire('routing:called');
 
-			if(!V || viewIsCurrent) return resolve();
-			silent || (silent = V.silent || false);
+			if(!P || pageIsCurrent) return resolve();
+			silent || (silent = P.silent || false);
 
 			if(enRoute || routingBlocked){
 				var toQueue = {
-					view:view,
-					silent:silent,
-					resolver:resolve
+					page: 		page,
+					silent: 	silent,
+					resolver: resolve
 				};
 				if(!_.contains(queuedRoutes,toQueue)){
 					queuedRoutes.unshift(toQueue);
@@ -94,40 +94,40 @@
 				return;
 			}
 
-			var isPrevious = (V.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.view);
+			var isPrevious = (P.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.page);
 			if( isPrevious ){
-				return V.frameWillLoad()
+				return P.frameWillLoad()
 				.then(function(){
 					Router.fire('routing:begin');
-					enRoute = V;
-					return V._queue();
+					enRoute = P;
+					return P._queue();
 				})
 				.then(function(){
-					if(currentView){
-						currentView.elem.classList.add('view-animating');
-						return currentView._exit();
+					if(currentPage){
+						currentPage.elem.classList.add('frame-animating');
+						return currentPage._exit();
 					}
 				})
 				.then(function(){
-					currentView && currentView.elem.classList.remove('view-animating');
-					return V._load();
+					currentPage && currentPage.elem.classList.remove('frame-animating');
+					return P._load();
 				})
-				.then(V.frameDidLoad)
+				.then(P.frameDidLoad)
 				.then(function(){
-					Router.fire('view:loaded');
-					//previousView = currentView;
-					currentView = V;
+					Router.fire('page:loaded');
+					//previousPage = currentPage;
+					currentPage = V;
 					enRoute = null;
 					App.set({
-						viewID: 		V.id,
-						viewTitle: 	V.title
+						pageID: 		P.id,
+						pageTitle: 	P.title
 					});
 				})
 				.then(function(){
 
 					if(queuedRoutes.length >0){
 						var next = queuedRoutes.shift();
-						return Router.route(next.view,next.silent).then(next.resolver);
+						return Router.route(next.page,next.silent).then(next.resolver);
 					}
 				})
 				.then(function(){
@@ -140,34 +140,34 @@
 
 			} else {
 
-				return V.frameWillLoad()
+				return P.frameWillLoad()
 				.then(function(){
 					Router.fire('routing:begin');
-					enRoute = V;
-					if(currentView) return currentView._queue();
+					enRoute = P;
+					if(currentPage) return currentPage._queue();
 				})
 				.then(function(){
-					Router.fire('view:loading');
-					return V._load();
+					Router.fire('page:loading');
+					return P._load();
 				})
-				.then(V.frameDidLoad)
+				.then(P.frameDidLoad)
 				.then(function(){
-					Router.fire('view:loaded');
-					var previousView = currentView;
-					currentView = V;
+					Router.fire('page:loaded');
+					var previousPage = currentPage;
+					currentPage = P;
 					enRoute = null;
-					if(!silent) Router.pushState({view:V.id});
+					if(!silent) Router.pushState({page: P.id});
 					App.set({
-						viewID: 		V.id,
-						viewTitle: 	V.title
+						pageID: 		P.id,
+						pageTitle: 	P.title
 					});
-					if(previousView) return previousView._exit();
+					if(previousPage) return previousPage._exit();
 				})
 				.then(function(){
 
 					if(queuedRoutes.length >0){
 						var next = queuedRoutes.shift();
-						return Router.route(next.view,next.silent).then(next.resolver);
+						return Router.route(next.page,next.silent).then(next.resolver);
 					}
 				})
 				.then(function(){
@@ -190,8 +190,8 @@
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
-											var view = View.get(route);
-											view && view.beforeLoad(deferred);
+											var page = Page.get(route);
+											page && page.beforeLoad(deferred);
 										});
 										return this;
 									},
@@ -204,8 +204,8 @@
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
-											var view = View.get(route);
-											view && view.onload(callback,argsArray);
+											var page = Page.get(route);
+											page && page.onload(callback,argsArray);
 										});
 										return this;
 									},
@@ -214,8 +214,8 @@
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
-											var view = View.get(route);
-											view && view.onExit(callback,argsArray);
+											var page = Page.get(route);
+											page && page.onExit(callback,argsArray);
 										});
 										return this;
 									},
@@ -231,7 +231,7 @@
 											routingBlocked = false;
 											if(queuedRoutes.length > 0){
 												var next = queuedRoutes.shift();
-												Router.route(next.view,next.silent)
+												Router.route(next.page,next.silent)
 													.then(next.resolver);
 											}
 										} else {
@@ -251,9 +251,9 @@
 		return queuedRoutes;
 	});
 
-	Object.defineProperty(View,'current',{
+	Object.defineProperty(Page,'current',{
 		get: function(){
-			return currentView;
+			return currentPage;
 		},
 		configurable:false
 	});
@@ -264,11 +264,11 @@
 	// change the view with browser's forward/back buttons
 	Router
 	.any(stateChangeEvent,function(){
-		this.route(this.parseUrl().view);
+		this.route(this.parseUrlQueryString().page);
 	})
 	// ensure onscreen view keeps proper dimensions to proper dimensions
 	.any('translated resize orientationchange',function(){
-		currentView && currentView.setCanvasHeight();
+		currentPage && currentPage.setCanvasHeight();
 	});
 
 

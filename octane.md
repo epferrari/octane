@@ -23,33 +23,32 @@
 
 ### Why Octane
   
-Octane was developed to provide a stepping stone into the world of frontend MVC (model-view-controller) frameworks and two-way data binding, without requiring developers to learn extensive and API-specific jargon. It also provides some fundamental functionality applications with client-side state, like routing and view animations for routes.  For the most part though, Octane strives to stay out of the way, allowing you to access its model and controller structures when you need them, and write code like you're used to everywhere else.
+Octane was developed to provide a stepping stone into the world of frontend MV* frameworks, providing two-way data binding and a rudimentary router. Its aim was to be simple rather than robust, to solve problems like animating between views, binding a data layer with a view layer, and providing an environment that encourages separation of concerns.  For the most part though, Octane strives to stay out of the way, allowing you to access its model and controller structures when you need them, and write code your way everywhere else.
 
-Be aware: you'll probably write a little more code with Octane than with some other frameworks, but that's part of the idea. We don't obfuscate everything to the point it feels like magic when you use Octane's models and methods. We want developers to still write javascript the way they want to, with the freedom to lean on Octane but not be confined by it. At the same time, Octane's open ended-interface allows you as a developer to extend core modules and new add modules as you see fit, incorporating the core model/view/controller/view-model system to accomplish your end goals. Ultimately, you're always writing your applications *your way*, not the Octane way.
+Be aware: you'll probably write a little more code with Octane than with some other frameworks, but that's part of the idea. We don't obfuscate everything to the point it feels like magic when you use Octane's models and methods. We want developers to still write javascript the way they want to, with the freedom to lean on Octane but not be confined by it. At the same time, Octane's open ended-interface allows you as a developer to extend core modules and new add modules as you see fit, incorporating the core model/view/controller/view-model system to accomplish your end goals. Ultimately, you're mostly writing your applications *your way*, not the Octane way.
 
 
 ### Overview
 
 At its core, Octane is a model/view/controller/view-model (MVCVM) framework. The premise of any MV\* framework is to compartmentalize different roles of an application code. Each component of an MV\* have a specialized role, much like HTML, CSS, and javascript have separate functions on the DOM. Skip ahead for the [API reference](#api) or read on to learn how Octane's **model**, **view**, **controller**, and **view-model** components interact with the **Octane Circuit** and how Octane implements a its MV\* design pattern.
 
-To get a good grasp on MV\* and other Javascript design patterns, check out the free e-book [Learning Javascript Design Patterns][ref1] by Addy Osmani.
+To get a good grasp on MV* and other Javascript design patterns, check out the free e-book [Learning Javascript Design Patterns][ref1] by Addy Osmani.
 
 [ref1]: http://addyosmani.com/resources/essentialjsdesignpatterns/book/
 
 
 #### The Octane Circuit
 
-Octane's components are held together by the Circuit, a continuous loop of state monitoring, comparing, and updating that's triggered with any change to a data key bound between the **View** (DOM layer) and the **Model**.  This connection between the View and the Model is known as two-way data binding, and it's the most powerful weapon in an MV\*'s arsenal. In Octane, this loop can be triggered in two ways, each from opposite ends of the Circuit: one is in the **View Model**, whenever bound data is changed in the DOM by the user. This starts the Circuit's uptake channel, where data makes its way to the Model via the **Controller** and its methods.  The other trigger is inside the Model itself, fired when its data is altered. This initiates the Circuit's outflow channel as the updated data makes its way back to the DOM for the user to see.
+Octane's components are held together by the Circuit, a continuous loop of state monitoring, comparing, and updating that's triggered with any change to data bound between a **View** (DOM layer) and a **Model**.  This connection between the View and the Model is known as two-way data binding, and it's the most powerful weapon in an MV\*'s arsenal. In Octane, this loop can be triggered in two ways, each from opposite ends of the Circuit: one is in the **View Model**, whenever bound data is changed in the DOM by the user. This starts the Circuit's uptake channel, where data makes its way to the Model.  The other trigger is inside the Model itself, fired when its data is altered. This initiates the Circuit's outflow channel as the updated data makes its way back to the DOM for the user to see in the **View**.
 
-DOM Elements are bound to Models, and thus included in the circuit, by giving them an `o-bind` or `o-update` attribute. See [Octane DOM](#octane-dom) for how your HTML views interact with Octane using `o-*` attributes and tags. 
+DOM Elements are bound to a model's data via **View Models**, abstraction objects that handle the uptake and outflow of data between views and models. See [Octane DOM](#octane-dom) for how you can decalre that parts of your HTML views are to interact with Octane using `o-*` attributes and tags. 
 	
 ---
 
 #### Models
 
-Traditionally, a Model holds the data users see in your application. Static content is still held in HTML, but content that changes in the view depending on user interaction should be held in a Model. It provides a centralized location for all data related to your application, or to a certain part of your application.
+A Model holds the data that informs your application's views. Static content is still held in HTML, but view content that changes in response user interaction should be held in a Model. Models provide a centralized location for all data related to parts of your application.
 
-Octane's Models are unique in that they are partitioned into REST-style resource data that you set when you initiate the Model, and active data that changes depending on the user's interaction with your application.  Resource data can be accessed throughout your application in response to changes on input fields, select boxes, etc, but it cannot be edited. Active data, on the other hand, is entirely fluid and changes as users progress through the flow of the application. The Resource data is by its nature stateless, while the active data is entirely mutable and comprises the state of your application. Throughout this documentation, **model state** and **state data** may be used interchangeably to describe this dynamic data object in the Model.
 
 <a class="btn btn-info pull-right" href="#models-api" role="button">using Models</a>
 
@@ -57,9 +56,9 @@ Octane's Models are unique in that they are partitioned into REST-style resource
 
 ##### View Models
 
-A View Model in Octane is actually initialized in tandem with each Model instance, but its purpose is different enough to warrant its own explanation. The View Model has one job and one job only: to keep the data in the view in sync with the Model's state at all times. This means when a user enters or selects information in the UI, the Model is updated. Conversely, if user-entered data is manipulated by the Controller in any way or there's a change to any data point in the Model's scope, the view reflects that newly altered data syncronously.
+A View Model in Octane is actually initialized in tandem with each Model instance, but its purpose is different enough to warrant its own explanation. The View Model has one job and one job only: to keep the data in the view in sync with the Model's state at all times. This means when a user enters or selects information in the UI, the Model is updated. Conversely, if user-entered data is manipulated by the Controllers, hooks, or your application logic in any way, the View Model ensures that each view reflects that newly altered data syncronously.
 
-You won't interact with the View Model directly. It serves as an interface layer, performing its job silently in cooperation to your Controllers, Models, and Views.
+In most cases, you won't interact with a View Model directly. It serves as an interface layer, performing its job silently in cooperation to your Controllers, Models, and Views, although it can be extended to encompass more complex logic for views that require it.
 
 <a class="btn btn-info pull-right" href="#view-models-api" role="button">View Models</a>
 
@@ -67,7 +66,7 @@ You won't interact with the View Model directly. It serves as an interface layer
 
 #### Views
 
-Views are the presentation layer, written in HTML and styled by CSS. In classic MV\* implementaions, a view has no logic within it. In Octane, this is mostly true, however Octane creates is a **View Object** for every DOM element you create with the `<o-view>` tag.
+Views are the presentation layer, written in HTML and styled by CSS. In classic MV\ implementaions, a view has no logic within it. In Octane, this is mostly true, however Octane creates is a **View Object** for every DOM element you create with the `<o-view>` tag.
 
 The View Object is has a very few methods, mostly to deal with animating itself in and out of the viewport. While Octane's [Router core module](#router) handles the logic for tasks like loading, unloading, and updating the history, the View object holds information about how each particular view should adhere to those tasks. Think of the View as the HTML, and the View Object as reference to the HTML stored in the Router.
 

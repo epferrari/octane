@@ -5,7 +5,7 @@ var uiPack 			= require('velocity-ui-pack');
 var Factory  		= require('./OctaneBase.js');
 
 
-var ViewFrame = Factory.extend({
+var Frame = Factory.extend({
 	defaultPos: 		'left',
 	prepareFrame: 	function(elem){
 
@@ -19,24 +19,24 @@ var ViewFrame = Factory.extend({
 									});
 
 									var isClassed = false;
-									var viewClasses = ['view-left','view-right','view-bottom','view-top','view-fader'];
-									var n = viewClasses.length;
-									var isClassed = _.intersection(this.elem.classList,viewClasses).length > 0;
+									var classes = ['frame-left','frame-right','frame-bottom','frame-top','frame-fade'];
+									var n = classes.length;
+									var isClassed = _.intersection(this.elem.classList,classes).length > 0;
 
-									if(!isClassed) this.elem.classList.add('view-'+this.defaultPos);
+									if(!isClassed) this.elem.classList.add('frame-'+this.defaultPos);
 								},
 	beforeLoad:   function(deferred){
 									try{
 										this.beforeLoadTasks.push(deferred);
 									} catch(ex){
-										this.log && this.log('cannot push "beforeLoad" promise to view '+this.id+', reason: '+ex.message);
+										this.log && this.log('cannot push "beforeLoad" promise to page '+this.id+', reason: '+ex.message);
 									}
 								},
 	onload:       function(callback,args){
 									try{
 										this.onloadTasks.push([callback,args]);
 									}catch(ex){
-										this.log && this.log('cannot push "onload" callback to view '+this.id+', reason: '+ex.message);
+										this.log && this.log('cannot push "onload" callback to page '+this.id+', reason: '+ex.message);
 									}
 								},
 
@@ -44,7 +44,7 @@ var ViewFrame = Factory.extend({
 									try{
 										this.onExitTasks.push([callback,args]);
 									}catch(ex){
-										this.log && this.log('cannot push "onExit" callback to view '+this.id+', reason: '+ex.message);
+										this.log && this.log('cannot push "onExit" callback to page '+this.id+', reason: '+ex.message);
 									}
 								},
 	frameWillLoad:function(){
@@ -81,4 +81,4 @@ var ViewFrame = Factory.extend({
 
 });
 
-module.exports = ViewFrame;
+module.exports = Frame;

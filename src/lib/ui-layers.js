@@ -10,7 +10,7 @@
 	var
 	bgContainer = DOM.bgContainer,
 	appContainer = DOM.appContainer,
-	viewContainer = DOM.viewContainer,
+	pageContainer = DOM.pageContainer,
 	modalContainer = DOM.modalContainer;
 
 /* ------------------------------------------------------------------- */

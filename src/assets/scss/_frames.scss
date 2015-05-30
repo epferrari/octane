@@ -1,63 +1,42 @@
 /* Scss Document */
-o-view-container{
-	position:relative;
-	display:block;
-	width:100%;
-		z-index:10;
-		overflow-x:hidden;
-		overflow-y:hidden;
-}
 
-o-view {
-		position:absolute;
-		visibility:hidden;
-		opacity:0;
-		width:100%;
-		height:100%;
-		top:0;
-		left:0;
-		overflow-x:hidden;
-		overflow-y:hidden;
-		z-index:1;
-		background-color:white;
-}
 
-.view-left{
+.frame-left{
 		transform: translateX(-100%);
 		transition:
 			transform 0.3s cubic-bezier(0.465,0.183,0.153,0.946),
 			opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-right{
+.frame-right{
 		transform: translateX(100%);
 		transition:
 			transform 0.3s cubic-bezier(0.465,0.183,0.153,0.946),
 			opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-top{
+.frame-top{
 		transform: translateY(-100%);
 		transition:
 			transform 0.3s cubic-bezier(0.465,0.183,0.153,0.946),
 			opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-bottom{
+.frame-bottom{
 		transform: translateY(100%);
 		transition:
 			transform 0.3s cubic-bezier(0.465,0.183,0.153,0.946),
 			opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-fader{
+.frame-fade{
 		opacity: 0;
 		transition:
 			transform 0.3s cubic-bezier(0.465,0.183,0.153,0.946),
 			opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-queued{
+.frame-queued{
 		opacity:1;
 		visibility:visible;
 		display:block;
@@ -68,7 +47,7 @@ o-view {
 			//opacity 0.5s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-active{
+.frame-active{
 		opacity:1;
 		visibility:visible;
 		display:block;
@@ -79,7 +58,7 @@ o-view {
 				opacity 0.2s cubic-bezier(0.465,0.183,0.153,0.946);
 }
 
-.view-animating{
+.frame-animating{
 	opacity:1;
 	visibility:visible;
 	display:block;

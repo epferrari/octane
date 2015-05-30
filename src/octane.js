@@ -588,16 +588,16 @@
 
 
 	/* ------------------------------------------------------- */
-	/*                          VIEWS                          */
+	/*                     PAGE VIEWS                          */
 	/* ------------------------------------------------------- */
 
-			var View = require('./lib/OctaneView.js');
+			var Page = require('./lib/OctanePage.js');
 
-			Octane.defineProp('View',View);
+			Octane.defineProp('Page',Page);
 
-			Compiler.assign('o-view',function(elem){
-				var view = new View(elem);
-				view;
+			Compiler.assign('o-page',function(elem){
+				var page = new Page(elem);
+				page;
 			});
 
 
@@ -702,10 +702,10 @@
 			.on('octane:ready',function(){
 					// unhide the app content hidden behind the loader
 				var loadingContainer = Octane.DOM.loadingContainer;
-				var view = Octane.defaultView || Octane.Router.parseUrl().view || 'home';
+				var page = Octane.defaultView || Octane.Router.parseUrlQueryString().page || 'home';
 
 				Octane.DOM.appContainer.classList.remove('hidden');
-				Octane.route(view);
+				Octane.route(page);
 				setTimeout(function(){
 					Velocity(loadingContainer,'fadeOut',{duration:500})
 					.then(function(){

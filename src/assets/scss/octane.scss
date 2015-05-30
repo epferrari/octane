@@ -3,8 +3,9 @@ $transition: cubic-bezier(0.465,0.183,0.153,0.946);
 $loaderImage:  url(../img/loader-light.gif);
 
 @import '_mixins';
-@import '_views';
-@import '_modal';
+@import '_frames';
+@import '_pages';
+@import '_modals';
 @import '_loading';
 @import '_debug';
 

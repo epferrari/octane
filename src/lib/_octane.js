@@ -16,7 +16,7 @@ var _octane = {
 	moduleExports:  {},
 	templates:      {},
 	viewModels:     {},
-	views:          {}
+	pages:          {}
 };
 
 

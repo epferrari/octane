@@ -17,19 +17,19 @@ DOM.defineGetter('appContainer',function(){
 		return getByTag('o-app-container')[0] || createElement('o-app-container');
 });
 
-DOM.defineGetter('viewContainer',function(){
-		return getByTag('o-view-container')[0] || createElement('o-view-container');
+DOM.defineGetter('pageContainer',function(){
+		return getByTag('o-page-container')[0] || createElement('o-page-container');
 });
 
 DOM.defineGetter('modalContainer',function(){
 		return getByTag('o-modal-container')[0] || createElement('o-modal-container');
 });
 
-DOM.defineGetter('getViewElements',function(){
-		return getByTag('o-view');
+DOM.defineGetter('getPages',function(){
+		return getByTag('o-page');
 });
 
-DOM.defineGetter('getModalElements',function(){
+DOM.defineGetter('getModals',function(){
 		return getByTag('o-modal');
 });
 
