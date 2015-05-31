@@ -16,20 +16,21 @@
 
 	var pageAnimating = null;
 	var routingBlocked = false;
-	var currentPage;                // pointer
-	var queuedPages = [];          // store routes called while another route is executing its loading animation
-	var routerKeys = [];
-	var routes = [];
-	// are we on a local host?
+	var currentPage;                																							// pointer
+	var queuedPages = [];          																								// store routes called while another route is executing its loading animation
+	var pageHistory = [];																													// the history stack of page views, separate of data state history
+	var routerKeys = [];																													// keys which have locked the Router with Router.lock()
+	var routes = [];																															// collection of regexps and actions to call when a route matches
 	var location = global.location;
-	var localRouting = location.protocol === "file:";
-	// for HTML5 vs. HTML4 browsers
-	var stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';
+	var localRouting = (location.protocol === "file:"); 													// are we on a local host?
+	var stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';								// for HTML5 vs. HTML4 browsers
 	var Router = new OctaneBase();
 
-
-
-
+/*
+	Router.defineGetter('currentPage',function(){
+		return pageHistory[0];
+	});
+*/
 	// helper to parse URL for a view
 	Router.defineProp('parseUrlQueryString',function(){
 
@@ -113,9 +114,7 @@
 				return;
 			}
 
-			//var isPrevious = (P.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.page);
-			var isPrevious = false;
-			if( isPrevious ){
+			if( pageHistory[1] === P.id ){
 				return P.frameWillLoad()
 				.then(function(){
 					Router.fire('routing:begin');
@@ -135,6 +134,7 @@
 				.then(P.frameDidLoad)
 				.then(function(){
 					Router.fire('page:loaded');
+					pageHistory.shift();
 					//previousPage = currentPage;
 					currentPage = P;
 					pageAnimating = null;
@@ -173,6 +173,7 @@
 				.then(P.frameDidLoad)
 				.then(function(){
 					Router.fire('page:loaded');
+					pageHistory.unshift(P.id);
 					var previousPage = currentPage;
 					currentPage = P;
 					pageAnimating = null;
