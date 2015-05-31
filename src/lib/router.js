@@ -1,7 +1,6 @@
 	// reveal Modernizr on the global namespace
 	require('../../vendor/modernizr.js');
 
-	//var History			= require('html5-history');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
 
