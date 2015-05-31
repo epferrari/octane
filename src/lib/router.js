@@ -1,7 +1,7 @@
 	// reveal Modernizr on the global namespace
 	require('../../vendor/modernizr.js');
 
-	var History			= require('html5-history');
+	//var History			= require('html5-history');
 	var _ 					= require('lodash');
 	var Promise 		= require('bluebird');
 
@@ -10,46 +10,26 @@
 	var App			    = require('./app-model.js');
 	var utils 			= require('./utils.js');
 	var Compiler		= require('./Compiler.js');
+	var _octane 		= require('./_octane.js');
 
+	// HTML5 vs. HTML4 browsers
+	var historyAPI = Modernizr.history;
 
-	var enRoute = null;
+	var pageAnimating = null;
 	var routingBlocked = false;
 	var currentPage;                // pointer
-	var queuedRoutes = [];          // store routes called while another route is executing its loading animation
+	var queuedPages = [];          // store routes called while another route is executing its loading animation
 	var routerKeys = [];
-
+	var routes = [];
+	// are we on a local host?
+	var location = global.location;
+	var localRouting = location.protocol === "file:";
 	// for HTML5 vs. HTML4 browsers
-	var stateChangeEvent = Modernizr.history ? 'popstate' : 'hashchange';
+	var stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';
 	var Router = new OctaneBase();
 
-	History.init();
-	// helper to maintain appstate, uses History.pushState
-	Router.defineProp('pushState',function(params){
 
-		var parsed,language,title,appName,fragment;
 
-		_.isObject(params) || (params = {});
-		// update the language in the url
-		parsed 		= utils.urlObject().searchObject;
-		//language 	= Translator.getLang();
-		title 		= utils.titleize(params.page) || currentPage.title;
-		appName 	= App.get('name');
-
-		_.extend(parsed,params);
-
-		var fragment = '?' + _.map(parsed,function(val,key){
-			return key + '=' + val;
-		}).join('&');
-
-		History.pushState({
-				lang: language,
-				page: params.page
-			},
-			appName +' | '+ title,
-			fragment
-		);
-		document.querySelector('head>title').innerHTML = appName + ' | ' + title;
-	});
 
 	// helper to parse URL for a view
 	Router.defineProp('parseUrlQueryString',function(){
@@ -58,7 +38,7 @@
 			return utils.urlObject().searchObject;
 		} else {
 			var hash = window.location.hash
-			.replace('#?','')
+			.replace(/^(.*\?)/,'')
 			.split('&');
 
 			return _.reduce(hash,function(result,n){
@@ -69,8 +49,45 @@
 		}
 	});
 
-	// the meat
-	Router.defineProp('route',function(page,silent){
+	Router.defineProp('pruneRoot',function(url){
+
+		var root,localRoot;
+		if(localRouting){
+			localRoot = _octane.entryPoint ? new RegExp('^.*'+_octane.entryPoint) : /^(.*index.html)/;
+			return url.replace(localRoot,'');
+		} else {
+			root = _octane.root || location.origin+'/'+location.pathname;
+			return url.replace(root,'');
+		}
+	});
+
+	Router.defineProp('pushState',function(state,title,route){
+		document.title = title;
+		if(historyAPI){
+			history.pushState(_.merge({},state),title,route);
+			Router.fire('popstate');
+		} else {
+			global.location.hash = route;
+		}
+	});
+
+
+
+	Router.defineProp('route',function(path){
+
+		path = Router.pruneRoot(path);
+		_.each(routes,function(route){
+			if(route.re.test(path)) {
+				var params = path.match(route.re);
+				params.shift();
+				route.fn.apply(Object.create(null),params);
+			}
+		});
+	});
+
+
+	// direct the animation of frame loading
+	Router.defineProp('loadPage',function(page,silent){
 		return new Promise(function(resolve,reject){
 			var P = Page.get(page);
 			var pageIsCurrent = (P === currentPage);
@@ -83,26 +100,27 @@
 			}
 			silent || (silent = P.silent || false);
 
-			if(enRoute || routingBlocked){
+			if(pageAnimating || routingBlocked){
 				var toQueue = {
 					page: 		page,
 					silent: 	silent,
 					resolver: resolve
 				};
-				if(!_.contains(queuedRoutes,toQueue)){
-					queuedRoutes.unshift(toQueue);
+				if(!_.contains(queuedPages,toQueue)){
+					queuedPages.unshift(toQueue);
 				} else{
 					//return resolve();
 				}
 				return;
 			}
 
-			var isPrevious = (P.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.page);
+			//var isPrevious = (P.id == (History.savedStates[History.savedStates.length-1]||{data:{}}).data.page);
+			var isPrevious = false;
 			if( isPrevious ){
 				return P.frameWillLoad()
 				.then(function(){
 					Router.fire('routing:begin');
-					enRoute = P;
+					pageAnimating = P;
 					return P._queue();
 				})
 				.then(function(){
@@ -120,7 +138,7 @@
 					Router.fire('page:loaded');
 					//previousPage = currentPage;
 					currentPage = P;
-					enRoute = null;
+					pageAnimating = null;
 					App.set({
 						pageID: 		P.id,
 						pageTitle: 	P.title
@@ -128,9 +146,9 @@
 				})
 				.then(function(){
 
-					if(queuedRoutes.length >0){
-						var next = queuedRoutes.shift();
-						return Router.route(next.page,next.silent).then(next.resolver);
+					if(queuedPages.length >0){
+						var next = queuedPages.shift();
+						return Router.loadPage(next.page,next.silent).then(next.resolver);
 					}
 				})
 				.then(function(){
@@ -146,7 +164,7 @@
 				return P.frameWillLoad()
 				.then(function(){
 					Router.fire('routing:begin');
-					enRoute = P;
+					pageAnimating = P;
 					if(currentPage) return currentPage._queue();
 				})
 				.then(function(){
@@ -158,8 +176,8 @@
 					Router.fire('page:loaded');
 					var previousPage = currentPage;
 					currentPage = P;
-					enRoute = null;
-					if(!silent) Router.pushState({page: P.id});
+					pageAnimating = null;
+					//if(!silent) Router.pushState({page: P.id});
 					App.set({
 						pageID: 		P.id,
 						pageTitle: 	P.title
@@ -168,9 +186,9 @@
 				})
 				.then(function(){
 
-					if(queuedRoutes.length >0){
-						var next = queuedRoutes.shift();
-						return Router.route(next.page,next.silent).then(next.resolver);
+					if(queuedPages.length >0){
+						var next = queuedPages.shift();
+						return Router.loadPage(next.page,next.silent).then(next.resolver);
 					}
 				})
 				.then(function(){
@@ -188,8 +206,22 @@
 
 
 	Router.defineProp({
+		add: 					function(pattern,action){
+			routes.push({
+				re:pattern,
+				fn:action
+			});
+			return this;
+		},
+		remove: 			function(pattern){
+			_.each(routes,function(route){
+				if(route.re === pattern){
+					_.pull(routes,route);
+				}
+			});
+		},
 		// add a Promise that must resolve before a view is routed
-		beforeRoute: 	function beforeRoute(routes,deferred){
+		beforePageLoad: function (routes,deferred){
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
@@ -198,12 +230,9 @@
 										});
 										return this;
 									},
-		// alias
-		routeThen: 		function(){
-										return Router.onroute.apply(this,arguments);
-									},
+
 		// add a callback to be executed when the specified view finishes its loading animation
-		onroute: 			function (routes,callback,argsArray){
+		onPageLoad: 	function (routes,callback,argsArray){
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
@@ -213,7 +242,7 @@
 										return this;
 									},
 		// add a callback to be executed when the specified view finishes its exit animation
-		onRouteDismissed: function(routes,callback,argsArray){
+		onPageExit: 	function(routes,callback,argsArray){
 										_.isArray(routes)||(routes=routes.split(','));
 										_.each(routes,function(route){
 											route = route.trim();
@@ -232,9 +261,9 @@
 										_.pull(routerKeys,key);
 										if(routerKeys.length === 0){
 											routingBlocked = false;
-											if(queuedRoutes.length > 0){
-												var next = queuedRoutes.shift();
-												Router.route(next.page,next.silent)
+											if(queuedPages.length > 0){
+												var next = queuedPages.shift();
+												Router.loadPage(next.page,next.silent)
 													.then(next.resolver);
 											}
 										} else {
@@ -251,7 +280,7 @@
 	});
 
 	Router.defineGetter('queue',function(){
-		return queuedRoutes;
+		return queuedPages;
 	});
 
 	Object.defineProperty(Page,'current',{
@@ -267,30 +296,41 @@
 	// change the view with browser's forward/back buttons
 	Router
 	.any(stateChangeEvent,function(){
-		this.route(this.parseUrlQueryString().page);
+		this.route(global.location.href);
 	})
 	// ensure onscreen view keeps proper dimensions to proper dimensions
 	.any('translated resize orientationchange',function(){
 		currentPage && currentPage.setCanvasHeight();
-	});
-
-
-	Compiler
-	.assign('a.route',function(el){
-		console.log(el.href);
-		// catch a click event from a child node
-		el.addEventListener('click',function(e){
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
-				var fullpath = window.location.href;
-				var routeName = this.href.replace(fullpath+'#','');
-				//el.dispatchEvent(__.customEvent('octane:route',{bubbles:true}));
-				Router.route(routeName);
-		},false);
-
 	})
-	.assign('.o-back',function(el){
+
+	// catch a click event from a child node
+Compiler.assign('a.route',function(elem){
+	elem.addEventListener('click',function(e){
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			var route = this.getAttribute('href');
+			var page;
+
+			var useHash = (!historyAPI || localRouting);
+			// !important: Router expects page is the first argument BEFORE the slash
+			// if there is nothing before the slash, then page is assumed to be current page
+			if(useHash){
+				page = (route.match(/^#(.*?)(?=[\/]|$)/)||[])[1];
+			} else {
+				page = (route.match(/^(.*?)(?=[\/]|$)/)||[])[1];
+			}
+
+			if(!page){
+				page = (useHash ? '#' : './') + currentPage.id;
+				route = route.replace(/^(.*?)(?=[\/]|$)/,page);
+			}
+
+			var title = App.get('name') + ' | ' + utils.titleize(page);
+
+			Router.pushState({},title,route);
+	},false);
+}).assign('.o-back',function(el){
 		el.addEventListener('click',function(e){
 				//el.dispatchEvent(__.customEvent('octane:routeback',{bubbles:true}));
 				History.go(-1);
@@ -299,21 +339,3 @@
 
 
 module.exports = Router;
-
-/*
-// add a condition that needs to be true for the route to run
-routeIf: 			function(viewID,conditions){
-								_.isObject(conditions) || (conditions = {});
-
-								if(!_.isArray(routeConditions[viewID])){
-									routeConditions[viewID] = [];
-								}
-								if(!_.isFunction(conditions.predicate)){
-									conditions.predicate = function(){
-											return true;
-									}
-								}
-								routeConditions[viewID].push(conditions);
-								return this;
-							},
-*/

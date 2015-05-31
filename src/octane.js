@@ -610,9 +610,15 @@
 			Octane.defineProp({ Router: Router });
 
 			//add Router methods to Application Object
-			Octane.extend(Router);
+			var routerMethods = ['route','beforePageLoad','onPageLoad','onPageExit'];
+			_.each(routerMethods,function(method){
+				Octane[method] = Router[method];
+			});
+			Octane.addRoute = Router.add;
 
-
+			Router.add(/^#?(.*?)(?=[\/]|$)/,function(page){
+				Router.loadPage(page);
+			});
 
 	/* ------------------------------------------------------- */
 	/*                          MODALS                         */
@@ -702,10 +708,11 @@
 			.on('octane:ready',function(){
 					// unhide the app content hidden behind the loader
 				var loadingContainer = Octane.DOM.loadingContainer;
-				var page = Octane.defaultView || Octane.Router.parseUrlQueryString().page || 'home';
 
+				var route = Octane.defaultRoute || global.location.href;
 				Octane.DOM.appContainer.classList.remove('hidden');
-				Octane.route(page);
+
+				Router.route(route);
 				setTimeout(function(){
 					Velocity(loadingContainer,'fadeOut',{duration:500})
 					.then(function(){
@@ -737,7 +744,7 @@
 
 
 											_.isPlainObject(appConfig) || (appConfig = {});
-											Octane.defaultView	= appConfig.defaultView;
+											Octane.defaultRoute	= appConfig.Route;
 											Octane.context			= appConfig.context;
 
 
