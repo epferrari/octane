@@ -66,6 +66,7 @@ var Events = {
 											delete events[srcId][eventType];
 										}
 									}else{
+										_.pull(this._listening_,eventType);
 										_.forOwn(events,function(src){
 											delete src[eventType];
 										});
@@ -93,8 +94,8 @@ var Events = {
 
 										// make sure the Quarterback will normalize the event
 										if(!_.contains(Quarterback._listening_,eventType)){
-												Quarterback._listening_.push(eventType);
-												window.addEventListener(eventType,Quarterback.normalizeDOMEvent,false);
+											Quarterback._listening_.push(eventType);
+											global.addEventListener(eventType,Quarterback.normalizeDOMEvent,false);
 										}
 
 										// register this object with the Quarterback
