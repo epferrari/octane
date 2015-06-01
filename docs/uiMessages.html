@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>hinter.js</title>
+  <title>uiMessages.js</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="docco.css" />
@@ -135,11 +135,6 @@
                 </a>
               
                 
-                <a class="source" href="hinter.html">
-                  hinter.js
-                </a>
-              
-                
                 <a class="source" href="http.html">
                   http.js
                 </a>
@@ -165,6 +160,11 @@
                 </a>
               
                 
+                <a class="source" href="uiMessages.html">
+                  uiMessages.js
+                </a>
+              
+                
                 <a class="source" href="utils.html">
                   utils.js
                 </a>
@@ -178,7 +178,7 @@
         
           <li id="title">
               <div class="annotation">
-                  <h1>hinter.js</h1>
+                  <h1>uiMessages.js</h1>
               </div>
           </li>
         
@@ -197,8 +197,9 @@
 	<span class="hljs-keyword">var</span> _           = <span class="hljs-built_in">require</span>(<span class="hljs-string">'lodash'</span>);
 	<span class="hljs-keyword">var</span> OctaneModel = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./OctaneModel.js'</span>);
 
-	<span class="hljs-keyword">var</span> Hinter = OctaneModel.extend({
-		hint: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+	<span class="hljs-keyword">var</span> uiMessages = <span class="hljs-keyword">new</span> OctaneModel();
+
+	uiMessages.hint =  <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
 
 			<span class="hljs-keyword">var</span> setObject,toUnset,timeout;</pre></div></div>
             
@@ -216,14 +217,14 @@
             </div>
             
             <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">if</span>(_.isString(<span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>])){
-					setObject = {};
-					setObject[<span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>]] = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">1</span>];
-					timeout = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">2</span>];
+				setObject = {};
+				setObject[<span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>]] = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">1</span>];
+				timeout = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">2</span>];
 			} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(_.isObject(<span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>])){
-					setObject = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>];
-					timeout = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">1</span>];
+				setObject = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">0</span>];
+				timeout = <span class="hljs-built_in">arguments</span>[<span class="hljs-number">1</span>];
 			} <span class="hljs-keyword">else</span> {
-					<span class="hljs-keyword">return</span> {};
+				<span class="hljs-keyword">return</span> {};
 			}
 			timeout || (timeout = <span class="hljs-number">5000</span>);</pre></div></div>
             
@@ -236,17 +237,18 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>automatically remove after 5 seconds or specified time</p>
+              <p>automatically unset after 5 seconds || passed-in time</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>			toUnset = <span class="hljs-built_in">Object</span>.keys(setObject);
 			<span class="hljs-keyword">this</span>._set(setObject);
 			<span class="hljs-keyword">this</span>._unset(toUnset,{timeout:timeout});
-		}
-	});
+	};
 
-	<span class="hljs-built_in">module</span>.exports = Hinter;</pre></div></div>
+	uiMessages.become(<span class="hljs-string">'UiMessages'</span>);
+
+	<span class="hljs-built_in">module</span>.exports = uiMessages;</pre></div></div>
             
         </li>
         
