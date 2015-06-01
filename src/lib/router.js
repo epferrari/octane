@@ -38,6 +38,8 @@
 	var localRouting      = (location.protocol === "file:");
 	// for HTML5 vs. HTML4 browsers
 	var stateChangeEvent  = historyAPI ? 'popstate' : 'hashchange';
+	// set the initial current route
+	var currentRoute = location;
 	// variable used for the interval in .usePolling
 	var poll;
 
@@ -102,7 +104,7 @@
 	* @param {string} url A URL to match against defined routes
 	*/
 	Router.defineProp(false,'_executeRoute',function(url){
-
+		currentRoute = url;
 		var path = Router._pruneRoot(url);
 		/*
 		var routesExecuted = _.map(routes,function(route){
@@ -120,23 +122,27 @@
 				route.fn.apply(Object.create(null),params);
 			}
 		});
-
-		/*Promise.all(routesExecuted).then(function(result){
-			if(result.length === 1){
-				//only the page was matched, remove the rest of the route and rewrite URL
-				var useHash = (!historyAPI || localRouting) ? '#' : '';
-				var currentPage = Router.currentPage ? Router.currentPage.id : 'home' ;
-				console.log(currentPage);
-				var replacementUrl = useHash + currentPage;
-				if(historyAPI){
-					history.replaceState(history.state,document.title,replacementUrl);
-				} else {
-					location.hash = replacementUrl;
+		/*console.log(routesExecuted);
+		if(routesExectuted.length === 0){
+			Router.route('home');
+		} else{
+			Promise.all(routesExecuted).then(function(result){
+				if(result.length === 1){
+					//only the page was matched, remove the rest of the route and rewrite URL
+					var useHash = (!historyAPI || localRouting) ? '#' : '';
+					var currentPage = result[0] ? result[0].id : 'home' ;
+					console.log(currentPage);
+					var replacementUrl = useHash + currentPage;
+					if(historyAPI){
+						history.replaceState(history.state,document.title,replacementUrl);
+					} else {
+						location.hash = replacementUrl;
+					}
 				}
-			}
-		}).catch(function(err){
-			console.log('one of the routes failed');
-		})
+			}).catch(function(err){
+				console.log('one of the routes failed');
+			});
+		}
 		 /*else if(routesExecuted.length === 0){
 			Router.route('home');
 		}
@@ -728,13 +734,13 @@
 				e.stopImmediatePropagation();
 				var route = this.getAttribute('href');
 
-				Router.route(route);
+				if(location.href !== this.href) Router.route(route);
 
 		},false);
 	// route backwards using the browser's history, Router will take care of the rest
 	}).assign('.o-back',function(el){
 		el.addEventListener('click',function(e){
-			History.go(-1);
+			history.go(-1);
 		},false);
 	});
 
