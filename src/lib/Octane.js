@@ -17,19 +17,20 @@
 	/*                         BASE                            */
 	/* ------------------------------------------------------- */
 
-			var define       = Object.defineProperty;
-			var _            = require('lodash');
-			var Promise      = require('bluebird');
-			var FastClick    = require('fastclick');
-			var Velocity     = require('velocity-animate');
-			var _octane      = require('./_octane.js');
-			var utils        = require('./utils.js');
-			var debug        = require('./debug.js');
-			var AppModel     = require('./app-model.js');
+		var define       = Object.defineProperty;
+		var _            = require('lodash');
+		var Promise      = require('bluebird');
+		var FastClick    = require('fastclick');
+		var Velocity     = require('velocity-animate');
+		var _octane      = require('./_octane.js');
+		var utils        = require('./utils.js');
+		var debug        = require('./debug.js');
+		var AppModel     = require('./app-model.js');
+		var css          = require('../css/octane.css');
 
-			require('velocity-ui-pack');
-			global._ = _;
-			global.Promise = Promise;
+		require('velocity-ui-pack');
+		global._ = _;
+		global.Promise = Promise;
 
 
 
@@ -37,12 +38,12 @@
 
 
 	/* ------------------------------------------------------- */
-	/*								PUBLIC APPLICATION OBJECT								 */
+	/*               PUBLIC APPLICATION OBJECT                 */
 	/* ------------------------------------------------------- */
 
-			var OctaneBase = require('./OctaneBase.js');
+		var OctaneBase = require('./OctaneBase.js');
 
-			var Octane = new OctaneBase();
+		var Octane = new OctaneBase();
 
 
 
@@ -51,72 +52,65 @@
 	/*                          EVENTS                         */
 	/* ------------------------------------------------------- */
 
-			Octane.defineProp({
+		Octane.defineProp({
 
-				dispatch: 	function(type,detail){
-					if(_.isString(type)){
-						var e = utils.customEvent(type,{
-							bubbles: 	true,
-							detail: 	detail
-						});
-						window.dispatchEvent(e);
-					}
-				},
-
-				// programatically alert that user data has changed on a data-bound element
-				trip: function(node,eventType){
-					var rand = Math.random();
-					var	e = utils.customEvent((eventType || 'input'),{bubbles:true,detail:rand});
-					node.dispatchEvent(e);
+			dispatch: 	function(type,detail){
+				if(_.isString(type)){
+					var e = utils.customEvent(type,{
+						bubbles: 	true,
+						detail: 	detail
+					});
+					window.dispatchEvent(e);
 				}
-			});
+			},
+
+			// programatically alert that user data has changed on a data-bound element
+			trip: function(node,eventType){
+				var rand = Math.random();
+				var	e = utils.customEvent((eventType || 'input'),{bubbles:true,detail:rand});
+				node.dispatchEvent(e);
+			}
+		});
 
 
 
 
 	/* ------------------------------------------------------- */
-	/*       			COMPILER and ORDINANCE ASSIGNMENT         	 */
+	/*             COMPILER and ORDINANCE ASSIGNMENT           */
 	/* ------------------------------------------------------- */
 
-			var Compiler = require('./Compiler.js');
+		var Compiler = require('./Compiler.js');
 
-			Octane.defineProp({
+		Octane.defineProp({
 
-				compiler: function(qselector,task){
-					Compiler.assign(qselector,task);
-					return this;
-				},
+			compiler: function(qselector,task){
+				Compiler.assign(qselector,task);
+				return this;
+			},
 
-				// alias of .compiler
-				designate: function(qselector,task){
-					Compiler.assign(qselector,task);
-					return this;
-				},
+			// alias of .compiler
+			designate: function(qselector,task){
+				Compiler.assign(qselector,task);
+				return this;
+			},
 
-				recompile: function(context){
-					return Compiler.compileAll(context);
-				},
+			recompile: function(context){
+				return Compiler.compileAll(context);
+			},
 
-				clearCompileCache: function(){
-					Compiler.nodeMap = {};
-				}
-			});
+			clearCompileCache: function(){
+				Compiler.nodeMap = {};
+			}
+		});
 
 
 	/* ------------------------------------------------------- */
 	/*                     XMLHttpRequest                      */
 	/* ------------------------------------------------------- */
 
-	//Not included at this time
-	/*
-			var Http = require('./http.js');
 
-			Octane.defineProp({
-				http: function(url,headers){
-					return new Http(url,headers);
-				}
-			});
-	*/
+
+		//Not implemented at this time
 
 
 
@@ -124,9 +118,9 @@
 	/*                       DICTIONARIES                      */
 	/* ------------------------------------------------------- */
 
-			var Dictionary = require('./Dictionary.js');
+		var Dictionary = require('./Dictionary.js');
 
-			Octane.defineProp({ Dictionary : Dictionary	});
+		Octane.defineProp({ Dictionary : Dictionary	});
 
 
 
@@ -135,10 +129,9 @@
 	/*                       TEMPLATES                         */
 	/* ------------------------------------------------------- */
 
-			var Template = require('./Template.js');
+		var Template = require('./Template.js');
 
-			Octane.defineProp({ Template: Template });
-
+		Octane.defineProp({ Template: Template });
 
 
 
@@ -147,142 +140,146 @@
 	/*                         MODELS                          */
 	/* ------------------------------------------------------- */
 
-			var OctaneModel 			= require('./OctaneModel.js');
+		var OctaneModel = require('./OctaneModel.js');
 
-			Octane.defineProp({
+		Octane.defineProp({
 
-				Model: 		 	OctaneModel,
+			Model: 		 	OctaneModel,
 
-				// functional alias for calling new Octane.Model() or Octane.Model.create()
-				// returns a named model if it already exists
-				model: function (data){
+			// functional alias for calling new Octane.Model() or Octane.Model.create()
+			// returns a named model if it already exists
+			model: function (data){
 
-					if(_.isString(data)){
-						var alias = data;
-						// only an alias was passed and it's currently occupied on the ViewModel
-						// return the model occupying that alias
-						if(_octane.models[alias]){
-							return _octane.models[alias];
-						// only an alias was passed and it's vacant on the ViewModel
-						// create new model, assign it to the alias, and return it
-						} else {
-							return new OctaneModel().become(alias);
-						}
-					}
-					// alias was not passed, return an unassigned model instance
-					// possibly with data to set
-					return new OctaneModel(data);
-				},
-
-				// access a bound model's get method from the application object
-				get: function(modelStateKey){
-
-					var modelName = OctaneModel._parseName(modelStateKey);
-					var stateKey = OctaneModel._parseKey(modelStateKey);
-					var model = _octane.models[modelName];
-
-					if(model && stateKey){
-						return model.get(stateKey);
-					} else if(model){
-						return model.get();
-					}
-				},
-
-				// access a bound model's set method from the application object
-				set: function(key,val){
-
-					var inbound;
-					var tk = utils.typeOf(key);
-
-					if(tk === 'object'){
-						inbound = key;
-					}
-					else if(tk === 'string'){
-						(inbound = {})[key] = val;
-					}
-					else {
-						inbound = {};
-					}
-
-					_.forOwn(inbound,function(value,path){
-						var name 	= OctaneModel._parseName(path);
-						var _key 	= OctaneModel._parseKey(path);
-						var model = _octane.models[name] || ( Octane.Model.create().become(name) );
-						if(model){
-							(_key !== '') ? model.set(_key,value) : model.reset(value);
-						}
-					});
-				},
-
-				// access a bound model's unset method from the application object
-				unset: function(toUnset,options){
-
-					if(!toUnset) return;
-					_.isPlainObject(options) || (options = {});
-					_.isArray(toUnset) || (toUnset = toUnset.split(','));
-
-					var unset = function(binding){
-							binding 	= binding.trim();
-							var name 	= OctaneModel._parseName(binding);
-							var key 	= OctaneModel._parseKey(binding);
-							var model = _octane.models[name];
-							model && model.unset(key);
-					};
-					var timeout = options.timeout;
-					var throttle = options.throttle;
-
-					if(timeout && (utils.typeOf(timeout) === 'number')){ 			// timout the unset
-
-							if(throttle){                                					// throttle the unsets
-								_.each(toUnset,function(binding,i){
-									setTimeout(function(){
-											unset(binding);
-									},timeout*(i+1));                   							// make sure we timeout the 0 index
-								});
-							}else{                                      					// unset all together after timeout
-								setTimeout(function(){
-									_.each(toUnset,unset);
-								},timeout);
-							}
+				if(_.isString(data)){
+					var alias = data;
+					// only an alias was passed and it's currently occupied on the ViewModel
+					// return the model occupying that alias
+					if(_octane.models[alias]){
+						return _octane.models[alias];
+					// only an alias was passed and it's vacant on the ViewModel
+					// create new model, assign it to the alias, and return it
 					} else {
-							_.each(toUnset,unset);                      					// unset all immediately
+						return new OctaneModel().become(alias);
 					}
 				}
-			});
+				// alias was not passed, return an unassigned model instance
+				// possibly with data to set
+				return new OctaneModel(data);
+			},
+
+			// access a bound model's get method from the application object
+			get: function(modelStateKey){
+
+				var modelName = OctaneModel._parseName(modelStateKey);
+				var stateKey = OctaneModel._parseKey(modelStateKey);
+				var model = _octane.models[modelName];
+
+				if(model && stateKey){
+					return model.get(stateKey);
+				} else if(model){
+					return model.get();
+				}
+			},
+
+			// access a bound model's set method from the application object
+			set: function(key,val){
+
+				var inbound;
+				var tk = utils.typeOf(key);
+
+				if(tk === 'object'){
+					inbound = key;
+				}
+				else if(tk === 'string'){
+					(inbound = {})[key] = val;
+				}
+				else {
+					inbound = {};
+				}
+
+				_.forOwn(inbound,function(value,path){
+					var name 	= OctaneModel._parseName(path);
+					var _key 	= OctaneModel._parseKey(path);
+					var model = _octane.models[name] || ( Octane.Model.create().become(name) );
+					if(model){
+						(_key !== '') ? model.set(_key,value) : model.reset(value);
+					}
+				});
+			},
+
+			// access a bound model's unset method from the application object
+			unset: function(toUnset,options){
+
+				if(!toUnset) return;
+				_.isPlainObject(options) || (options = {});
+				_.isArray(toUnset) || (toUnset = toUnset.split(','));
+
+				var unset = function(binding){
+						binding 	= binding.trim();
+						var name 	= OctaneModel._parseName(binding);
+						var key 	= OctaneModel._parseKey(binding);
+						var model = _octane.models[name];
+						model && model.unset(key);
+				};
+				var timeout = options.timeout;
+				var throttle = options.throttle;
+
+				if(timeout && (utils.typeOf(timeout) === 'number')){
+					// timout the unset
+						if(throttle){
+							// throttle the unsets
+							_.each(toUnset,function(binding,i){
+								setTimeout(function(){
+										unset(binding);
+								// make sure we timeout the 0 index
+								},timeout*(i+1));
+							});
+						}else{
+							// unset all together after timeout
+							setTimeout(function(){
+								_.each(toUnset,unset);
+							},timeout);
+						}
+				} else {
+					// unset all immediately
+						_.each(toUnset,unset);
+				}
+			}
+		});
 
 
 
 
 	/* ------------------------------------------------------- */
-	/*           				DEEP MODEL MONITORING                  */
+	/*                  DEEP MODEL MONITORING                  */
 	/* ------------------------------------------------------- */
 
-			var watch = function(path,fn,thisArg){
-				var watching;
+		var watch = function(path,fn,thisArg){
+			var watching;
 
-				path.split('.').reduce(function(o,x,i){
-					watching = (i === 0) ? x : o + '.' + x;
-					// set handler for each state change in a subBinding
-					this.any('modelchange:' + watching,function(){
-						var currentVal = Octane.get(watching);
-						fn.apply((thisArg || this),[currentVal,watching]);
-					});
-					return watching;
-				}.bind(this),path[0]);
-				return this;
-			};
+			path.split('.').reduce(function(o,x,i){
+				watching = (i === 0) ? x : o + '.' + x;
+				// set handler for each state change in a subBinding
+				this.any('modelchange:' + watching,function(){
+					var currentVal = Octane.get(watching);
+					fn.apply((thisArg || this),[currentVal,watching]);
+				});
+				return watching;
+			}.bind(this),path[0]);
+			return this;
+		};
 
-			define(OctaneBase.prototype,'watch',{
-				value: watch,
-				writable:false,
-				configurable:false
-			});
+		define(OctaneBase.prototype,'watch',{
+			value: watch,
+			writable:false,
+			configurable:false
+		});
 
-			define(OctaneModel.prototype,'watch',{
-				value: watch,
-				writable:false,
-				configurable:false
-			});
+		define(OctaneModel.prototype,'watch',{
+			value: watch,
+			writable:false,
+			configurable:false
+		});
 
 
 
@@ -291,54 +288,54 @@
 	/*                      VIEW MODEL                         */
 	/* ------------------------------------------------------- */
 
-			var ViewModel = require('./ViewModel.js');
+		var ViewModel = require('./ViewModel.js');
 
-			var uptake = function uptake(e,el){
+		var uptake = function uptake(e,el){
 
-				var model			= el.getAttribute('o-model');
-				var binding 	= el.getAttribute('o-bind');
-				var value;
+			var model = el.getAttribute('o-model');
+			var binding = el.getAttribute('o-bind');
+			var value;
 
-				// if o-bind is the only attribute, use it as binding,
-				// otherwise o-bind is a key of the o=model attribute
-				model && (binding = model + '.' + binding);
+			// if o-bind is the only attribute, use it as binding,
+			// otherwise o-bind is a key of the o=model attribute
+			model && (binding = model + '.' + binding);
 
-				if(el.type === 'file'){
-					value = el.files;
-				}else if(el.type === 'checkbox'){
-					value = el.checked;
-				}	else if(el.tagName === 'TEXT-AREA'){
-					value = el.innerHTML;
-				} else{
-					(value = el.value);
-				}
+			if(el.type === 'file'){
+				value = el.files;
+			}else if(el.type === 'checkbox'){
+				value = el.checked;
+			}	else if(el.tagName === 'TEXT-AREA'){
+				value = el.innerHTML;
+			} else{
+				(value = el.value);
+			}
 
-				if( value !== Octane.get(binding) ){
-					Octane.set(binding,value);
-				}
-			};
+			if( value !== Octane.get(binding) ){
+				Octane.set(binding,value);
+			}
+		};
 
-			Compiler.assign('[o-bind]',function(elem,binding){
+		Compiler.assign('[o-bind]',function(elem,binding){
 
-				Octane.on('input click select',elem,uptake);
+			Octane.on('input click select',elem,uptake);
 
-				if(_.contains( ['file','checkbox'] ,elem.type)){
-					Octane.on('change',elem,uptake);
-				} else {
-					Octane.watch(binding,function(value){
-						if(value === undefined || value === null){
-							value = '';
-						}
-						elem.value = value;
-					});
-				}
-			});
+			if(_.contains( ['file','checkbox'] ,elem.type)){
+				Octane.on('change',elem,uptake);
+			} else {
+				Octane.watch(binding,function(value){
+					if(value === undefined || value === null){
+						value = '';
+					}
+					elem.value = value;
+				});
+			}
+		});
 
-			Octane.defineProp({
-				ViewModel: 	ViewModel,
-				link: 			ViewModel.link,
-				unlink: 		ViewModel.unlink
-			});
+		Octane.defineProp({
+			ViewModel: 	ViewModel,
+			link: 			ViewModel.link,
+			unlink: 		ViewModel.unlink
+		});
 
 
 
@@ -352,7 +349,7 @@
 	/* ------------------------------------------------------- */
 
 
-
+		//Not implemented at this time
 
 
 
@@ -363,95 +360,95 @@
 	/*                     CONTROLLERS                         */
 	/* ------------------------------------------------------- */
 
-			var OctaneController = require('./Controller.js');
+		var OctaneController = require('./Controller.js');
 
-			define(Octane,'controller',{
-				value: function (name,config){
-					if(!name){
-						throw new Error('OctaneController must have name');
-					} else if(!_octane.controllers[name]){
-						return new OctaneController(name,config);
-					} else {
-						return _octane.controllers[name];
-					}
-				},
-				writable: false,
-				configurable:false
-			});
+		define(Octane,'controller',{
+			value: function (name,config){
+				if(!name){
+					throw new Error('OctaneController must have name');
+				} else if(!_octane.controllers[name]){
+					return new OctaneController(name,config);
+				} else {
+					return _octane.controllers[name];
+				}
+			},
+			writable: false,
+			configurable:false
+		});
 
 
-			define(Octane,'Controller',{
-				value: OctaneController,
-				writable: false,
-				configurable: false
-			});
+		define(Octane,'Controller',{
+			value: OctaneController,
+			writable: false,
+			configurable: false
+		});
 
-			Compiler.assign('[o-control]',function(elem,attrVal){
+		Compiler.assign('[o-control]',function(elem,attrVal){
 
-				// ex. <ul  o-control="(click) [ListViewController.refresh>" o-delegator="li"..</ul>
-				// elem: <ul>
-				// attrVal: '(click)[ListViewController.refresh,li a]
+			// ex. <ul  o-control="(click) [ListViewController.refresh>" o-delegator="li"..</ul>
+			// elem: <ul>
+			// attrVal: '(click)[ListViewController.refresh,li a]
 
-				var isDelegator = elem.hasAttribute('o-delegator');
-				var delegates;
+			var isDelegator = elem.hasAttribute('o-delegator');
+			var delegates;
 
-				if(isDelegator) delegates = elem.getAttribute('o-delegator');
+			if(isDelegator) delegates = elem.getAttribute('o-delegator');
 
-				var vals = attrVal.match( /(\(.*?\])/g )||[];
-				_.each(vals,function(str){
+			var vals = attrVal.match( /(\(.*?\])/g )||[];
+			_.each(vals,function(str){
 
-					var event,handler,params,action,ctrlName,method;
+				var event,handler,params,action,ctrlName,method;
 
-					event 				= (str.match( /\((.*?)\)/ )||[null,'click'])[1];
-					handler				= (str.match( /\[(.*?)\]/ )||[null,''])[1];
-					params 				= handler.split(',');
-					action 				= (params.shift()||'').split('.');
-					ctrlName			= action[0];
-					method		 		= action[1];
+				event    = (str.match( /\((.*?)\)/ )||[null,'click'])[1];
+				handler  = (str.match( /\[(.*?)\]/ )||[null,''])[1];
+				params   = handler.split(',');
+				action   = (params.shift()||'').split('.');
+				ctrlName = action[0];
+				method	 = action[1];
 
-					if(isDelegator){
-						elem.addEventListener(event,function(e){
+				if(isDelegator){
+					elem.addEventListener(event,function(e){
 
-							var src,controller;
+						var src,controller;
 
-							src = (e.srcElement||e.target);
-							controller = _octane.controllers[ ctrlName ];
+						src = (e.srcElement||e.target);
+						controller = _octane.controllers[ ctrlName ];
 
-							// If we've declared delegates AND
-							// the event is fired from an element we're delegating events for,
-							// then the Controller.method is called with *src* as the first arg
-							if(delegates && _.contains(this.querySelectorAll(delegates),src)){
-								try{
-									controller[method].apply(controller,[src].concat(params));
-								} catch(ex){
-									Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
-								}
-
-							// If we've declared that this element listens for events on its children
-							// but did not define a querySelector pattern,
-							// then the Controller.method is called with `this` as the first arg,
-							// `this` being the object listening for the event
-							} else if(!delegates) {
-								try{
-									controller[method].apply(controller,[this].concat(params));
-								}catch (ex){
-									Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
-								}
-							}
-						});
-					} else {
-						Octane.on(event,elem,function(e,el){
-							var controller = _octane.controllers[ ctrlName ];
+						// If we've declared delegates AND
+						// the event is fired from an element we're delegating events for,
+						// then the Controller.method is called with *src* as the first arg
+						if(delegates && _.contains(this.querySelectorAll(delegates),src)){
 							try{
-									controller[method].apply(controller,[el].concat(params));
-								} catch(ex){
-									Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
-								}
-						});
-					}
-					elem = null;
-				});
+								controller[method].apply(controller,[src].concat(params));
+							} catch(ex){
+								Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
+							}
+
+						// If we've declared that this element listens for events on its children
+						// but did not define a querySelector pattern,
+						// then the Controller.method is called with `this` as the first arg,
+						// `this` being the object listening for the event
+						} else if(!delegates) {
+							try{
+								controller[method].apply(controller,[this].concat(params));
+							}catch (ex){
+								Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
+							}
+						}
+					});
+				} else {
+					Octane.on(event,elem,function(e,el){
+						var controller = _octane.controllers[ ctrlName ];
+						try{
+							controller[method].apply(controller,[el].concat(params));
+						} catch(ex){
+							Octane.log('delegated '+ctrlName+'.'+method+' could not be applied',ex);
+						}
+					});
+				}
+				elem = null;
 			});
+		});
 
 
 
@@ -460,16 +457,16 @@
 	/*                       FILTERS                           */
 	/* ------------------------------------------------------- */
 
-			var filter = require('./filters.js');
-			// filterFunction as: function([params]){...do something }
-			define(Octane,'filter',{
-				value: function(name,filterFunction){
-					filter.apply(Object.create(null),[name,filterFunction]);
-					return Octane;
-				},
-				writable: false,
-				configurable: false
-			});
+		var filter = require('./filters.js');
+		// filterFunction as: function([params]){...do something }
+		define(Octane,'filter',{
+			value: function(name,filterFunction){
+				filter.apply(Object.create(null),[name,filterFunction]);
+				return Octane;
+			},
+			writable: false,
+			configurable: false
+		});
 
 
 
@@ -478,46 +475,46 @@
 	/*                          HOOKS                          */
 	/* ------------------------------------------------------- */
 
-			// A function to be applied before the setting of data in the model
-			// If one model data value changes depending on another, a hook is the place for that logic.
-			// Binding is the incoming data model.key to parse for, func is the function to apply
-			// A hook is applied at set time to a binding
+		// A function to be applied before the setting of data in the model
+		// If one model data value changes depending on another, a hook is the place for that logic.
+		// Binding is the incoming data model.key to parse for, func is the function to apply
+		// A hook is applied at set time to a binding
 
-			define(Octane,'hook',{
+		define(Octane,'hook',{
 
-				value: function(binding,fn){
-					(_octane.hooks[binding]||(_octane.hooks[binding]=[])).push(fn);
-					return this;
-					// chainable
-				},
-				writable: false,
-				configurable: false
-			});
+			value: function(binding,fn){
+				(_octane.hooks[binding]||(_octane.hooks[binding]=[])).push(fn);
+				return this;
+				// chainable
+			},
+			writable: false,
+			configurable: false
+		});
 
 
 
 
 	/* ------------------------------------------------------- */
-	/*         				 	RUNTIME MODULES                        */
+	/*                  RUNTIME MODULES                        */
 	/* ------------------------------------------------------- */
 
-			var OctaneModule = require('./OctaneModule.js');
+		var OctaneModule = require('./OctaneModule.js');
 
-			Octane.defineProp({
+		Octane.defineProp({
 
-				module: 		function(name,dependencies){
-					_octane.modules[name] = new OctaneModule(name,dependencies);
-					return _octane.modules[name];
-				},
+			module: function(name,dependencies){
+				_octane.modules[name] = new OctaneModule(name,dependencies);
+				return _octane.modules[name];
+			},
 
-				hasModule: 	function (name){
-					return (_octane.modules[name] && _octane.modules[name].initialized);
-				},
+			hasModule: function (name){
+				return (_octane.modules[name] && _octane.modules[name].initialized);
+			},
 
-				moduleConfig:function(moduleName,cfg){
-					_.isPlainObject(cfg) && (_octane.moduleConfigs[moduleName] = cfg);
-				}
-			});
+			moduleConfig: function(moduleName,cfg){
+				_.isPlainObject(cfg) && (_octane.moduleConfigs[moduleName] = cfg);
+			}
+		});
 
 
 
@@ -526,13 +523,13 @@
 	/*                          DOM                            */
 	/* ------------------------------------------------------- */
 
-			var DOM = require('./DOM.js');
+		var DOM = require('./DOM.js');
 
-			define(Octane,'DOM',{
-				value: DOM,
-				writable: false,
-				configurable: false
-			});
+		define(Octane,'DOM',{
+			value: DOM,
+			writable: false,
+			configurable: false
+		});
 
 
 
@@ -540,38 +537,38 @@
 	/*                     PAGE VIEWS                          */
 	/* ------------------------------------------------------- */
 
-			var Page = require('./OctanePage.js');
+		var Page = require('./OctanePage.js');
 
-			Octane.defineProp('Page',Page);
+		Octane.defineProp('Page',Page);
 
-			Compiler.assign('o-page',function(elem){
-				var page = new Page(elem);
-				page;
-			});
+		Compiler.assign('o-page',function(elem){
+			var page = new Page(elem);
+			page;
+		});
 
 
 	/*-------------------------------------------------------	*/
-	/*                					ROUTER												*/
+	/*                          ROUTER                        */
 	/*-------------------------------------------------------	*/
 
-			var Router = require('./Router.js');
+		var Router = require('./Router.js');
 
-			Octane.defineProp({ Router: Router });
+		Octane.defineProp({ Router: Router });
 
-			//add Router methods to Application Object
-			var routerMethods = ['route','loadPageif','beforePageLoad','onPageLoad','onPageExit'];
-			_.each(routerMethods,function(method){
-				Octane[method] = Router[method];
-			});
-			Octane.addRoute = Router.add;
+		//add Router methods to Application Object
+		var routerMethods = ['route','loadPageif','beforePageLoad','onPageLoad','onPageExit'];
+		_.each(routerMethods,function(method){
+			Octane[method] = Router[method];
+		});
+		Octane.addRoute = Router.add;
 
-			// set up animations for all Pages defined in HTML markup
-			Router.add(/^#?(.*?)(?=[\/]|$)/,function(page){
-				Router._loadPage(page);
-			});
+		// set up animations for all Pages defined in HTML markup
+		Router.add(/^#?(.*?)(?=[\/]|$)/,function(page){
+			return Router._loadPage(page);
+		});
 
 	/* ------------------------------------------------------- */
-	/*                          MODALS                         */
+	/*                       MODALS                            */
 	/* ------------------------------------------------------- */
 
 			var Modal = require('./OctaneModal.js');
@@ -582,46 +579,48 @@
 
 
 	/*-------------------------------------------------------	*/
-	/*                 NATIVE APP ORDINANCES									*/
+	/*                  NATIVE APP ORDINANCES                 */
 	/*-------------------------------------------------------	*/
 
-			Compiler.assign('[o-src]',function(elem,value){
-				var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
+		Compiler.assign('[o-src]',function(elem,value){
+			var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
 
-				if(!pattern.test(value)){
-					elem.src = value;
-					elem.removeAttribute('o-src');
-				} else {
-					elem.removeAttribute('src');
-					delete elem.src;
-				}
-			});
+			if(!pattern.test(value)){
+				elem.src = value;
+				elem.removeAttribute('o-src');
+			} else {
+				elem.removeAttribute('src');
+				delete elem.src;
+			}
+		});
 
 
-			Compiler.assign('[o-bg-img]',function(elem,value){
+		Compiler.assign('[o-bg-img]',function(elem,value){
 
-				var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
-				if(!pattern.test(value)){
-					elem.style.backgroundImage = 'url('+value+')';
-					elem.removeAttribute('o-bg-img');
-				}
-			});
+			var pattern = /\{\{([^{^}]+)\}\}|^(_*)$|^(\s*)$/g;
+			if(!pattern.test(value)){
+				elem.style.backgroundImage = 'url('+value+')';
+				elem.removeAttribute('o-bg-img');
+			}
+		});
 
 
 
 
 	/*-------------------------------------------------------	*/
-	/*                 			UI MESSAGES												*/
+	/*                      UI MESSAGES                       */
 	/*-------------------------------------------------------	*/
 
-			var Hinter = require('./Hinter.js');
+		// a model with method .hint that unsets itself after 5 seconds,
+		// or the number of ms passed in as second param to .hint
+		var uiMessages = require('./uiMessages.js');
 
-			Octane.defineProp({ uiMessages : new Hinter().become('uiMessages') });
+		Octane.defineProp({ uiMessages : uiMessages });
 
-			Compiler.assign('ui-message',function(elem){
-				var vm = new ViewModel(elem,'uiMessages');
-				_octane.viewModels[vm.guid()] = vm;
-			});
+		Compiler.assign('ui-message',function(elem){
+			var vm = new ViewModel(elem,'uiMessages');
+			_octane.viewModels[vm.guid()] = vm;
+		});
 
 
 
@@ -630,197 +629,201 @@
 	/*                        INIT                            */
 	/* -------------------------------------------------------*/
 
-			// Getter and setter for environment,
-			// used for feature detection.
-			// Set to either 'web' or 'cordova'
-			Object.defineProperty(Octane,'env',{
+		// Getter and setter for environment,
+		// used for feature detection.
+		// Set to either 'web' or 'cordova'
+		Object.defineProperty(Octane,'env',{
 
-				get: function(){
-					return _octane.environment;
-				},
-				set: function(env){
-					var contexts = ['web','cordova'];
-					_.contains(contexts,env) && (_octane.environment = env);
-				},
-				configurable: false
-			});
+		get: function(){
+			return _octane.environment;
+		},
+		set: function(env){
+			var contexts = ['web','cordova'];
+			_.contains(contexts,env) && (_octane.environment = env);
+		},
+		configurable: false
+		});
 
 
-			Octane
-			.hook('App.loadingProgress',function(progress,inbound){
-				inbound.progress = inbound.progress <= 100 ? inbound.progress : 100;
-				inbound.percent = inbound.progress.toString()+"%";
-				inbound.screenReader = inbound.percent+' Loaded';
-			})
-			.hook('App.loadingMessage',function(message,inbound){
-				inbound.message = _.isString(inbound.message) ? inbound.message : 'Loading...';
-			})
-			.on('octane:ready',function(){
-					// unhide the app content hidden behind the loader
-				var loadingContainer = Octane.DOM.loadingContainer;
+		Octane
+		.hook('App.loadingProgress',function(progress,inbound){
+			inbound.progress = inbound.progress <= 100 ? inbound.progress : 100;
+			inbound.percent = inbound.progress.toString()+"%";
+			inbound.screenReader = inbound.percent+' Loaded';
+		})
 
-				Octane.DOM.appContainer.classList.remove('hidden');
+		.hook('App.loadingMessage',function(message,inbound){
+			inbound.message = _.isString(inbound.message) ? inbound.message : 'Loading...';
+		})
 
-				if(Octane.defaultRoute){
-					Router.route(Octane.defaultRoute);
-				} else {
-					Router._executeRoute(global.location.href);
-				}
+		.on('octane:ready',function(){
+			// unhide the app content hidden behind the loader
+			var loadingContainer = Octane.DOM.loadingContainer;
 
-				setTimeout(function(){
-					Velocity(loadingContainer,'fadeOut',{duration:500})
+			Octane.DOM.appContainer.classList.remove('hidden');
+
+			if(Octane.defaultRoute){
+				Router.route(Octane.defaultRoute);
+			} else {
+				Router._executeRoute(global.location.href);
+			}
+
+			setTimeout(function(){
+				Velocity(loadingContainer,'fadeOut',{duration:500})
 					.then(function(){
 						document.body.removeChild(loadingContainer);
 					});
-				},500);
-			});
+			},500);
+		});
 
 
-			Octane.defineProp({
+		Octane.defineProp({
 
-				initialize: function initialize (appConfig,moduleConfigs){
-
-
-					// don't reinitialize
-					if(_octane.initialized) return false;
+			initialize: function initialize (appConfig,moduleConfigs){
 
 
-
-
-					// attach fastclick.js for mobile touch
-					if (document.addEventListener) {
-						document.addEventListener('DOMContentLoaded', function() {
-							FastClick(document.body);
-						}, false);
-					}
+				// don't reinitialize
+				if(_octane.initialized) return false;
 
 
 
 
-					_.isPlainObject(appConfig) || (appConfig = {});
-					Octane.defaultRoute	= appConfig.Route;
-					Octane.env = appConfig.env;
-					_octane.animateBy = _.contains(['js','css'],appConfig.animateBy) ?
-						appConfig.animateBy : 'css';
+				// attach fastclick.js for mobile touch
+				if (document.addEventListener) {
+					document.addEventListener('DOMContentLoaded', function() {
+						FastClick(document.body);
+					}, false);
+				}
 
 
 
 
-					// start the Router
-					Router[appConfig.legacyRouting ? 'usePolling' : 'useBrowserEvents']();
+				_.isPlainObject(appConfig) || (appConfig = {});
+				Octane.defaultRoute	= appConfig.Route;
+				Octane.env = appConfig.env;
+				_octane.animateBy = _.contains(['js','css'],appConfig.animateBy) ?
+					appConfig.animateBy : 'css';
 
 
 
-					// establish module configuration
-					// configs passed at init are used over those passed earlier
-					// by individual calls to octane.configureModule
-					_.isObject(moduleConfigs) || (moduleConfigs = {});
-					_.each(_octane.modules,function(m,name){
-						if(!_octane.moduleConfigs[name]) _octane.moduleConfigs[name] = {};
 
-						_.merge(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
+				// start the Router
+				Router[appConfig.legacyRouting ? 'usePolling' : 'useBrowserEvents']();
+
+
+
+				// establish module configuration
+				// configs passed at init are used over those passed earlier
+				// by individual calls to octane.configureModule
+				_.isObject(moduleConfigs) || (moduleConfigs = {});
+				_.each(_octane.modules,function(m,name){
+					if(!_octane.moduleConfigs[name]) _octane.moduleConfigs[name] = {};
+
+					_.merge(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
+				});
+
+
+
+
+				// parse the DOM initially to create virtual DOM model
+				Octane.defineProp('App',AppModel);
+
+
+
+
+
+				Octane.App.set({
+					loadingProgress : 0,
+					name : appConfig.appName
+				});
+
+
+
+
+				// hook for loading screens
+				Octane.hook('App.loadingProgress',function(value,inbound,current){
+					var currentProgress = current.loadingProgress || 0;
+					inbound.loadingProgress = currentProgress + inbound.loadingProgress;
+				});
+
+
+
+
+				// compile DOM templates
+				Template.compile();
+
+
+
+
+				ViewModel.getScope();
+
+
+
+
+				// add debugging support
+				// set to false in production
+				if(appConfig.debugMode){
+					define(_octane,'debugMode',{
+						value: true,
+						writable: false,
+						configurable: false
+					});
+					Octane.defineGetter('errors',function(){
+						debug.getErrors();
 					});
 
-
-
-
-					// parse the DOM initially to create virtual DOM model
-					Octane.defineProp('App',AppModel);
-
-
-
-
-
-					Octane.App.set({
-						loadingProgress : 0,
-						name : appConfig.appName
+					Octane.defineGetter('bootlog',function(){
+						debug.getBootlog();
 					});
+					Octane.Reflection = _octane;
+					debug.showConsole();
 
-
-
-
-					// hook for loading screens
-					Octane.hook('App.loadingProgress',function(value,inbound,current){
-						var currentProgress = current.loadingProgress || 0;
-						inbound.loadingProgress = currentProgress + inbound.loadingProgress;
+				} else {
+					define(_octane,'debugMode',{
+						value: false,
+						writable: false,
+						configurable: false
 					});
+				}
 
 
 
-
-					// compile DOM templates
-					Template.compile();
+				var modules = _octane.modules;
 
 
+				// load runtime modules -> compile -> ready!
 
+				return Compiler.compile('o-view')
+					.then(function(){
+						return Compiler.compile('o-modal');
+					})
+					.then(function(){
+						return Promise.resolve(Object.keys(modules));
+					})
+					.each(function(m){
+						return modules[m]._load();
+					})
+					.then(function(){
+						return Compiler.compileAll();
+					})
+					.then(function(){
+						ViewModel.forceRefresh();
 
-					ViewModel.getScope();
-
-
-
-
-					// add debugging support
-					// set to false in production
-					if(appConfig.debugMode){
-						define(_octane,'debugMode',{
+						define(_octane,'initialized',{
 							value: true,
 							writable: false,
 							configurable: false
 						});
-						Octane.defineGetter('errors',function(){
-							debug.getErrors();
-						});
 
-						Octane.defineGetter('bootlog',function(){
-							debug.getBootlog();
-						});
-						Octane.Reflection = _octane;
-						debug.showConsole();
-
-					} else {
-						define(_octane,'debugMode',{
-							value: false,
-							writable: false,
-							configurable: false
-						});
-					}
-
-
-
-					var modules = _octane.modules;
+						Octane.fire('octane:ready');
+					})
+					.catch(function(err){
+						Octane.log(err);
+					});
 
 					// Octane initialize returns a Promise!
-					// load modules -> compile -> ready
-
-					return Compiler.compile('o-view')
-						.then(function(){
-							return Compiler.compile('o-modal');
-						})
-						.then(function(){
-							return Promise.resolve(Object.keys(modules));
-						})
-						.each(function(m){
-							return modules[m]._load();
-						})
-						.then(function(){
-							return Compiler.compileAll();
-						})
-						.then(function(){
-							ViewModel.forceRefresh();
-
-							define(_octane,'initialized',{
-								value: true,
-								writable: false,
-								configurable: false
-							});
-
-							Octane.fire('octane:ready');
-						})
-						.catch(function(err){
-							Octane.log(err);
-						});
-				}
-			});
+			}
+	});
 
 
 
