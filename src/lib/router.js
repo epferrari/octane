@@ -6,42 +6,42 @@
 	// reveal Modernizr on the global namespace
 	require('../../vendor/modernizr.js');
 
-	var _ 					= require('lodash');
-	var Promise 		= require('bluebird');
+	var _           = require('lodash');
+	var Promise     = require('bluebird');
 
-	var OctaneBase 	= require('./OctaneBase.js');
-	var Page 				= require('./OctanePage.js');
-	var App			    = require('./app-model.js');
-	var utils 			= require('./utils.js');
-	var Compiler		= require('./Compiler.js');
-	var _octane 		= require('./_octane.js');
+	var OctaneBase  = require('./OctaneBase.js');
+	var Page        = require('./OctanePage.js');
+	var App         = require('./app-model.js');
+	var utils       = require('./utils.js');
+	var Compiler    = require('./Compiler.js');
+	var _octane     = require('./_octane.js');
 
 	// HTML5 vs. HTML4 browsers
-	var historyAPI = Modernizr.history;
-
-	var pageAnimating = null;
-	var routingLocked = false;
+	var historyAPI        = Modernizr.history;
+	// the page that is currently animating
+	var pageAnimating     = null;
+	var routingLocked     = false;
 	// track the number of times in a row unlocking failed
-	var unlockAttempts = 0;
-	var allowedAttempts = _octane.maxConsecutiveAllowedRouterUnlockAttemps || 10;
+	var unlockAttempts    = 0;
+
 	// store routes called while another route is executing its loading animation
-	var queuedPages = [];
+	var queuedPages       = [];
 	// the history stack of page views, separate of data state history
-	var pageHistory = [];
+	var pageHistory       = [];
 	// keys which have locked the Router with Router.lock()
-	var routerKeys = [];
+	var routerKeys        = [];
 	// collection of regexps and actions to call when a route matches
-	var routes = [];
+	var routes            = [];
 	// cache this
-	var location = global.location;
+	var location          = global.location;
 	// are we on a local host?
-	var localRouting = (location.protocol === "file:");
+	var localRouting      = (location.protocol === "file:");
 	// for HTML5 vs. HTML4 browsers
-	var stateChangeEvent = historyAPI ? 'popstate' : 'hashchange';
+	var stateChangeEvent  = historyAPI ? 'popstate' : 'hashchange';
 	// variable used for the interval in .usePolling
 	var poll;
 
-
+	// Singleton Router
 	var Router = new OctaneBase();
 
 	// Private, non-enumerable API
@@ -171,9 +171,9 @@
 			}
 
 			if( pageHistory[1] === requested ){
-				// requested was the last page in the pageHistory deck, we need to onscreen it,
+				// `requested` was the last page in the pageHistory deck, we need to onscreen it,
 				// but queue it underneath the current page on the z-index.
-				// first ensure all requested's predicates are met and before load promises are resolved
+				// First ensure all requested's predicates are met and before-load promises are resolved
 				return requested.frameWillLoad()
 				.then(function(pgReady){
 					Router.fire('routing:begin');
@@ -188,15 +188,15 @@
 						return currentPage._exit();
 					}
 				})
-				// move the requested page from queued to active
+				// move requested` queued to active
 				.then(function(exitedPg){
 					exitedPg && exitedPg.elem.classList.remove('frame-animating');
 					return requested._load();
 				})
 				// execute the page onload callbacks as promises
 				.then(requested.frameDidLoad)
-				// shift the exited page off the pageHistory deck, and the requested page, now loaded, is at the top again
-				// fire page:loaded event for subscribers
+				// shift the exited page off the pageHistory deck, and the requested page, now loaded, is at the top again.
+				// Fire `page:loaded` event for subscribers
 				.then(function(loadedPg){
 					Router.fire('page:loaded');
 					pageHistory.shift();
@@ -212,8 +212,8 @@
 						return Router._loadPage(nextPg.id).then(nextPg.resolver);
 					}
 				})
-				// resolve with the last page loaded, either the original requested, or the last loaded from the queue
-				// fire routing:complete for any subscribers, like Modal, who is locked until the page routing process completes
+				// Resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
+				// Fire `routing:complete` for any subscribers, like Modal, who is locked until the page routing process completes.
 				.then(function(lastLoadedPg){
 					resolve(lastLoadedPg);
 					Router.fire('routing:complete');
@@ -223,23 +223,23 @@
 				});
 
 			} else {
-				// a new request, animate over the current page
-				// first ensure all requested's predicates are met and before load promises are resolved
+				// A new request, animate over the current page.
+				// First ensure all requested's predicates are met and before load promises are resolved.
 				return requested.frameWillLoad()
 				.then(function(pgReady){
 					Router.fire('routing:begin');
 					pageAnimating = pgReady;
 					if(Router.currentPage) return Router.currentPage._queue();
 				})
-				// load the requested page over the now-queued current page
+				// load `requested` over the now-queued current page
 				.then(function(){
 					Router.fire('page:loading');
 					return requested._load();
 				})
 				// execute the page onload callbacks as promises
 				.then(requested.frameDidLoad)
-				// unshift the pageHistory deck adding the requested page to the top
-				// fire page:loaded event for subscribers
+				// unshift the pageHistory deck adding the requested page to the top.
+				// Fire page:loaded event for subscribers
 				.then(function(loadedPg){
 					Router.fire('page:loaded');
 					pageHistory.unshift(loadedPg);
@@ -248,7 +248,7 @@
 						pageID: 		loadedPg.id,
 						pageTitle: 	loadedPg.title
 					});
-					// if there was a current before requested, take it from queued to exited
+					// if there was a current before requested, take it from queued to exited,
 					// exectuting its onexit callbacks asyncronously as promises
 					if(pageHistory[1]) pageHistory[1]._exit();
 				})
@@ -260,8 +260,8 @@
 						return Router._loadPage(nextPg.id).then(nextPg.resolver);
 					}
 				})
-				// resolve with the last page loaded, either the original requested, or the last loaded from the queue
-				// fire routing:complete for any subscribers, like Modal, who is locked until the page routing process completes
+				// resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
+				// Fire `routing:complete` for any subscribers, like Modal, who is locked until the page routing process completes
 				.then(function(lastLoadedPg){
 					resolve(lastLoadedPg);
 					Router.fire('routing:complete');
@@ -370,7 +370,7 @@
 			_.each(pageIds,function(pageId){
 				pageId = pageId.trim();
 				var page = _octane.pages[pageId];
-				page && page.beforeLoad(predicate);
+				page && page.checkBeforeLoad(predicate);
 			});
 			return this;
 		},
@@ -488,7 +488,7 @@
 		* @throws {Error} thrown when the maximum number of consecutive failed unlocks is attempted. Router becomes permanently locked and Application will need restarted (prevent brute force unlocks)
 		*/
 		unlock: function(key){
-			if(unlockAttempts >= allowedAttempts){
+			if(unlockAttempts >= _octane.maxRouterUnlockAttempts){
 				// prevent brute force attack on unlock after 10 failed attempts
 				var errorMessage = 'Router was locked permanently for too many failed unlock attempts. Please restart the Application.';
 				alert(errorMessage);
@@ -529,7 +529,7 @@
 		*
 		* @public
 		* @static
-		* @method useBrowserEvents
+		* @method usePolling
 		*/
 		usePolling: function(){
 			Router.forget(stateChangeEvent);

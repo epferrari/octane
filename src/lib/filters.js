@@ -8,30 +8,24 @@
 	};
 
 	filter('round',function(decimalPlaces){
-		var input = this.input;
+		var float = parseFloat(this.val);
 		var power = Math.pow(10,decimalPlaces);
-		input = parseFloat(input);
-		return Math.round(input*power)/power;
+		this.val  = Math.round(float*power)/power;
 	});
 
 	filter('roundDown',function(){
-		return Math.floor( parseFloat(this.input) );
+		this.val =  Math.floor( parseFloat(this.val) );
 	});
 
 	filter('titleize',function(){
-		return  utils.titleize(this.input);
+		this.val = utils.titleize(this.val);
 	});
 
-	filter('caps',function(){
-		var input = this.input;
-		return (utils.typeOf(input) == 'string') ? input.toUpperCase() : input;
-	});
 
 	filter('hidePassword',function(replacement){
 		if(!this.model.showPassword){
-			return this.input.replace(/./g,replacement);
+			this.val =  this.val.replace(/./g,replacement);
 		}
-		return this.input;
 	});
 
-module.exports = filter;
+	module.exports = filter;

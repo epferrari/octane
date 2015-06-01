@@ -4,7 +4,7 @@ var _octane = {
 	bootlog:        [],
 	controllers:    {},
 	collections:    {},
-	debugMode: 			true,
+	debugMode:      true,
 	environment:    'web',
 	filters:        {},
 	hooks:          {},
@@ -16,10 +16,13 @@ var _octane = {
 	moduleExports:  {},
 	templates:      {},
 	viewModels:     {},
-	pages:          {}
+	pages:          {},
+	webRoot:        null,
+	localRoot:      null,
+	maxRouterUnlockAttempts: 10,
+	useBackgroundFilterEffects: true,
+	animateBy:     'css'
 };
-
-
 
 
 module.exports = _octane;

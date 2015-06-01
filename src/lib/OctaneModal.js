@@ -1,29 +1,25 @@
-	var _ 					= require('lodash');
-	var Promise 		= require('bluebird');
-	var Velocity 		= require('velocity-animate');
+	var _            = require('lodash');
+	var Promise      = require('bluebird');
+	var Velocity     = require('velocity-animate');
 	require('velocity-ui-pack');
-	var _octane 		= require('./_octane.js');
-	var Controller 	= require('./Controller.js');
-	var Frame 			= require('./ViewFrame.js');
-	var DOM 				= require('./DOM.js');
-	var Router 			= require('./Router.js');
-	var UiLayers 		= require('./ui-layers.js');
-	var Compiler 		= require('./Compiler.js');
+	var _octane      = require('./_octane.js');
+	var Controller   = require('./Controller.js');
+	var Frame        = require('./ViewFrame.js');
+	var DOM          = require('./DOM.js');
+	var Router       = require('./Router.js');
+	var UiLayers     = require('./ui-layers.js');
+	var Compiler     = require('./Compiler.js');
 
 
-	var bg              = DOM.modalContainer;
-	var modalQueue      = null;
-	var currentModal    = false;
-	var block           = false;
+	var bg           = DOM.modalContainer;
+	var modalQueue   = null;
+	var currentModal = false;
+	var block        = false;
 
-	var OctaneModal     = Frame.extend({
+	var OctaneModal  = Frame.extend({
 
 		// Instance Methods
-		/*
-		constructor:  function OctaneModal(){
-			return Controller.apply(this,arguments);
-		},
-		*/
+
 		constructor: 	OctaneModal,
 		defaultPos: 'bottom',
 		initialize: function(elem){
@@ -43,26 +39,26 @@
 
 			if(!block){
 
-					var key = Router.lock();
+				var key = Router.lock();
 
-					if(!currentModal){
-					// no modal onscreen, load this one
-						modalLoaded = UiLayers.addLayerEffect()
-						.bind(this)
-						.then(this._load);
-					} else if (currentModal && !this.isCurrent){
-					// another modal is onscreen, remove it
-						modalLoaded = currentModal._exit()
-						.bind(this)
-						.then(this._load);
-					} else {
-					// this modal is already onscreen, resolve
-						modalLoaded = Promise.resolve();
-					}
+				if(!currentModal){
+				// no modal onscreen, load this one
+					modalLoaded = UiLayers.addLayerEffect()
+					.bind(this)
+					.then(this._load);
+				} else if (currentModal && !this.isCurrent){
+				// another modal is onscreen, remove it
+					modalLoaded = currentModal._exit()
+					.bind(this)
+					.then(this._load);
+				} else {
+				// this modal is already onscreen, resolve
+					modalLoaded = Promise.resolve();
+				}
 
-					return modalLoaded.then(function(){
-						Router.unlock(key);
-					});
+				return modalLoaded.then(function(){
+					Router.unlock(key);
+				});
 
 			} else {
 				// modal animations are blocked, send to queue
@@ -91,10 +87,10 @@
 			var w = (viewport.right - viewport.left)+'px';
 
 			_.extend(this.elem.style,{
-					minHeight   : h,
-					width       : w,
-					minWidth    : w,
-					maxWidth    : w
+				minHeight   : h,
+				width       : w,
+				minWidth    : w,
+				maxWidth    : w
 			});
 		},
 

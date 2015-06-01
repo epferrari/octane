@@ -94,16 +94,16 @@ var utils = {
 	titleize: function(string){
 
 		if(utils.typeOf(string) == 'string'){
-				return string
-				.replace(/[-_]+/g,' ')
-				.trim()
-				.replace(/^.|\s+?[a-z]/g,
-					function(chr){
-						return chr.toUpperCase();
-				})
-				.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
-					return chr1+' '+chr2.toUpperCase();
-				})
+			return string
+			.replace(/[-_]+/g,' ')
+			.trim()
+			.replace(/^.|\s+?[a-z]/g,
+				function(chr){
+					return chr.toUpperCase();
+			})
+			.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
+				return chr1+' '+chr2.toUpperCase();
+			})
 		}
 	},
 
@@ -123,16 +123,16 @@ var utils = {
 
 	dashify : 	function(string){
 		if(utils.typeOf(string) == 'string'){
-				return string
-				.trim()
-				.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
-					return chr1+'-'+chr2.toLowerCase();
-				})
-				.replace(/[A-Z]/g,function(chr){
-					return chr.toLowerCase();
-				})
-				.replace(/\s+|[_]+/g,'-')
-				.replace(/-{2,}/g,'-');
+			return string
+			.trim()
+			.replace(/([a-z])([A-Z])/g,function(pattern,chr1,chr2){
+				return chr1+'-'+chr2.toLowerCase();
+			})
+			.replace(/[A-Z]/g,function(chr){
+				return chr.toLowerCase();
+			})
+			.replace(/\s+|[_]+/g,'-')
+			.replace(/-{2,}/g,'-');
 		}
 	},
 

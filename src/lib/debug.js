@@ -1,9 +1,9 @@
 
-		var _ 					= require('lodash');
-		var _octane 		= require('./_octane.js');
-		var Template 		= require('./Template.js');
-		var Controller 	= require('./Controller.js');
-		var QB 					= require('./Quarterback.js');
+		var _           = require('lodash');
+		var _octane     = require('./_octane.js');
+		var Template    = require('./Template.js');
+		var Controller  = require('./Controller.js');
+		var QB          = require('./Quarterback.js');
 
 
 		var debug = new Controller("Debug",{

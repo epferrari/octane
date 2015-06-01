@@ -1,14 +1,14 @@
 
-	var select 						= document.querySelector.bind(document);
-	var selectAll 				= document.querySelectorAll.bind(document);
-	var define 						= Object.defineProperty;
-	var _ 								= require('lodash');
-	var Promise 					= require('bluebird');
-	var OctaneBase 				= require('./OctaneBase.js');
-	var _octane 					= require('./_octane.js');
-	var utils 						= require('./utils.js');
-	var ViewModel 				= require('./ViewModel.js');
-	var OctaneController 	= require('./Controller.js');
+	var select            = document.querySelector.bind(document);
+	var selectAll         = document.querySelectorAll.bind(document);
+	var define            = Object.defineProperty;
+	var _                 = require('lodash');
+	var Promise           = require('bluebird');
+	var OctaneBase        = require('./OctaneBase.js');
+	var _octane           = require('./_octane.js');
+	var utils             = require('./utils.js');
+	var ViewModel         = require('./ViewModel.js');
+	var OctaneController  = require('./Controller.js');
 
 
 
@@ -16,17 +16,17 @@
 
 
 	// messages to log to the boot logger during the app's initialization
-	var msgs		= {
-		load	  : function(a)  { return "       "+a+': not initialized, loading...'},
-		init		: function(a)  { return "       "+a+': initializing...'},
-		done		: function(a)  { return "       "+a+': successfully initialized!'},
-		skip	  : function(a)  { return "       "+a+': already initialized, continuing...'},
-		fail1		: function(a)  { return "FAILED "+a+': failed to initialize!'},
-		check		: function(a)  { return "       "+a+': checking dependencies...'},
-		clear		: function(a)  { return "       "+a+': no dependencies, preparing to initialize...'},
-		next		: function(a,b){ return "       "+a+': dependency "'+ b +'" loaded and initialized, continuing...'},
-		hold		: function(a,b){ return "       "+a+': dependency "'+ b +'" not yet loaded, loading now...'},
-		fail2		: function(a,b){ return 'FAILED '+a+': Could not load module, missing module dependency "'+ b +'"'},
+	var msgs = {
+		load: function(a){ return "       "+a+': not initialized, loading...'},
+		init: function(a){ return "       "+a+': initializing...'},
+		done: function(a){ return "       "+a+': successfully initialized!'},
+		skip: function(a){ return "       "+a+': already initialized, continuing...'},
+		fail1: function(a){ return "FAILED "+a+': failed to initialize!'},
+		check: function(a){ return "       "+a+': checking dependencies...'},
+		clear: function(a){ return "       "+a+': no dependencies, preparing to initialize...'},
+		next: function(a,b){ return "       "+a+': dependency "'+ b +'" loaded and initialized, continuing...'},
+		hold: function(a,b){ return "       "+a+': dependency "'+ b +'" not yet loaded, loading now...'},
+		fail2: function(a,b){ return 'FAILED '+a+': Could not load module, missing module dependency "'+ b +'"'},
 
 	};
 
@@ -39,13 +39,13 @@
 
 
 	function OctaneModule (name,dependencies){
-		this.initialized        = false;
-		this.name               = name;
-		this.imports            = {};
-		this.controllers        = {};
-		this.dependencies       = dependencies;
-		this.status							= {isPending : function(){return false}};
-		var loading = false;
+		this.initialized  = false;
+		this.name         = name;
+		this.imports      = {};
+		this.controllers  = {};
+		this.dependencies = dependencies;
+		this.status       = {isPending : function(){return false}};
+		var loading       = false;
 
 		this.accessors('loading',{
 			set : function(bool){

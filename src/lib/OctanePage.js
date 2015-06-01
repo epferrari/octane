@@ -1,77 +1,78 @@
-var _ 					= require('lodash');
-var Promise 		= require('bluebird');
-var Velocity 		= require('velocity-animate');
-var uiPack 			= require('velocity-ui-pack');
-var Factory 		= require('./OctaneBase.js');
-var DOM 				= require('./DOM.js');
-var Controller  = require('./Controller.js');
-var Frame 			= require('./ViewFrame.js');
-var _octane			= require('./_octane.js');
 
-var OctanePage = Frame.extend({
+	var _          = require('lodash');
+	var Promise    = require('bluebird');
+	var Velocity   = require('velocity-animate');
+	var uiPack     = require('velocity-ui-pack');
+	var Factory    = require('./OctaneBase.js');
+	var DOM        = require('./DOM.js');
+	var Controller = require('./Controller.js');
+	var Frame      = require('./ViewFrame.js');
+	var _octane    = require('./_octane.js');
 
-	initialize: 	function(elem){
+	var OctanePage = Frame.extend({
 
-									if(!elem) throw new Error('Must pass an HTMLElement to OctaneView');
+		initialize: function(elem){
 
-									this.prepareFrame(elem);
-									this.view = this.elem;
-									this.name = _.capitalize(_.camelCase(this.title))+'FrameController';
-									_octane.pages[this.id] = this;
-								},
+			if(!elem) throw new Error('Must pass an HTMLElement to OctaneView');
 
-	constructor: 	function OctaneView(){
-									return Controller.apply(this,arguments);
-								},
+			this.prepareFrame(elem);
+			this.view = this.elem;
+			this.name = _.capitalize(_.camelCase(this.title))+'FrameController';
+			_octane.pages[this.id] = this;
+		},
 
-	setCanvasHeight:function(){
+		constructor: function OctaneView(){
+			return Controller.apply(this,arguments);
+		},
 
-									var windowHeight = window.document.body.offsetHeight;
-									this.elem.style.height = DOM.pageContainer.style.height = windowHeight+'px';
-								},
+		setCanvasHeight: function(){
 
-	_load:        function(){
-									this.setCanvasHeight();
-									this.elem.classList.add('frame-active');
-									Velocity(this.elem,'scroll',{duration:100});
-									return Promise.delay(405)
-									.bind(this)
-									.then( this.setCanvasHeight );
-								},
+			var windowHeight = window.document.body.offsetHeight;
+			this.elem.style.height = DOM.pageContainer.style.height = windowHeight+'px';
+		},
 
-	_queue:   		function(){
+		_load: function(){
+			this.setCanvasHeight();
+			this.elem.classList.add('frame-active');
+			Velocity(this.elem,'scroll',{duration:100});
+			return Promise.delay(405)
+			.bind(this)
+			.then( this.setCanvasHeight );
+		},
 
-									this.elem.classList.add('frame-queued');
-									this.elem.classList.remove('frame-active');
-									return Promise.delay(405);
-								},
+		_queue: function(){
 
-	_exit:        function (){
-									this.elem.classList.remove('frame-active');
-									this.elem.classList.remove('frame-queued');
-									return this.frameDidExit().delay(805);
-								}
-},{
-	// Static Methods
+			this.elem.classList.add('frame-queued');
+			this.elem.classList.remove('frame-active');
+			return Promise.delay(405);
+		},
 
-	create: 			function(elem){
-									return new OctaneView(elem);
-								},
+		_exit: function (){
+			this.elem.classList.remove('frame-active');
+			this.elem.classList.remove('frame-queued');
+			return this.frameDidExit().delay(805);
+		}
+	},{
+		// Static Methods
 
-	destroy: 			function(id){
-									var toDestroy = _octane.pages[id];
-									if(toDestroy){
-										toDestroy._exit();
-										_.each(toDestroy,function(prop){
-											prop = null;
-										});
-										_octane.pages[id] = null;
-									}
-								},
+		create: function(elem){
+			return new OctaneView(elem);
+		},
 
-	get: 					function(id){
-									return _octane.pages[id];
-								}
-});
+		destroy: function(id){
+			var toDestroy = _octane.pages[id];
+			if(toDestroy){
+				toDestroy._exit();
+				_.each(toDestroy,function(prop){
+					prop = null;
+				});
+				_octane.pages[id] = null;
+			}
+		},
 
-module.exports = OctanePage;
+		get: function(id){
+			return _octane.pages[id];
+		}
+	});
+
+	module.exports = OctanePage;
