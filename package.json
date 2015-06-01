@@ -5,62 +5,61 @@
 	"main": "./octane.js",
 	"license": "MIT",
 	"author": "Ethan Ferrari <ethan@onefiremedia.com> (https://github.com/epferrari)",
-	"repository":{
-		"type":"git",
-		"url":"https://github.com/epferrari/octane.git"
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/epferrari/octane.git"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"install": "mkdir -p ./dist & mkdir -p ./build && npm run build",
-		"postinstall":"npm run docs",
-		"clean:build": "rm -rf ./build/*",
-		"predocs": "rm -rf ./docs",
+		"watch": "watchify ./src/**/*.js -o ./octane.js && npm run build",
+		"predocs": "rm -rf ./docs/*",
 		"docs:source": "docco -o ./docs ./src/**/*.js",
 		"docs:main": "jsdoc2md  ./src/**/*.js --property-list-format list --separators true --sort-by name > readme.md",
 		"docs": "mkdir -p ./docs && npm run docs:source & npm run docs:main",
-		"prebuild": "npm run build:modernizr && eslint ./src/lib/Octane.js && npm run clean:build",
+		"prebuild": "npm run build:modernizr && eslint ./src/lib/Octane.js",
 		"build:modernizr": "node ./scripts/build-modernizr.js",
-		"build:browserify": "mkdir -p ./build && browserify ./src/lib/Octane.js > ./build/octane.js",
-		"build:css": "node-sass ./src/scss/octane.scss ./build/octane.css | autoprefixer ./build/octane.css",
+		"build:browserify": "browserify -t browserify-css ./src/lib/Octane.js > ./octane.js",
+		"build:css": "node-sass ./src/scss/octane.scss ./src/css/octane.css | autoprefixer ./src/css/octane.css",
 		"build:html": "cp ./src/index.html ./index.html",
-		"build:img": "mkdir -p ./build/img && cp ./src/img/* ./build/img",
-		"build": "npm run build:browserify & npm run build:css & npm run build:html & npm run build:img",
+		"build": "npm run build:css && npm run build:browserify && npm run build:html",
 		"postbuild": "npm run dist",
-		"predist": "npm run dist:clean",
-		"dist:clean": "rm -rf ./dist/*",
+		"predist": "rm -rf ./dist/*",
 		"dist:img": "mkdir -p ./dist/img && cp ./src/img/* ./dist/img",
-		"dist:css": "node-sass --output-style compressed ./src/sass/octane.scss ./dist/octane-min.css | autoprefixer > ./dist/octane-min.css",
-		"dist:js": "uglifyjs --compress --mangle -o ./dist/octane-min.js ./build/octane.js",
+		"dist:css": "node-sass --output-style compressed ./src/scss/octane.scss ./dist/octane-min.css | autoprefixer > ./dist/octane-min.css",
+		"dist:js": "uglifyjs --compress --mangle -o ./dist/octane-min.js ./octane.js",
 		"dist": "npm run dist:js & npm run dist:css & npm run dist:img",
-		"postdist": "cp ./build/octane.js ./octane.js & node ./scripts/octane-ignited.js"
+		"postdist": "npm run docs & node ./scripts/octane-ignited.js"
+	},
+	"browserify":{
+		"transform":["browserify-css"]
+	},
+	"browserify-css":{
+		"autoInject":true,
+		"minify":true
 	},
 	"dependencies": {
 		"bluebird": "^2.9.26",
 		"fastclick": "^1.0.6",
 		"lodash": "^3.9.1",
-		"modernizr": "^3.0.0-alpha.4",
 		"velocity-animate": "^1.2.2",
 		"velocity-ui-pack": "^1.2.2"
 	},
 	"devDependencies": {
 		"autoprefixer": "^5.0.0",
+		"modernizr": "^3.0.0-alpha.4",
 		"autoprefixer-core": "^5.0.0",
 		"bower": "^1.3.12",
 		"browserify": "^10.2.0",
 		"browserify-css": "^0.6.1",
-		"coffee-script": "^1.9.2",
 		"docco": "^0.7.0",
-		"eslint": "^0.21.2",
-		"file": "^0.2.2",
-		"filesize": "^3.1.2",
+		"eslint": "^0.22.1",
 		"node-sass": "^3.1.2",
 		"postcss": "^4.0.1",
-		"requirejs": "^2.1.15",
-		"system": "^0.1.0",
-		"uglify-js": "^2.4.23"
+		"uglify-js": "^2.4.23",
+		"watchify": "^3.2.1"
 	},
-	"bugs":{
-		"url":"https://github.com/epferrari/octane/issues"
+	"bugs": {
+		"url": "https://github.com/epferrari/octane/issues"
 	},
 	"engines": {
 		"node": "~0.12.2"
