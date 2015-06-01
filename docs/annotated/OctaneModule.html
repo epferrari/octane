@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>OctaneModule.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="Collection.html">
+                  Collection.js
+                </a>
+              
+                
+                <a class="source" href="Compiler.html">
+                  Compiler.js
+                </a>
+              
+                
+                <a class="source" href="Component.html">
+                  Component.js
+                </a>
+              
+                
+                <a class="source" href="Controller.html">
+                  Controller.js
+                </a>
+              
+                
+                <a class="source" href="DOM.html">
+                  DOM.js
+                </a>
+              
+                
+                <a class="source" href="Dictionary.html">
+                  Dictionary.js
+                </a>
+              
+                
+                <a class="source" href="Events.html">
+                  Events.js
+                </a>
+              
+                
+                <a class="source" href="Factory.html">
+                  Factory.js
+                </a>
+              
+                
+                <a class="source" href="Hinter.html">
+                  Hinter.js
+                </a>
+              
+                
+                <a class="source" href="OctaneBase.html">
+                  OctaneBase.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModal.html">
+                  OctaneModal.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModel.html">
+                  OctaneModel.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModule.html">
+                  OctaneModule.js
+                </a>
+              
+                
+                <a class="source" href="OctanePage.html">
+                  OctanePage.js
+                </a>
+              
+                
+                <a class="source" href="Quarterback.html">
+                  Quarterback.js
+                </a>
+              
+                
+                <a class="source" href="Router.html">
+                  Router.js
+                </a>
+              
+                
+                <a class="source" href="Template.html">
+                  Template.js
+                </a>
+              
+                
+                <a class="source" href="Translator.html">
+                  Translator.js
+                </a>
+              
+                
+                <a class="source" href="ViewFrame.html">
+                  ViewFrame.js
+                </a>
+              
+                
+                <a class="source" href="ViewModel.html">
+                  ViewModel.js
+                </a>
+              
+                
+                <a class="source" href="_octane.html">
+                  _octane.js
+                </a>
+              
+                
+                <a class="source" href="app-model.html">
+                  app-model.js
+                </a>
+              
+                
+                <a class="source" href="debug.html">
+                  debug.js
+                </a>
+              
+                
+                <a class="source" href="extend.html">
+                  extend.js
+                </a>
+              
+                
+                <a class="source" href="filters.html">
+                  filters.js
+                </a>
+              
+                
+                <a class="source" href="http.html">
+                  http.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="ui-layers.html">
+                  ui-layers.js
+                </a>
+              
+                
+                <a class="source" href="utils.html">
+                  utils.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>OctaneModule.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> select 						= <span class="hljs-built_in">document</span>.querySelector.bind(<span class="hljs-built_in">document</span>);
+<span class="hljs-keyword">var</span> selectAll 				= <span class="hljs-built_in">document</span>.querySelectorAll.bind(<span class="hljs-built_in">document</span>);
+<span class="hljs-keyword">var</span> define 						= <span class="hljs-built_in">Object</span>.defineProperty;
+<span class="hljs-keyword">var</span> _ 								= <span class="hljs-built_in">require</span>(<span class="hljs-string">'lodash'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>var Promise                     = require(‘bluebird’);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> OctaneBase 				= <span class="hljs-built_in">require</span>(<span class="hljs-string">'./OctaneBase.js'</span>);
+<span class="hljs-keyword">var</span> _octane 					= <span class="hljs-built_in">require</span>(<span class="hljs-string">'./_octane.js'</span>);
+<span class="hljs-keyword">var</span> utils 						= <span class="hljs-built_in">require</span>(<span class="hljs-string">'./utils.js'</span>);
+<span class="hljs-keyword">var</span> ViewModel 				= <span class="hljs-built_in">require</span>(<span class="hljs-string">'./ViewModel.js'</span>);
+<span class="hljs-keyword">var</span> OctaneController 	= <span class="hljs-built_in">require</span>(<span class="hljs-string">'./Controller.js'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>messages to log to the boot logger during the app’s initialization</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> msgs		= {
+	load	  : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': not initialized, loading...'</span>},
+	init		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': initializing...'</span>},
+	done		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': successfully initialized!'</span>},
+	skip	  : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': already initialized, continuing...'</span>},
+	fail1		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"FAILED "</span>+a+<span class="hljs-string">': failed to initialize!'</span>},
+	check		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': checking dependencies...'</span>},
+	clear		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a</span>)  </span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': no dependencies, preparing to initialize...'</span>},
+	next		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a,b</span>)</span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': dependency "'</span>+ b +<span class="hljs-string">'" loaded and initialized, continuing...'</span>},
+	hold		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a,b</span>)</span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">"       "</span>+a+<span class="hljs-string">': dependency "'</span>+ b +<span class="hljs-string">'" not yet loaded, loading now...'</span>},
+	fail2		: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">a,b</span>)</span>{ <span class="hljs-keyword">return</span> <span class="hljs-string">'FAILED '</span>+a+<span class="hljs-string">': Could not load module, missing module dependency "'</span>+ b +<span class="hljs-string">'"'</span>},
+
+};
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">bootlog</span>(<span class="hljs-params">msg,a,b</span>)</span>{
+	<span class="hljs-keyword">var</span> message = msgs[msg](a,b);
+	_octane.bootlog.push( message );
+}
+
+
+
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">OctaneModule</span> (<span class="hljs-params">name,dependencies</span>)</span>{
+		<span class="hljs-keyword">this</span>.initialized        = <span class="hljs-literal">false</span>;
+		<span class="hljs-keyword">this</span>.name               = name;
+		<span class="hljs-keyword">this</span>.imports            = {};
+		<span class="hljs-keyword">this</span>.controllers        = {};
+		<span class="hljs-keyword">this</span>.dependencies       = dependencies;
+		<span class="hljs-keyword">this</span>.status							= {isPending : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>}};
+		<span class="hljs-keyword">var</span> loading = <span class="hljs-literal">false</span>;
+
+		<span class="hljs-keyword">this</span>.accessors(<span class="hljs-string">'loading'</span>,{
+			set : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">bool</span>)</span>{
+				<span class="hljs-keyword">if</span>(!<span class="hljs-keyword">this</span>.initialized) {
+					loading = utils.typeOf(bool) == <span class="hljs-string">'boolean'</span> ? bool : loading;
+				}
+			},
+			get : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+				<span class="hljs-keyword">return</span> loading;
+			}
+		});
+}
+
+
+
+
+OctaneModule.prototype = <span class="hljs-built_in">Object</span>.create(OctaneBase.prototype);
+OctaneModule.prototype.extend({
+	initialize: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{},
+	constructor: OctaneModule
+});
+
+OctaneModule.prototype.defineProp({
+
+	<span class="hljs-keyword">import</span>: 		function(module){
+								return _octane.moduleExports[module];
+							},
+
+	<span class="hljs-keyword">export</span>: 		<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">exports</span>)</span>{
+								<span class="hljs-comment">/*
+								_.isObject(_octane.moduleExports[this.name]) || (_octane.moduleExports[this.name] = {});
+
+								try{
+									_.extend(_octane.moduleExports[this.name],exports);
+								}catch (ex){
+									this.log('Could not create exports for module '+this.name+'.',ex);
+								}
+								*/</span>
+								_octane.moduleExports[<span class="hljs-keyword">this</span>.name] = exports;
+							},
+
+	controller: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">name,methods</span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>give the controller the module’s config hash</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>								(methods || (methods = {})).moduleConfig = (_octane.moduleConfigs[<span class="hljs-keyword">this</span>.name] || {});
+								<span class="hljs-keyword">this</span>.controllers[name] = _octane.controllers[name] = <span class="hljs-keyword">new</span> OctaneController(name,methods);
+								<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>; <span class="hljs-comment">// chainable</span>
+							},
+
+	_getImports:<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+								_.transform(<span class="hljs-keyword">this</span>.dependencies,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">imports,dependency</span>)</span>{
+										imports[dependency] = _octane.moduleExports[dependency];
+								},<span class="hljs-keyword">this</span>.imports);
+							},
+
+	_load: 			<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+								<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{
+									<span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>.initialized){
+
+										bootlog(<span class="hljs-string">'skip'</span>,<span class="hljs-keyword">this</span>.name);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>return Promise.resolve(this);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>										<span class="hljs-keyword">return</span> resolve(<span class="hljs-keyword">this</span>);
+
+									} <span class="hljs-keyword">else</span> {
+
+										bootlog(<span class="hljs-string">'load'</span>,<span class="hljs-keyword">this</span>.name);
+
+										<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._checkDependencies()
+											.bind(<span class="hljs-keyword">this</span>)
+										.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+											<span class="hljs-keyword">var</span> name = <span class="hljs-keyword">this</span>.name;
+											<span class="hljs-keyword">var</span> config 	= _octane.moduleConfigs[name] || {};
+
+											bootlog(<span class="hljs-string">'init'</span>,name);
+											<span class="hljs-keyword">this</span>._getImports(name);
+											<span class="hljs-keyword">this</span>.initialize(config);
+											<span class="hljs-keyword">this</span>.defineProp(<span class="hljs-string">'initialized'</span>,<span class="hljs-literal">true</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>update progress bar and message as modules load</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>											ViewModel.get(<span class="hljs-string">'App'</span>).set({
+												<span class="hljs-string">"loadingProgress"</span>: (<span class="hljs-built_in">Math</span>.ceil(<span class="hljs-number">100</span> / <span class="hljs-built_in">Object</span>.keys(_octane.modules).length)),
+												<span class="hljs-string">"loadingMessage"</span>:  <span class="hljs-string">"Loading module "</span>+ utils.titleize(name)
+											});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>hook-in for updating a loading screen</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>											<span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'loaded:module'</span>,{moduleID: name});
+
+
+											bootlog(<span class="hljs-string">'done'</span>,name);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>return Promise.resolve(this);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>											<span class="hljs-keyword">return</span> resolve(<span class="hljs-keyword">this</span>);
+										})
+										.catch(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>)</span>{
+											bootlog(<span class="hljs-string">'fail1'</span>,<span class="hljs-keyword">this</span>.name);
+											<span class="hljs-keyword">this</span>.log(err);
+											<span class="hljs-keyword">this</span>.initialized = <span class="hljs-literal">false</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>return Promise.reject();</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>											<span class="hljs-keyword">return</span> reject();
+										});
+									}
+								}.bind(<span class="hljs-keyword">this</span>));
+							},
+
+	_checkDependencies: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+								<span class="hljs-keyword">var</span> deps = <span class="hljs-keyword">this</span>.dependencies || [];
+								<span class="hljs-keyword">var</span> n = deps.length;
+								<span class="hljs-keyword">var</span> results = [];
+
+								bootlog(<span class="hljs-string">'check'</span>,<span class="hljs-keyword">this</span>.name);
+
+								<span class="hljs-keyword">if</span>(n === <span class="hljs-number">0</span>){
+										bootlog(<span class="hljs-string">'clear'</span>,<span class="hljs-keyword">this</span>.name);
+										<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.resolve();
+								} <span class="hljs-keyword">else</span> {
+									<span class="hljs-keyword">while</span>(n--){
+										results.push(<span class="hljs-keyword">this</span>._checkDependency(deps[n]));
+									}
+									<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.all(results);
+								}
+							},
+
+	_checkDependency: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">dname</span>)</span>{
+
+								dname = <span class="hljs-string">''</span>.trim.apply(dname||<span class="hljs-string">''</span>);
+
+								<span class="hljs-keyword">var</span> name 			= <span class="hljs-keyword">this</span>.name;
+								<span class="hljs-keyword">var</span> required 	= _octane.modules[dname];
+
+								<span class="hljs-keyword">switch</span>(<span class="hljs-literal">true</span>){
+
+									<span class="hljs-keyword">case</span> (dname.length === <span class="hljs-number">0</span>) : 													<span class="hljs-comment">// no dependency</span>
+
+										bootlog(<span class="hljs-string">'clear'</span>,name);
+										<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.resolve();
+
+									<span class="hljs-keyword">case</span> (!(required &amp;&amp; required <span class="hljs-keyword">instanceof</span> OctaneModule)): <span class="hljs-comment">// module is not present, fail</span>
+
+										bootlog(<span class="hljs-string">'fail2'</span>,name,dname);
+										<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.reject();
+
+									<span class="hljs-keyword">case</span> ( required &amp;&amp; required.initialized ) : 					<span class="hljs-comment">// module is already loaded, continue</span>
+
+										bootlog(<span class="hljs-string">'next'</span>,name,dname);
+										<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.resolve();
+
+									<span class="hljs-keyword">case</span> (required &amp;&amp; required.status.isPending()):
+										bootlog(<span class="hljs-string">'hold'</span>,name,dname);
+										<span class="hljs-keyword">return</span> required.status;
+
+									<span class="hljs-keyword">case</span> (!required.initialized): 												<span class="hljs-comment">// module is not loaded, try to load it</span>
+
+										bootlog(<span class="hljs-string">'hold'</span>,name,dname);
+										required.status.isPending() || (required.status = required._load());
+										<span class="hljs-keyword">return</span> required.status;
+								}
+							}
+});
+
+
+<span class="hljs-built_in">module</span>.exports = OctaneModule;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
