@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Router.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="Collection.html">
+                  Collection.js
+                </a>
+              
+                
+                <a class="source" href="Compiler.html">
+                  Compiler.js
+                </a>
+              
+                
+                <a class="source" href="Component.html">
+                  Component.js
+                </a>
+              
+                
+                <a class="source" href="Controller.html">
+                  Controller.js
+                </a>
+              
+                
+                <a class="source" href="DOM.html">
+                  DOM.js
+                </a>
+              
+                
+                <a class="source" href="Dictionary.html">
+                  Dictionary.js
+                </a>
+              
+                
+                <a class="source" href="Events.html">
+                  Events.js
+                </a>
+              
+                
+                <a class="source" href="Factory.html">
+                  Factory.js
+                </a>
+              
+                
+                <a class="source" href="Hinter.html">
+                  Hinter.js
+                </a>
+              
+                
+                <a class="source" href="Octane.html">
+                  Octane.js
+                </a>
+              
+                
+                <a class="source" href="OctaneBase.html">
+                  OctaneBase.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModal.html">
+                  OctaneModal.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModel.html">
+                  OctaneModel.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModule.html">
+                  OctaneModule.js
+                </a>
+              
+                
+                <a class="source" href="OctanePage.html">
+                  OctanePage.js
+                </a>
+              
+                
+                <a class="source" href="Quarterback.html">
+                  Quarterback.js
+                </a>
+              
+                
+                <a class="source" href="Router.html">
+                  Router.js
+                </a>
+              
+                
+                <a class="source" href="Template.html">
+                  Template.js
+                </a>
+              
+                
+                <a class="source" href="Translator.html">
+                  Translator.js
+                </a>
+              
+                
+                <a class="source" href="ViewFrame.html">
+                  ViewFrame.js
+                </a>
+              
+                
+                <a class="source" href="ViewModel.html">
+                  ViewModel.js
+                </a>
+              
+                
+                <a class="source" href="_octane.html">
+                  _octane.js
+                </a>
+              
+                
+                <a class="source" href="app-model.html">
+                  app-model.js
+                </a>
+              
+                
+                <a class="source" href="debug.html">
+                  debug.js
+                </a>
+              
+                
+                <a class="source" href="extend.html">
+                  extend.js
+                </a>
+              
+                
+                <a class="source" href="filters.html">
+                  filters.js
+                </a>
+              
+                
+                <a class="source" href="http.html">
+                  http.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="ui-layers.html">
+                  ui-layers.js
+                </a>
+              
+                
+                <a class="source" href="utils.html">
+                  utils.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>Router.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+	<span class="hljs-comment">/**
+	* @module Octane.Router
+	*/</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>reveal Modernizr on the global namespace</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-built_in">require</span>(<span class="hljs-string">'../../vendor/modernizr.js'</span>);
+
+	<span class="hljs-keyword">var</span> _           = <span class="hljs-built_in">require</span>(<span class="hljs-string">'lodash'</span>);
+	<span class="hljs-keyword">var</span> <span class="hljs-built_in">Promise</span>     = <span class="hljs-built_in">require</span>(<span class="hljs-string">'bluebird'</span>);
+
+	<span class="hljs-keyword">var</span> OctaneBase  = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./OctaneBase.js'</span>);
+	<span class="hljs-keyword">var</span> Page        = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./OctanePage.js'</span>);
+	<span class="hljs-keyword">var</span> App         = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./app-model.js'</span>);
+	<span class="hljs-keyword">var</span> utils       = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./utils.js'</span>);
+	<span class="hljs-keyword">var</span> Compiler    = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./Compiler.js'</span>);
+	<span class="hljs-keyword">var</span> _octane     = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./_octane.js'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>HTML5 vs. HTML4 browsers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> historyAPI        = Modernizr.history;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>the page that is currently animating</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> pageAnimating     = <span class="hljs-literal">null</span>;
+	<span class="hljs-keyword">var</span> routingLocked     = <span class="hljs-literal">false</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>track the number of times in a row unlocking failed</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> unlockAttempts    = <span class="hljs-number">0</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>store routes called while another route is executing its loading animation</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> queuedPages       = [];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>the history stack of page views, separate of data state history</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> pageHistory       = [];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>keys which have locked the Router with Router.lock()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> routerKeys        = [];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>collection of regexps and actions to call when a route matches</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> routes            = [];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>cache this</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> location          = global.location;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>are we on a local host?</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> localRouting      = (location.protocol === <span class="hljs-string">"file:"</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>for HTML5 vs. HTML4 browsers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> stateChangeEvent  = historyAPI ? <span class="hljs-string">'popstate'</span> : <span class="hljs-string">'hashchange'</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>variable used for the interval in .usePolling</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> poll;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Singleton Router</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> Router = <span class="hljs-keyword">new</span> OctaneBase();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>Private, non-enumerable API</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+	<span class="hljs-comment">/**
+	* Remove the root from a URL, using Application webRoot or localRoot, if defined, depending on context
+	* webRoot is defined as `appConfig.webRoot` in **Octane.initialize**, else defaults to `location.origin + '/' + location.pathname`
+	* localRoot is defined as `appConfig.localRoot` in **Octane.initialize**, else defaults to local filepath up to 'index.html'
+	*
+	* @private
+	* @static
+	* @method _pruneRoot
+	* @returns {string} the URL with root removed
+	*/</span>
+	Router.defineProp(<span class="hljs-string">'_pruneRoot'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">url</span>)</span>{
+
+		<span class="hljs-keyword">var</span> root,localRoot;
+		<span class="hljs-keyword">if</span>(localRouting){
+			localRoot = _octane.localRoot ? <span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">'^.*'</span>+_octane.localRoot) : <span class="hljs-regexp">/^(.*index.html)/</span>;
+			<span class="hljs-keyword">return</span> url.replace(localRoot,<span class="hljs-string">''</span>);
+		} <span class="hljs-keyword">else</span> {
+			root = _octane.webRoot || location.origin+<span class="hljs-string">'/'</span>+location.pathname;
+			<span class="hljs-keyword">return</span> url.replace(root,<span class="hljs-string">''</span>);
+		}
+	});
+
+
+
+
+	<span class="hljs-comment">/**
+	* Set the document title, call `history.pushState` and trigger popstate event in HTML5 browsers, or change hash in HTML4 browsers
+	*
+	* @private
+	* @static
+	* @method _pushState
+	* @param {object} state An object representing the Application state
+	* @param {string} title Set the document title and history entry title
+	* @param {string} route Root-relative URL to be matched and executed by the Router
+	*/</span>
+	Router.defineProp(<span class="hljs-literal">false</span>,<span class="hljs-string">'_pushState'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">state,title,route</span>)</span>{
+		<span class="hljs-built_in">document</span>.title = title;
+		<span class="hljs-keyword">if</span>(historyAPI){
+			history.pushState(_.merge({},state),title,route);
+			Router.fire(<span class="hljs-string">'popstate'</span>);
+		} <span class="hljs-keyword">else</span> {
+			location.hash = route;
+		}
+	});
+
+
+
+	<span class="hljs-comment">/**
+	* Apply the route logic to display correct Page and Application state when the URL changes, should not be called on its own, use `.route` instead.
+	*
+	* @private
+	* @static
+	* @method _executeRoute
+	* @param {string} url A URL to match against defined routes
+	*/</span>
+	Router.defineProp(<span class="hljs-literal">false</span>,<span class="hljs-string">'_executeRoute'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">url</span>)</span>{
+
+		<span class="hljs-keyword">var</span> path = Router._pruneRoot(url);
+		<span class="hljs-comment">/*
+		var routesExecuted = _.map(routes,function(route){
+			if(route.re.test(path)) {
+				var params = path.match(route.re);
+				params.shift();
+				return route.fn.apply(Object.create(null),params);
+			}
+		});
+		*/</span>
+		_.each(routes,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">route</span>)</span>{
+			<span class="hljs-keyword">if</span>(route.re.test(path)) {
+				<span class="hljs-keyword">var</span> params = path.match(route.re);
+				params.shift();
+				route.fn.apply(<span class="hljs-built_in">Object</span>.create(<span class="hljs-literal">null</span>),params);
+			}
+		});
+
+		<span class="hljs-comment">/*Promise.all(routesExecuted).then(function(result){
+			if(result.length === 1){
+</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>only the page was matched, remove the rest of the route and rewrite URL</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">var</span> useHash = (!historyAPI || localRouting) ? <span class="hljs-string">'#'</span> : <span class="hljs-string">''</span>;
+				<span class="hljs-keyword">var</span> currentPage = Router.currentPage ? Router.currentPage.id : <span class="hljs-string">'home'</span> ;
+				<span class="hljs-built_in">console</span>.log(currentPage);
+				<span class="hljs-keyword">var</span> replacementUrl = useHash + currentPage;
+				<span class="hljs-keyword">if</span>(historyAPI){
+					history.replaceState(history.state,<span class="hljs-built_in">document</span>.title,replacementUrl);
+				} <span class="hljs-keyword">else</span> {
+					location.hash = replacementUrl;
+				}
+			}
+		}).catch(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>)</span>{
+			<span class="hljs-built_in">console</span>.log(<span class="hljs-string">'one of the routes failed'</span>);
+		})
+		 <span class="hljs-comment">/*else if(routesExecuted.length === 0){
+			Router.route('home');
+		}
+		*/</span>
+	});
+
+
+
+	<span class="hljs-comment">/**
+	* Direct page loading and exit animations. For internal use, use `.route` to load pages
+	*
+	* @see OctanePage
+	* @private
+	* @static
+	* @method _loadPage
+	* @param {string} page The name of the page to be loaded
+	* @returns {Promise} a thenable that the load animation sequence for all requested pages has completed
+	*/</span>
+	Router.defineProp(<span class="hljs-literal">false</span>,<span class="hljs-string">'_loadPage'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">page</span>)</span>{
+		<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>the requested Page</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">var</span> requested = _octane.pages[page];
+			<span class="hljs-keyword">var</span> pageIsCurrent = (requested === Router.currentPage);
+
+			Router.fire(<span class="hljs-string">'routing:called'</span>);
+
+			<span class="hljs-keyword">if</span>(!requested || pageIsCurrent) {
+				Router.fire(<span class="hljs-string">'routing:complete'</span>);
+				<span class="hljs-keyword">return</span> resolve(requested);
+			}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>if the Router is busy or locked, send requested page to the queue with its resolver</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">if</span>(pageAnimating || routingLocked){
+				<span class="hljs-keyword">var</span> toQueue = {
+					id: 			page,
+					resolver: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+						resolve();
+						<span class="hljs-keyword">return</span> requested;
+					}
+				};
+				<span class="hljs-keyword">if</span>(!_.contains(queuedPages,toQueue)){
+					queuedPages.unshift(toQueue);
+				}
+				<span class="hljs-keyword">return</span>;
+			}
+
+			<span class="hljs-keyword">if</span>( pageHistory[<span class="hljs-number">1</span>] === requested ){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p><code>requested</code> was the last page in the pageHistory deck, we need to onscreen it,
+but queue it underneath the current page on the z-index.
+First ensure all requested’s predicates are met and before-load promises are resolved</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">return</span> requested.frameWillLoad()
+				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pgReady</span>)</span>{
+					Router.fire(<span class="hljs-string">'routing:begin'</span>);
+					pageAnimating = pgReady;
+					<span class="hljs-keyword">return</span> pgReady._queue();
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>now dismiss the current page</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					<span class="hljs-keyword">var</span> currentPage = Router.currentPage;
+					<span class="hljs-keyword">if</span>(currentPage){
+						currentPage.elem.classList.add(<span class="hljs-string">'frame-animating'</span>);
+						<span class="hljs-keyword">return</span> currentPage._exit();
+					}
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>move requested` queued to active</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">exitedPg</span>)</span>{
+					exitedPg &amp;&amp; exitedPg.elem.classList.remove(<span class="hljs-string">'frame-animating'</span>);
+					<span class="hljs-keyword">return</span> requested._load();
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>execute the page onload callbacks as promises</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(requested.frameDidLoad)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>shift the exited page off the pageHistory deck, and the requested page, now loaded, is at the top again.
+Fire <code>page:loaded</code> event for subscribers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">loadedPg</span>)</span>{
+					Router.fire(<span class="hljs-string">'page:loaded'</span>);
+					pageHistory.shift();
+					pageAnimating = <span class="hljs-literal">null</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>set App model</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					App.set({
+						pageID: 		loadedPg.id,
+						pageTitle: 	loadedPg.title
+					});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>cleanup any queued pages that were requested during this load</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					<span class="hljs-keyword">if</span>(queuedPages.length &gt; <span class="hljs-number">0</span>){
+						<span class="hljs-keyword">var</span> nextPg = queuedPages.shift();
+						<span class="hljs-keyword">return</span> Router._loadPage(nextPg.id).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+							<span class="hljs-keyword">var</span> next = nextPg.resolver();
+							<span class="hljs-keyword">return</span> next;
+						});
+					} <span class="hljs-keyword">else</span> {
+						<span class="hljs-keyword">return</span> loadedPg;
+					}
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>reconcile any difference between the url and App pageHistory stack caused by hyper-clicking</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">lastLoadedPg</span>)</span>{
+					<span class="hljs-keyword">var</span> urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					<span class="hljs-keyword">if</span>(urlPage !== lastLoadedPg.id) {
+						<span class="hljs-keyword">return</span> Router._loadPage(urlPage);
+					} <span class="hljs-keyword">else</span>{
+						<span class="hljs-keyword">return</span> lastLoadedPg;
+					}
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Resolve with the last page loaded, either the original <code>requested</code>, or the last loaded from the queue.
+Fire <code>routing:complete</code> for any subscribers, like Modal, who is locked until the page routing process completes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">lastLoadedPg</span>)</span>{
+					resolve(lastLoadedPg);
+					Router.fire(<span class="hljs-string">'routing:complete'</span>);
+				})
+				.catch(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>)</span>{
+					Router.log(err);
+				});
+
+			} <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>A new request, animate over the current page.
+First ensure all requested’s predicates are met and before load promises are resolved.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">return</span> requested.frameWillLoad()
+				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pgReady</span>)</span>{
+					Router.fire(<span class="hljs-string">'routing:begin'</span>);
+					pageAnimating = pgReady;
+					<span class="hljs-keyword">if</span>(Router.currentPage) <span class="hljs-keyword">return</span> Router.currentPage._queue();
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>load <code>requested</code> over the now-queued current page</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					Router.fire(<span class="hljs-string">'page:loading'</span>);
+					<span class="hljs-keyword">return</span> requested._load();
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>execute the page onload callbacks as promises</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(requested.frameDidLoad)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>unshift the pageHistory deck adding the requested page to the top.
+Fire page:loaded event for subscribers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">loadedPg</span>)</span>{
+					Router.fire(<span class="hljs-string">'page:loaded'</span>);
+					pageHistory.unshift(loadedPg);
+					pageAnimating = <span class="hljs-literal">null</span>;
+					App.set({
+						pageID: 		loadedPg.id,
+						pageTitle: 	loadedPg.title
+					});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>if there was a current before requested, take it from queued to exited,
+exectuting its onexit callbacks asyncronously as promises</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					<span class="hljs-keyword">if</span>(pageHistory[<span class="hljs-number">1</span>]) pageHistory[<span class="hljs-number">1</span>]._exit();
+				})
+				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>cleanup any queued pages that were requested during this load,
+returning THEIR resolver</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					<span class="hljs-keyword">if</span>(queuedPages.length &gt;<span class="hljs-number">0</span>){
+						<span class="hljs-keyword">var</span> nextPg = queuedPages.shift();
+						<span class="hljs-keyword">return</span> Router._loadPage(nextPg.id).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+							<span class="hljs-keyword">return</span> nextPg.resolver();
+						});
+					} <span class="hljs-keyword">else</span> {
+						<span class="hljs-keyword">return</span> requested;
+					}
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>reconcile any difference between the url and App pageHistory stack caused by hyper-clicking</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">lastLoadedPg</span>)</span>{
+					<span class="hljs-keyword">var</span> urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					<span class="hljs-keyword">if</span>(urlPage !== lastLoadedPg.id) {
+						<span class="hljs-keyword">return</span> Router._loadPage(urlPage);
+					} <span class="hljs-keyword">else</span> {
+						<span class="hljs-keyword">return</span> lastLoadedPg;
+					}
+				})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>resolve with the last page loaded, either the original <code>requested</code>, or the last loaded from the queue.
+Fire <code>routing:complete</code> for any subscribers, like Modal, who is locked until the page routing process completes</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">lastLoadedPg</span>)</span>{
+					resolve(lastLoadedPg);
+					Router.fire(<span class="hljs-string">'routing:complete'</span>);
+				})
+				.catch(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>)</span>{
+					Router.log(err);
+				});
+			}
+		});
+	});
+
+
+
+	<span class="hljs-comment">/**
+	* Parse requested page from a route, stripping it of its hash if present
+	*
+	* @private
+	* @static
+	* @method _parsePage
+	* @param {string} route The route requested
+	* @returns {string} the normalized name of the page
+	*/</span>
+	Router.defineProp(<span class="hljs-string">'_parsePage'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">route</span>)</span>{
+		<span class="hljs-keyword">var</span> page;
+		<span class="hljs-keyword">var</span> useHash = (!historyAPI || localRouting);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>!important: Router expects page is the first argument BEFORE the slash.
+If there is nothing before the slash, then page is assumed to be current page</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="hljs-keyword">if</span>(useHash){
+			page = (route.match(<span class="hljs-regexp">/^#?(.*?)(?=[\/]|$)/</span>)||[])[<span class="hljs-number">1</span>];
+		} <span class="hljs-keyword">else</span> {
+			page = (route.match(<span class="hljs-regexp">/^(.*?)(?=[\/]|$)/</span>)||[])[<span class="hljs-number">1</span>];
+		}
+		<span class="hljs-keyword">return</span> page;
+	});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Public API</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	Router.defineProp({
+
+
+		<span class="hljs-comment">/**
+		* Determine hashing format and page from fragment, then send params to `Router._pushState`
+		*
+		* @public
+		* @static
+		* @method route
+		* @param {string} route Root-relative URL fragment to be sent to `Router._pushState` and executed by `Router._executeRoute`
+		*/</span>
+		route: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">route</span>)</span>{
+
+			route = Router._pruneRoot(route);
+
+			<span class="hljs-keyword">var</span> useHash = (!historyAPI || localRouting);
+			<span class="hljs-keyword">var</span> pageRequested = Router._parsePage(route);
+			<span class="hljs-keyword">var</span> pageExists = _octane.pages[pageRequested];
+			<span class="hljs-keyword">var</span> currentPage = Router.currentPage;
+			<span class="hljs-keyword">var</span> page;
+
+			<span class="hljs-keyword">if</span>(!pageRequested || pageRequested === <span class="hljs-string">'.'</span>){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>page was not passed to route, need to sub it in</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				page = currentPage ? currentPage.id : <span class="hljs-string">'home'</span>;
+			} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (pageRequested &amp;&amp; !pageExists){
+				alert(<span class="hljs-string">'Page '</span> + pageRequested + <span class="hljs-string">' does not exist!'</span>);
+				page = currentPage ? currentPage.id : <span class="hljs-string">'home'</span>;
+			} <span class="hljs-keyword">else</span> {
+				page = pageRequested;
+			}
+
+			page = (useHash ? <span class="hljs-string">'#'</span> : <span class="hljs-string">'./'</span>) + page;
+			route = route.replace(<span class="hljs-regexp">/^(.*?)(?=[\/]|$)/</span>,page);
+
+
+			<span class="hljs-keyword">var</span> title = App.get(<span class="hljs-string">'name'</span>) + <span class="hljs-string">' | '</span> + utils.titleize(page);
+
+			Router._pushState({},title,route);
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Add a route to be called when the URL changes
+		*
+		* @public
+		* @static
+		* @method
+		* @param {regexp} pattern The regexp pattern that matches the route against a URL
+		* @param {function} callback The callback to execute on a matching route, will be applied with the matched values of the route regexp
+		* @returns {this} for method chaining
+		*/</span>
+		add: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pattern,callback</span>)</span>{
+			routes.push({
+				re:pattern,
+				fn:callback
+			});
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Remove a route from the array of saved routes
+		*
+		* @public
+		* @static
+		* @method
+		* @param {regexp} pattern The pattern to remove
+		*/</span>
+		remove: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pattern</span>)</span>{
+			_.each(routes,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">route</span>)</span>{
+				<span class="hljs-keyword">if</span>(route.re === pattern){
+					_.pull(routes,route);
+				}
+			});
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Add a predicate condition that must be true for a page(s) to load
+		*
+		* @see OctanePage
+		* @public
+		* @static
+		* @method
+		* @param {string|array} page(s) The names of page(s) the condition should be evaluated for
+		* @param {function} predicate A function that should return a truthy or falsy value
+		* @returns {this} for method chaining
+		*/</span>
+		pageLoadIf: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageIds,predicate</span>)</span>{
+			_.isArray(pageIds)||(pageIds=pageIds.split(<span class="hljs-string">','</span>));
+			_.each(pageIds,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageId</span>)</span>{
+				pageId = pageId.trim();
+				<span class="hljs-keyword">var</span> page = _octane.pages[pageId];
+				page &amp;&amp; page.checkBeforeLoad(predicate);
+			});
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Add a Promise that must resolve before a page (or pages) can load
+		*
+		* @see OctanePage
+		* @public
+		* @static
+		* @method
+		* @param {string|array} page(s) The names of pages the condition should be evaluated for
+		* @param {function} deferred A deferred function that will be wrapped in a Promise
+		* @returns {this} for method chaining
+		* @example Octane.Router.beforePageLoad('about',function(resove,reject){...});
+		*/</span>
+		beforePageLoad: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">pageIds,deferred</span>)</span>{
+			_.isArray(pageIds)||(pageIds=pageIds.split(<span class="hljs-string">','</span>));
+			_.each(pageIds,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageId</span>)</span>{
+				pageId = pageId.trim();
+				<span class="hljs-keyword">var</span> page = _octane.pages[pageId];
+				page &amp;&amp; page.beforeLoad(deferred);
+			});
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Add a callback to the array of callbacks executed when a page has animated onscreen. Callbacks are wrapped in Promises at time of execution.
+		*
+		* @see OctanePage
+		* @public
+		* @static
+		* @method
+		* @param {string|array} page(s) The names of pages the callback should execute for
+		* @param {function} callback A callback to execute
+		* @param {array} [argsArray] An array of arguments to be applied to the callback at execution
+		* @param {object} [thisArg] The 'this' value of the callback at execution time, default is the Page object
+		* @returns {this} for method chaining
+		* @example
+		* // creates new Person with current values of Registrant ViewModel when page 'registrants' is loaded
+		* Octane.Router.onPageLoad('registrants',
+		* addNewPerson,
+		* [octane.get('Registrant.name'),octane.get('Registrant.job')],
+		*	Person);
+		*/</span>
+		onPageLoad: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">pageIds,callback,argsArray,thisArg</span>)</span>{
+			_.isArray(pageIds)||(pageIds=pageIds.split(<span class="hljs-string">','</span>));
+			_.each(pageIds,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageId</span>)</span>{
+				pageId = pageId.trim();
+				<span class="hljs-keyword">var</span> page = _octane.pages[pageId];
+				page &amp;&amp; page.onload(callback,argsArray,thisArg);
+			});
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Add a callback to the array of callbacks executed when a page has animated offscreen. Callbacks are wrapped in Promises at time of execution.
+		*
+		* @see OctanePage
+		* @public
+		* @static
+		* @method
+		* @param {string|array} page(s) The names of pages the callback should execute for
+		* @param {function} callback A callback to execute
+		* @param {array} [argsArray] An array of arguments to be applied to the callback at execution
+		* @param {object} [thisArg] The 'this' value of the callback at execution time, default is the Page object
+		* @returns {this} for method chaining
+		*/</span>
+		onPageExit: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageIds,callback,argsArray,thisArg</span>)</span>{
+			_.isArray(pageIds)||(pageIds=pageIds.split(<span class="hljs-string">','</span>));
+			_.each(pageIds,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">pageId</span>)</span>{
+				pageId = pageId.trim();
+				<span class="hljs-keyword">var</span> page = _octane.pages[pageId];
+				page &amp;&amp; page.onExit(callback,argsArray,thisArg);
+			});
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Lock the Router
+		*
+		* @public
+		* @static
+		* @method lock
+		* @returns {string} A randomly generated key to unlock the router from __THIS__ lock. Other locks may still be in place.
+		*/</span>
+		lock: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			routingLocked = <span class="hljs-literal">true</span>;
+			<span class="hljs-keyword">var</span> key = <span class="hljs-keyword">this</span>.guid({});
+			routerKeys.push(key);
+			<span class="hljs-keyword">return</span> key;
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Unlock the router from a calling of `Router.lock`.
+		* If the Router is locked, then after X number of failed unlocked attempts in a row,
+		* the Router will lock out and the Application will need to be restarted.
+		* Number of attempts can be set at Octane.initialize via `appConfig.maxConsecutiveAllowedRouterUnlockAttemps`, or defaults to 10
+		*
+		* @public
+		* @static
+		* @method
+		* @param {string} key The key returned from `Router.lock` to unlock the lock it placed. Other locks may still be in place.
+		* @returns {boolean} false if key is invalid or more locks remain, otherwise true and loads pages queued during lock
+		* @throws {Error} thrown when the maximum number of consecutive failed unlocks is attempted. Router becomes permanently locked and Application will need restarted (prevent brute force unlocks)
+		*/</span>
+		unlock: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">key</span>)</span>{
+			<span class="hljs-keyword">if</span>(unlockAttempts &gt;= _octane.maxRouterUnlockAttempts){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>prevent brute force attack on unlock after 10 failed attempts</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">var</span> errorMessage = <span class="hljs-string">'Router was locked permanently for too many failed unlock attempts. Please restart the Application.'</span>;
+				alert(errorMessage);
+				<span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(errorMessage);
+				<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+			}
+
+			<span class="hljs-keyword">var</span> lengthBeforePull = routerKeys.length;
+			<span class="hljs-keyword">var</span> lengthAfterPull = _.pull(routerKeys,key).length;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>record attempt to use forged key</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">if</span>(routingLocked &amp;&amp; lengthBeforePull === lengthAfterPull){
+				unlockAttempts++;
+				<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+			} <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>key was ok, reset the attempts</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				unlockAttempts = <span class="hljs-number">0</span>;
+			}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>unlock Router when all locks are removed, then route any queued Pages</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">if</span>(routerKeys.length === <span class="hljs-number">0</span>){
+				routingLocked = <span class="hljs-literal">false</span>;
+				<span class="hljs-keyword">if</span>(queuedPages.length &gt; <span class="hljs-number">0</span>){
+					<span class="hljs-keyword">var</span> nextPg = queuedPages.shift();
+					Router._loadPage(nextPg.id)
+						.then(nextPg.resolver);
+				}
+				<span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+			} <span class="hljs-keyword">else</span> {
+				<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+			}
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Set fallback to use polling in case popstate/hashchange is being finicky. Drops `popstate` or `hashchange` event listeners.
+		*
+		* @public
+		* @static
+		* @method usePolling
+		*/</span>
+		usePolling: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			Router.forget(stateChangeEvent);
+			<span class="hljs-keyword">var</span> cachedURL = location.href;
+			Router.checkURL = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+				<span class="hljs-keyword">if</span>(location.href !== cachedURL){
+					cachedURL = location.href;
+					Router._executeRoute(location.href);
+				}
+				clearInterval(poll);
+				poll = setInterval(Router.checkURL,<span class="hljs-number">50</span>);
+			}
+			poll = setInterval(Router.checkURL,<span class="hljs-number">50</span>);
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Update App state on URL change. Turns off polling interval if set. Octane calls this during initilization, unless overridden by `appConfig.legacyRouting: true`.
+		*
+		* @public
+		* @static
+		* @method useBrowserEvents
+		*/</span>
+		useBrowserEvents: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			clearInterval(poll);
+			Router.any(stateChangeEvent,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+				Router._executeRoute(location.href);
+			});
+		},
+
+
+
+		<span class="hljs-comment">/**
+		* Helper to parse URL's search string into an object
+		*
+		* @public
+		* @static
+		* @method urlSearchObject
+		* @return {object} an object of search parameters
+		* @example Router.urlSearchObject("http://yoursite.com?pawns=5&amp;kings=1")
+		* =&gt; {kings: 1, pawns: 5}
+		*/</span>
+		urlSearchObject: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+			<span class="hljs-keyword">if</span>(Modernizr.history){
+				<span class="hljs-keyword">return</span> utils.urlObject().searchObject;
+			} <span class="hljs-keyword">else</span> {
+				<span class="hljs-keyword">var</span> hash = <span class="hljs-built_in">window</span>.location.hash
+				.replace(<span class="hljs-regexp">/^(.*\?)/</span>,<span class="hljs-string">''</span>)
+				.split(<span class="hljs-string">'&amp;'</span>);
+
+				<span class="hljs-keyword">return</span> _.reduce(hash,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">result,n</span>)</span>{
+					<span class="hljs-keyword">var</span> param = n.split(<span class="hljs-string">'='</span>);
+					result[param[<span class="hljs-number">0</span>]] = param[<span class="hljs-number">1</span>];
+					<span class="hljs-keyword">return</span> result;
+				},{});
+			}
+		}
+	});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <p>Public Getters</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+	<span class="hljs-comment">/**
+	* Get the current page of the Application
+	*
+	* @name currentPage
+	* @public
+	* @static
+	* @readonly
+	*/</span>
+	Router.defineGetter(<span class="hljs-string">'currentPage'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		<span class="hljs-keyword">return</span> pageHistory[<span class="hljs-number">0</span>];
+	});
+
+	<span class="hljs-comment">/**
+	* Is the router locked?
+	*
+	* @name isLocked
+	* @readonly
+	* @public
+	* @static
+	* @returns {boolean}
+	*/</span>
+	Router.defineGetter(<span class="hljs-string">'isLocked'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		<span class="hljs-keyword">return</span> routingLocked;
+	});
+
+	<span class="hljs-comment">/**
+	* Queued Pages waiting to load during a lock
+	*
+	* @name queue
+	* @readonly
+	* @public
+	* @static
+	* @returns {array} the array of queued pages
+	* @static
+	*/</span>
+	Router.defineGetter(<span class="hljs-string">'queue'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		<span class="hljs-keyword">return</span> queuedPages;
+	});
+
+	<span class="hljs-built_in">Object</span>.defineProperty(Page,<span class="hljs-string">'current'</span>,{
+		get: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			<span class="hljs-keyword">return</span> pageHistory[<span class="hljs-number">0</span>];
+		},
+		configurable:<span class="hljs-literal">false</span>
+	});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>ensure onscreen view keeps proper dimensions to viewport</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	Router.any(<span class="hljs-string">'translated resize orientationchange'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		Router.currentPage &amp;&amp; Router.currentPage.setCanvasHeight();
+	});
+
+
+	Compiler</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p>send routes to Router onclick</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	.assign(<span class="hljs-string">'a.route'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">elem</span>)</span>{
+		elem.addEventListener(<span class="hljs-string">'click'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				<span class="hljs-keyword">var</span> route = <span class="hljs-keyword">this</span>.getAttribute(<span class="hljs-string">'href'</span>);
+
+				Router.route(route);
+
+		},<span class="hljs-literal">false</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>route backwards using the browser’s history, Router will take care of the rest</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	}).assign(<span class="hljs-string">'.o-back'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">el</span>)</span>{
+		el.addEventListener(<span class="hljs-string">'click'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+			History.go(-<span class="hljs-number">1</span>);
+		},<span class="hljs-literal">false</span>);
+	});
+
+
+	<span class="hljs-built_in">module</span>.exports = Router;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

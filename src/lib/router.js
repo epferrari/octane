@@ -104,6 +104,7 @@
 	Router.defineProp(false,'_executeRoute',function(url){
 
 		var path = Router._pruneRoot(url);
+		/*
 		var routesExecuted = _.map(routes,function(route){
 			if(route.re.test(path)) {
 				var params = path.match(route.re);
@@ -111,6 +112,15 @@
 				return route.fn.apply(Object.create(null),params);
 			}
 		});
+		*/
+		_.each(routes,function(route){
+			if(route.re.test(path)) {
+				var params = path.match(route.re);
+				params.shift();
+				route.fn.apply(Object.create(null),params);
+			}
+		});
+
 		/*Promise.all(routesExecuted).then(function(result){
 			if(result.length === 1){
 				//only the page was matched, remove the rest of the route and rewrite URL
@@ -162,7 +172,10 @@
 			if(pageAnimating || routingLocked){
 				var toQueue = {
 					id: 			page,
-					resolver: resolve
+					resolver: function(){
+						resolve();
+						return requested;
+					}
 				};
 				if(!_.contains(queuedPages,toQueue)){
 					queuedPages.unshift(toQueue);
@@ -207,9 +220,23 @@
 						pageTitle: 	loadedPg.title
 					});
 					// cleanup any queued pages that were requested during this load
-					if(queuedPages.length >0){
+					if(queuedPages.length > 0){
 						var nextPg = queuedPages.shift();
-						return Router._loadPage(nextPg.id).then(nextPg.resolver);
+						return Router._loadPage(nextPg.id).then(function(){
+							var next = nextPg.resolver();
+							return next;
+						});
+					} else {
+						return loadedPg;
+					}
+				})
+				// reconcile any difference between the url and App pageHistory stack caused by hyper-clicking
+				.then(function(lastLoadedPg){
+					var urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					if(urlPage !== lastLoadedPg.id) {
+						return Router._loadPage(urlPage);
+					} else{
+						return lastLoadedPg;
 					}
 				})
 				// Resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
@@ -257,7 +284,20 @@
 					// returning THEIR resolver
 					if(queuedPages.length >0){
 						var nextPg = queuedPages.shift();
-						return Router._loadPage(nextPg.id).then(nextPg.resolver);
+						return Router._loadPage(nextPg.id).then(function(){
+							return nextPg.resolver();
+						});
+					} else {
+						return requested;
+					}
+				})
+				// reconcile any difference between the url and App pageHistory stack caused by hyper-clicking
+				.then(function(lastLoadedPg){
+					var urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					if(urlPage !== lastLoadedPg.id) {
+						return Router._loadPage(urlPage);
+					} else {
+						return lastLoadedPg;
 					}
 				})
 				// resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
@@ -272,6 +312,33 @@
 			}
 		});
 	});
+
+
+
+	/**
+	* Parse requested page from a route, stripping it of its hash if present
+	*
+	* @private
+	* @static
+	* @method _parsePage
+	* @param {string} route The route requested
+	* @returns {string} the normalized name of the page
+	*/
+	Router.defineProp('_parsePage',function(route){
+		var page;
+		var useHash = (!historyAPI || localRouting);
+		// !important: Router expects page is the first argument BEFORE the slash.
+		// If there is nothing before the slash, then page is assumed to be current page
+		if(useHash){
+			page = (route.match(/^#?(.*?)(?=[\/]|$)/)||[])[1];
+		} else {
+			page = (route.match(/^(.*?)(?=[\/]|$)/)||[])[1];
+		}
+		return page;
+	});
+
+
+
 
 	// Public API
 	Router.defineProp({
@@ -290,24 +357,24 @@
 			route = Router._pruneRoot(route);
 
 			var useHash = (!historyAPI || localRouting);
+			var pageRequested = Router._parsePage(route);
+			var pageExists = _octane.pages[pageRequested];
+			var currentPage = Router.currentPage;
 			var page;
-			var pageExists;
-			// !important: Router expects page is the first argument BEFORE the slash
-			// if there is nothing before the slash, then page is assumed to be current page
-			if(useHash){
-				page = (route.match(/^#(.*?)(?=[\/]|$)/)||[])[1];
+
+			if(!pageRequested || pageRequested === '.'){
+				// page was not passed to route, need to sub it in
+				page = currentPage ? currentPage.id : 'home';
+			} else if (pageRequested && !pageExists){
+				alert('Page ' + pageRequested + ' does not exist!');
+				page = currentPage ? currentPage.id : 'home';
 			} else {
-				page = (route.match(/^(.*?)(?=[\/]|$)/)||[])[1];
+				page = pageRequested;
 			}
 
-			if(!page){
-				page = (useHash ? '#' : './') + (Router.currentPage ? Router.currentPage.id : 'home');
-				route = route.replace(/^(.*?)(?=[\/]|$)/,page);
-			} else if(page && !_octane.pages[page] ){
-				alert('Page ' + page + ' does not exist!');
-				page = (useHash ? '#' : './') + (Router.currentPage ? Router.currentPage.id : 'home');
-				route = route.replace(/^(.*?)(?=[\/]|$)/,page);
-			}
+			page = (useHash ? '#' : './') + page;
+			route = route.replace(/^(.*?)(?=[\/]|$)/,page);
+
 
 			var title = App.get('name') + ' | ' + utils.titleize(page);
 
@@ -512,9 +579,9 @@
 			if(routerKeys.length === 0){
 				routingLocked = false;
 				if(queuedPages.length > 0){
-					var next = queuedPages.shift();
-					Router._loadPage(next.page)
-						.then(next.resolver);
+					var nextPg = queuedPages.shift();
+					Router._loadPage(nextPg.id)
+						.then(nextPg.resolver);
 				}
 				return true;
 			} else {

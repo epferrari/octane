@@ -1,7 +1,8 @@
 	var _           = require('lodash');
 	var Promise     = require('bluebird');
 	var Velocity    = require('velocity-animate');
-	var html2canvas = require('html2canvas');
+	// using for now because current npm package is broken
+	var html2canvas = require('../../vendor/html2canvas.js');
 	var _octane     = require('./_octane.js');
 	var Controller  = require('./Controller.js');
 	var Router      = require('./Router.js');
@@ -142,12 +143,11 @@
 			return Promise.resolve();
 		},
 		// get the static image
-		getBackgroundImage: function (resolve,reject){
+		getBackgroundImage: function(){
 			html2canvas(appContainer,{
-				onrendered : function(canvas){
+				onrendered: function(canvas){
 					bgContainer.firstChild && bgContainer.removeChild(bgContainer.firstChild);
 					bgContainer.appendChild(canvas);
-					resolve(canvas);
 				}
 			});
 		}
@@ -158,17 +158,17 @@
 	// cache screenshot as soon as routing completes
 	if(supportsCssFilters){
 		UiLayers.addLayerEffect = function(){
-			var by = _octane.animateBy || 'css';
+			var by = _octane.animateBy;
 			return new Promise(this.activateBackground[by])
 				.bind(this)
 				.then( new Promise(this.activateModalContainer[by]) )
 				.then( new Promise(this.hideAppContainer[by]) );
 		};
 		UiLayers.removeLayerEffect = function(){
-			var by = _octane.animateBy || 'css';
-			return  new Promise(this.deactivateModalContainer[by])
+			var by = _octane.animateBy;
+			return  new Promise(this.revealAppContainer[by])
 				.bind(this)
-				.then( new Promise(this.revealAppContainer[by]) )
+				.then( new Promise(this.deactivateModalContainer[by]) )
 				.then( new Promise(this.deactivateBackground[by]) );
 		};
 		UiLayers.on('routing:complete',Router,function(){
@@ -176,11 +176,11 @@
 		});
 	} else {
 		UiLayers.activateLayerEffect = function(){
-			var by = _octane.animateBy || 'css';
+			var by = _octane.animateBy;
 			return new Promise(this.activateModalContainer[by]);
 		};
 		UiLayers.removeLayerEffect = function(){
-			var by = _octane.animateBy || 'css';
+			var by = _octane.animateBy;
 			return  new Promise(this.deactivateModalContainer[by]);
 		};
 	}

@@ -9,10 +9,11 @@
 		"no-underscore-dangle": 0,
 		"key-spacing": 0,
 		"comma-spacing": 0,
-		"curly": 1,
+		"curly": 0,
 		"no-unused-expressions": 1,
-		"space-infix-ops": 1,
+		"space-infix-ops": 0,
 		"new-cap": 0,
-		"no-unused-vars":1
+		"no-unused-vars":1,
+		"no-multi-spaces":0
 	}
 }

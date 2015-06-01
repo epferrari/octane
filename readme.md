@@ -6,18 +6,17 @@
   * [.beforePageLoad(page(s), deferred)](#Octane.module_Router.beforePageLoad) ⇒ <code>this</code>
   * [.currentPage](#Octane.module_Router.currentPage)
   * [.isLocked](#Octane.module_Router.isLocked) ⇒ <code>boolean</code>
-  * [.loadPage(page)](#Octane.module_Router.loadPage) ⇒ <code>Promise</code>
   * [.lock()](#Octane.module_Router.lock) ⇒ <code>string</code>
   * [.onPageExit(page(s), callback, [argsArray], [thisArg])](#Octane.module_Router.onPageExit) ⇒ <code>this</code>
   * [.onPageLoad(page(s), callback, [argsArray], [thisArg])](#Octane.module_Router.onPageLoad) ⇒ <code>this</code>
   * [.pageLoadIf(page(s), predicate)](#Octane.module_Router.pageLoadIf) ⇒ <code>this</code>
-  * [.pushState(state, title, route)](#Octane.module_Router.pushState)
   * [.queue](#Octane.module_Router.queue) ⇒ <code>array</code>
   * [.remove(pattern)](#Octane.module_Router.remove)
-  * [.route(url)](#Octane.module_Router.route)
   * [.route(route)](#Octane.module_Router.route)
   * [.unlock(key)](#Octane.module_Router.unlock) ⇒ <code>boolean</code>
   * [.urlSearchObject()](#Octane.module_Router.urlSearchObject) ⇒ <code>object</code>
+  * [.useBrowserEvents()](#Octane.module_Router.useBrowserEvents)
+  * [.usePolling()](#Octane.module_Router.usePolling)
 
 
 -
@@ -71,27 +70,11 @@ Get the current page of the Application
 
 <a name="Octane.module_Router.isLocked"></a>
 ### Router.isLocked ⇒ <code>boolean</code>
-Is the router locked or not?
+Is the router locked?
 
 **Kind**: static property of <code>[Router](#Octane.module_Router)</code>  
 **Access:** public  
 **Read only**: true  
-
--
-
-<a name="Octane.module_Router.loadPage"></a>
-### Router.loadPage(page) ⇒ <code>Promise</code>
-Direct page loading and exit animations
-
-**Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
-**Returns**: <code>Promise</code> - a thenable that the load animation sequence for all requested pages has completed  
-**Access:** public  
-**See**: OctanePage  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| page | <code>string</code> | The name of the page to be loaded |
-
 
 -
 
@@ -168,22 +151,6 @@ Add a predicate condition that must be true for a page(s) to load
 
 -
 
-<a name="Octane.module_Router.pushState"></a>
-### Router.pushState(state, title, route)
-Set the document title, call `history.pushState` and trigger popstate event in HTML5 browsers, or change hash in HTML4 browsers
-
-**Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
-**Access:** public  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| state | <code>object</code> | An object representing the Application state |
-| title | <code>string</code> | Set the document title and history entry title |
-| route | <code>string</code> | URL to be matched and executed by the Router |
-
-
--
-
 <a name="Octane.module_Router.queue"></a>
 ### Router.queue ⇒ <code>array</code>
 Queued Pages waiting to load during a lock
@@ -210,29 +177,15 @@ Remove a route from the array of saved routes
 -
 
 <a name="Octane.module_Router.route"></a>
-### Router.route(url)
-Apply the route logic to display correct Page and Application state when the URL changes, should not be called on its own, use `sendRoute` instead.
-
-**Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
-**Access:** public  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| url | <code>string</code> | A URL to match against defined routes |
-
-
--
-
-<a name="Octane.module_Router.route"></a>
 ### Router.route(route)
-Determine hashing format and page from fragment, then send params to `Router.pushState`
+Determine hashing format and page from fragment, then send params to `Router._pushState`
 
 **Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
 **Access:** public  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| route | <code>string</code> | Root-relative URL fragment to be sent to `Router.pushState` and executed by `Router.executeRoute` |
+| route | <code>string</code> | Root-relative URL fragment to be sent to `Router._pushState` and executed by `Router._executeRoute` |
 
 
 -
@@ -271,6 +224,24 @@ Helper to parse URL's search string into an object
 Router.urlSearchObject("http://yoursite.com?pawns=5&kings=1")
 => {kings: 1, pawns: 5}
 ```
+
+-
+
+<a name="Octane.module_Router.useBrowserEvents"></a>
+### Router.useBrowserEvents()
+Update App state on URL change. Turns off polling interval if set. Octane calls this during initilization, unless overridden by `appConfig.legacyRouting: true`.
+
+**Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
+**Access:** public  
+
+-
+
+<a name="Octane.module_Router.usePolling"></a>
+### Router.usePolling()
+Set fallback to use polling in case popstate/hashchange is being finicky. Drops `popstate` or `hashchange` event listeners.
+
+**Kind**: static method of <code>[Router](#Octane.module_Router)</code>  
+**Access:** public  
 
 -
 
