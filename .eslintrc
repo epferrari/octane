@@ -14,6 +14,7 @@
 		"space-infix-ops": 0,
 		"new-cap": 0,
 		"no-unused-vars":1,
-		"no-multi-spaces":0
+		"no-multi-spaces":0,
+		"no-extra-strict":1
 	}
 }

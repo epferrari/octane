@@ -8,9 +8,9 @@
 		// @author Ethan Ferrari <ethan@ethanferrari.com>
 		// ethanferrari.com/octane
 		// http://onefiremedia.com
-		// https://github.com/epferrari/Octane.git
-		// version 2.0.1
-		// April 2014 - May 2015
+		// https://github.com/epferrari/octane.git
+		// @version 1.0.0
+		// 1 June 2015
 
 
 	/* ------------------------------------------------------- */
