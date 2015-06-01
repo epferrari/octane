@@ -610,14 +610,15 @@
 			Octane.defineProp({ Router: Router });
 
 			//add Router methods to Application Object
-			var routerMethods = ['route','beforePageLoad','onPageLoad','onPageExit'];
+			var routerMethods = ['route','sendRoute','loadPageif','beforePageLoad','onPageLoad','onPageExit'];
 			_.each(routerMethods,function(method){
 				Octane[method] = Router[method];
 			});
 			Octane.addRoute = Router.add;
 
+			// set up animations for all Pages defined in HTML markup
 			Router.add(/^#?(.*?)(?=[\/]|$)/,function(page){
-				Router.loadPage(page);
+				Router._loadPage(page);
 			});
 
 	/* ------------------------------------------------------- */
@@ -709,10 +710,14 @@
 					// unhide the app content hidden behind the loader
 				var loadingContainer = Octane.DOM.loadingContainer;
 
-				var route = Octane.defaultRoute || global.location.href;
 				Octane.DOM.appContainer.classList.remove('hidden');
 
-				Router.route(route);
+				if(Octane.defaultRoute){
+					Router.route(Octane.defaultRoute);
+				} else {
+					Router._executeRoute(global.location.href);
+				}
+
 				setTimeout(function(){
 					Velocity(loadingContainer,'fadeOut',{duration:500})
 					.then(function(){
@@ -745,9 +750,13 @@
 
 											_.isPlainObject(appConfig) || (appConfig = {});
 											Octane.defaultRoute	= appConfig.Route;
-											Octane.context			= appConfig.context;
+											Octane.context = appConfig.context;
 
 
+
+
+											// start the Router
+											Router[appConfig.legacyRouting ? 'usePolling' : 'useBrowserEvents']();
 
 
 
@@ -760,12 +769,6 @@
 
 												_.merge(_octane.moduleConfigs[name],(moduleConfigs[name]||{}));
 											});
-
-
-
-
-
-
 
 
 

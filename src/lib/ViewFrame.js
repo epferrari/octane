@@ -13,6 +13,7 @@ var Frame = Factory.extend({
 											id              : elem.id,
 											title           : elem.getAttribute('title') || _.startCase(elem.id),
 											elem            : elem,
+											beforeLoadChecks: [],
 											beforeLoadTasks : [],
 											onloadTasks     : [],
 											onExitTasks     : []
@@ -25,56 +26,72 @@ var Frame = Factory.extend({
 
 									if(!isClassed) this.elem.classList.add('frame-'+this.defaultPos);
 								},
-	beforeLoad:   function(deferred){
-									try{
-										this.beforeLoadTasks.push(deferred);
-									} catch(ex){
-										this.log && this.log('cannot push "beforeLoad" promise to page '+this.id+', reason: '+ex.message);
-									}
+	checkBeforeLoad: function(predicate){
+									this.beforeLoadChecks.push(predicate);
 								},
-	onload:       function(callback,args){
-									try{
-										this.onloadTasks.push([callback,args]);
-									}catch(ex){
-										this.log && this.log('cannot push "onload" callback to page '+this.id+', reason: '+ex.message);
-									}
+	beforeLoad:   function(deferred){
+									this.beforeLoadTasks.push(deferred);
+								},
+	onload:       function(callback,args,thisArg){
+									this.onloadTasks.push({
+										cb:callback,
+										args:args,
+										thisArg:thisArg
+									});
 								},
 
-	onExit:       function(callback,args){
-									try{
-										this.onExitTasks.push([callback,args]);
-									}catch(ex){
-										this.log && this.log('cannot push "onExit" callback to page '+this.id+', reason: '+ex.message);
-									}
+	onExit:       function(callback,args,thisArg){
+									this.onExitTasks.push({
+										cb:callback,
+										args:args,
+										thisArg:thisArg
+									});
 								},
 	frameWillLoad:function(){
 
-									var todos = this.beforeLoadTasks;
-									var completed = _.map(todos,function(deferred){
-										if(_.isFunction(deferred)) return new Promise(deferred);
+									// check that all predicates are met
+									var checked = _.map(this.beforeLoadChecks,function(predicate){
+										return new Promise(function(resolve,reject){
+											var result = predicate();
+											!!result ? resolve() : reject();
+										});
 									});
-									return Promise.all(completed);
+
+									// check that all Promises have resolved
+									var completed = _.map(this.beforeLoadTasks,function(deferred){
+										return new Promise(deferred);
+									});
+
+									return Promise.all(checked.concat(completed))
+										.bind(this)
+										.then(function(){
+											return this;
+										});
 								},
 
 	frameDidLoad:   function(){
 
-									var todos = this.onloadTasks;
-									var completed = _.map(todos,this._execute);
-									return Promise.settle(completed);
+									var completed = _.map(this.onloadTasks,this._execute);
+									return Promise.settle(completed)
+										.bind(this)
+										.then(function(){
+											return this;
+										});
 								},
 
 	frameDidExit:   function(){
 
-									var todos = this.onExitTasks;
-									var completed = _.map(todos,this._execute);
-									return Promise.settle(completed);
+									var completed = _.map(this.onExitTasks,this._execute);
+									return Promise.settle(completed)
+										.bind(this)
+										.then(function(){
+											return this;
+										});
 								},
 
 	_execute:     function(task){
-									return new Promise(function(resolve,reject){
-										var callback = task[0];
-										var args = task[1];
-										if(_.isFunction(callback)) callback(args);
+									return new Promise(function(resolve){
+										task.cb.apply((task.thisArg||this),task.args);
 										resolve();
 									});
 								}

@@ -65,14 +65,14 @@ define(OctaneBase.prototype,'Proto',{
 
 // shortcut method to define immutable properties
 define(OctaneBase.prototype,'defineProp',{
-	value: 			function (isWritable,prop,val){
+	value: 			function (isEnumerable,prop,val){
 
-								if(!_.isBoolean(isWritable)){
-									// if no writable definition is passed, read first argument as prop
+								if(!_.isBoolean(isEnumerable)){
+									// if no emumerable definition is passed, read first argument as prop
 									val = prop;
-									prop = isWritable;
-									// default to non-writable
-									isWritable = false;
+									prop = isEnumerable;
+									// default to enumerable
+									isEnumerable = true;
 								}
 
 								switch(true){
@@ -86,8 +86,8 @@ define(OctaneBase.prototype,'defineProp',{
 												define(this,key,{
 													value : prop[key] ,
 													configurable : false,
-													writable: isWritable,
-													enumerable: true
+													writable: false,
+													enumerable: isEnumerable
 												});
 											} catch(ex){
 												this.log(ex)
@@ -99,8 +99,8 @@ define(OctaneBase.prototype,'defineProp',{
 											define(this,prop,{
 												value : val,
 												configurable : false,
-												writable : isWritable,
-												enumerable:true
+												writable : false,
+												enumerable:isEnumerable
 											});
 										} catch(ex){
 											this.log(ex);

@@ -109,8 +109,8 @@ var OctaneModal     = Frame.extend({
 									.then(function(){
 										return this.frameDidLoad();                           // array of callbacks to run after loading
 									})
-									.then(function(){
-										currentModal = this;
+									.then(function(m){
+										currentModal = m;
 									})
 									.catch(function(err){
 										this.log(err);
