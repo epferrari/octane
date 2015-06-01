@@ -46,7 +46,7 @@
 			showConsole: function(){
 				document.querySelector('body>octane-debugger').style.display = 'block';
 			}
-		})
+		});
 
 
 		var bar = [

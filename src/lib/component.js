@@ -1,7 +1,12 @@
-var _ = require('lodash');
 
-/* experimental */
+
+/**
+* @todo everything
+*/
+
 /*
+// experimental
+var _ = require('lodash');
 function OctaneElement(t,a,c){
 	this.type 		= t || 'span';
 	this.attrs 		= a || {};
