@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>OctaneModel.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="Collection.html">
+                  Collection.js
+                </a>
+              
+                
+                <a class="source" href="Controller.html">
+                  Controller.js
+                </a>
+              
+                
+                <a class="source" href="Dictionary.html">
+                  Dictionary.js
+                </a>
+              
+                
+                <a class="source" href="Factory.html">
+                  Factory.js
+                </a>
+              
+                
+                <a class="source" href="Octane.html">
+                  Octane.js
+                </a>
+              
+                
+                <a class="source" href="OctaneBase.html">
+                  OctaneBase.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModal.html">
+                  OctaneModal.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModel.html">
+                  OctaneModel.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModule.html">
+                  OctaneModule.js
+                </a>
+              
+                
+                <a class="source" href="OctanePage.html">
+                  OctanePage.js
+                </a>
+              
+                
+                <a class="source" href="Template.html">
+                  Template.js
+                </a>
+              
+                
+                <a class="source" href="Translator.html">
+                  Translator.js
+                </a>
+              
+                
+                <a class="source" href="ViewFrame.html">
+                  ViewFrame.js
+                </a>
+              
+                
+                <a class="source" href="ViewModel.html">
+                  ViewModel.js
+                </a>
+              
+                
+                <a class="source" href="_octane.html">
+                  _octane.js
+                </a>
+              
+                
+                <a class="source" href="app-model.html">
+                  app-model.js
+                </a>
+              
+                
+                <a class="source" href="compiler.html">
+                  compiler.js
+                </a>
+              
+                
+                <a class="source" href="component.html">
+                  component.js
+                </a>
+              
+                
+                <a class="source" href="debug.html">
+                  debug.js
+                </a>
+              
+                
+                <a class="source" href="dom.html">
+                  dom.js
+                </a>
+              
+                
+                <a class="source" href="events.html">
+                  events.js
+                </a>
+              
+                
+                <a class="source" href="extend.html">
+                  extend.js
+                </a>
+              
+                
+                <a class="source" href="filters.html">
+                  filters.js
+                </a>
+              
+                
+                <a class="source" href="http.html">
+                  http.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="quarterback.html">
+                  quarterback.js
+                </a>
+              
+                
+                <a class="source" href="router.html">
+                  router.js
+                </a>
+              
+                
+                <a class="source" href="ui-layers.html">
+                  ui-layers.js
+                </a>
+              
+                
+                <a class="source" href="uiMessages.html">
+                  uiMessages.js
+                </a>
+              
+                
+                <a class="source" href="utils.html">
+                  utils.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>OctaneModel.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-comment">/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/</span>
+
+
+<span class="hljs-keyword">var</span> _           = <span class="hljs-built_in">require</span>(<span class="hljs-string">'lodash'</span>);
+<span class="hljs-keyword">var</span> _octane     = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./_octane.js'</span>);
+<span class="hljs-keyword">var</span> OctaneBase  = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./OctaneBase.js'</span>);
+<span class="hljs-keyword">var</span> utils       = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./utils.js'</span>);
+<span class="hljs-keyword">var</span> extend      = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./extend.js'</span>);
+<span class="hljs-keyword">var</span> logger      = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./logger.js'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>base Model factory</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">OctaneModel</span>(<span class="hljs-params">dataset</span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>private</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> _alias	= <span class="hljs-literal">null</span>;
+	<span class="hljs-keyword">var</span> data = {};
+	<span class="hljs-keyword">var</span> queue = {};
+	<span class="hljs-keyword">this</span>.className = <span class="hljs-keyword">this</span>.className || <span class="hljs-string">'OctaneModel'</span>;
+	<span class="hljs-keyword">this</span>.guid();
+
+	<span class="hljs-keyword">this</span>.defineGetter(<span class="hljs-string">'queue'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		<span class="hljs-keyword">return</span> queue;
+	});
+
+	<span class="hljs-keyword">this</span>._resetQueue = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		queue = {};
+	};
+
+	<span class="hljs-keyword">this</span>.defineGetter(<span class="hljs-string">'alias'</span>,
+		<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			<span class="hljs-keyword">return</span> _alias;
+	});
+
+	<span class="hljs-keyword">this</span>.defineGetter(<span class="hljs-string">'data'</span>,
+		<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			<span class="hljs-keyword">return</span> data;
+	});
+
+	<span class="hljs-keyword">this</span>.extend({
+		become : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">alias</span>)</span>{
+			<span class="hljs-keyword">if</span>(alias === <span class="hljs-string">'App'</span> &amp;&amp; _octane.models[<span class="hljs-string">'App'</span>]) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Cannot replace App model, choose another model'</span>);
+			<span class="hljs-keyword">var</span> models = _octane.models;
+			models[alias] &amp;&amp; models[alias].detach();
+			models[alias] = <span class="hljs-keyword">this</span>;
+			_alias = alias;
+			<span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+alias);
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},
+		detach : <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+			<span class="hljs-keyword">var</span> alias = <span class="hljs-keyword">this</span>.alias;
+			<span class="hljs-keyword">if</span>(alias === <span class="hljs-string">'App'</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Cannot detach App model'</span>);
+			<span class="hljs-keyword">if</span>( alias ){
+				_octane.models[alias] = <span class="hljs-literal">null</span>;
+				_alias = <span class="hljs-literal">null</span>;
+				<span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+alias);
+			}
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		}
+	});
+
+	<span class="hljs-keyword">this</span>.initialize.apply(<span class="hljs-keyword">this</span>,<span class="hljs-built_in">arguments</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>set defaults from prototype</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">this</span>.set(<span class="hljs-keyword">this</span>.defaults);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>overwrite with data passed to constructor</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">this</span>.set(dataset);
+	<span class="hljs-keyword">this</span>.initialize &amp;&amp; <span class="hljs-keyword">this</span>.initialize.apply(<span class="hljs-keyword">this</span>,<span class="hljs-built_in">arguments</span>);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Static methods</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>OctaneBase.prototype.defineProp.call(OctaneModel,{
+
+	extend: extend,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>mixin the logger</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	log: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">message,err</span>)</span>{
+		logger.apply(<span class="hljs-keyword">this</span>,[message,error]);
+	},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>static factory</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	create: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">dataset</span>)</span>{
+		<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> OctaneModel(dataset);
+	},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>get the model name from a keystring, ex <code>App.loading.message</code> would return “App”</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	_parseName: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">binding</span>)</span>{
+		<span class="hljs-keyword">try</span> {
+			<span class="hljs-keyword">return</span> (binding || <span class="hljs-string">''</span>).split(<span class="hljs-string">'.'</span>)[<span class="hljs-number">0</span>];
+		} <span class="hljs-keyword">catch</span> (ex){
+			<span class="hljs-keyword">this</span>.log(<span class="hljs-string">'Could not parse model name from '</span>+binding+<span class="hljs-string">': '</span>+ex.message);
+			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+		}
+	},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>get the nested key from a keystring, ex <code>App.loading.message</code> would return “loading.message”</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	_parseKey: 	<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">binding</span>)</span>{
+		<span class="hljs-keyword">try</span>{
+			<span class="hljs-keyword">return</span> (binding || <span class="hljs-string">''</span>).split(<span class="hljs-string">'.'</span>).slice(<span class="hljs-number">1</span>).join(<span class="hljs-string">'.'</span>);
+		} <span class="hljs-keyword">catch</span> (ex){
+			<span class="hljs-keyword">this</span>.log(<span class="hljs-string">'Could not parse model key from '</span>+binding+<span class="hljs-string">': '</span>+ex.message);
+			<span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+		}
+	}
+});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>end static methods</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+
+
+OctaneModel.prototype = <span class="hljs-built_in">Object</span>.create(OctaneBase.prototype);
+
+OctaneModel.prototype.defineProp({
+
+	_ensureSetObject: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">key,value</span>)</span>{
+		<span class="hljs-keyword">var</span> tk = utils.typeOf(key);
+		<span class="hljs-keyword">var</span> inbound;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>handle key,value and {key:value}</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="hljs-keyword">if</span>(tk === <span class="hljs-string">'object'</span>){
+			inbound = key;
+		}<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(tk === <span class="hljs-string">'string'</span>){
+			(inbound = {})[key] = value;
+		}<span class="hljs-keyword">else</span> {
+			inbound = {};
+		}
+		<span class="hljs-keyword">return</span> inbound;
+	},
+
+	_set: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">key,val</span>)</span>{
+
+		<span class="hljs-keyword">var</span> inbound = <span class="hljs-keyword">this</span>._ensureSetObject(key,val);
+
+		<span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>.processing){
+			_.merge(<span class="hljs-keyword">this</span>.queue,inbound);
+		} <span class="hljs-keyword">else</span> {
+			<span class="hljs-keyword">this</span>.processing = <span class="hljs-literal">true</span>;
+
+				<span class="hljs-keyword">var</span> alias = <span class="hljs-keyword">this</span>.alias;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>apply any hooks</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">if</span>(alias){
+				_.forOwn(inbound,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">value,path</span>)</span>{
+					_octane.hooks[alias+<span class="hljs-string">'.'</span>+path] &amp;&amp; <span class="hljs-keyword">this</span>._applyHooks(path,inbound);
+				},<span class="hljs-keyword">this</span>);
+			}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>re-iterate in case there have been additional properties
+added to inbound via hooks</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			_.forOwn(inbound,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">value,path</span>)</span>{
+				_.set(<span class="hljs-keyword">this</span>.data,path,value);
+				<span class="hljs-keyword">this</span>.alias &amp;&amp; <span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+path);
+			},<span class="hljs-keyword">this</span>);
+			<span class="hljs-keyword">this</span>.processing = <span class="hljs-literal">false</span>;
+			<span class="hljs-keyword">if</span>(!_.isEmpty(<span class="hljs-keyword">this</span>.queue)) <span class="hljs-keyword">this</span>._set(<span class="hljs-keyword">this</span>.queue);
+			<span class="hljs-keyword">this</span>._resetQueue();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>alert any subscribers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			alias &amp;&amp; <span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+alias);
+		}
+		<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.data;
+	},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>use reduce to set a value using a nested key, ex “App.loading.message” would set {App:{loading:{message:value}}}
+deprecated by lodash 3.9 _.get</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-comment">/*
+	_setData: function(path,value){
+
+		var data = this.data;
+		var alias = this.alias;
+		var keyArray = path.replace(/\[\]/g,'.').split('.');
+		path = path.replace(/(\]\[)/g,'.')
+			.replace(/^(\[)/,'')
+			.replace(/(\])$/,'')
+			.replace(/([\[\]])/g,'.')
+			.split('.');
+		var k = keyArray.length;
+		var modelUpdated;
+
+		try{
+			keyArray.reduce(function(res,cur,index){
+				if(index === (k-1)){ // last iteration
+					return res[cur] = value;
+				}else{
+
+					return res[cur] = _.isPlainObject(res[cur]) ? res[cur] : {}; // create object if not already
+				}
+			},data);
+
+			modelUpdated = true;
+		}catch(ex){
+			modelUpdated = false;
+			this.log('Unable to set model data at "'+path+'"',ex);
+		}
+		modelUpdated &amp;&amp; alias &amp;&amp; this.fire('modelchange:'+alias+'.'+path);
+	},
+	*/</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>helper, applies hooks on changed model data attributes before they get set</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	_applyHooks: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path,inbound</span>)</span>{
+
+		<span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>.alias){
+			<span class="hljs-keyword">var</span> hooks = _octane.hooks[<span class="hljs-keyword">this</span>.alias+<span class="hljs-string">'.'</span>+path];
+			<span class="hljs-keyword">var</span> fresh = _.get(inbound,path);
+			<span class="hljs-keyword">var</span> current = <span class="hljs-keyword">this</span>.data;
+
+			_.each(hooks,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">hook</span>)</span>{
+				fresh &amp;&amp; hook(fresh,inbound,current);
+			});
+		}
+	},
+
+	_unset: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">toUnset,options</span>)</span>{
+
+		<span class="hljs-keyword">if</span>(!toUnset) <span class="hljs-keyword">return</span>;
+		_.isPlainObject(options) || (options = {});
+		_.isArray(toUnset) || (toUnset = toUnset.split(<span class="hljs-string">','</span>));
+
+		<span class="hljs-keyword">var</span> timeout = options.timeout;
+		<span class="hljs-keyword">var</span> throttle = options.throttle;
+
+		<span class="hljs-keyword">if</span>(timeout &amp;&amp; (utils.typeOf(timeout) == <span class="hljs-string">'number'</span>)){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>timout the unset</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+			<span class="hljs-keyword">if</span>(throttle){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>throttle the unsets</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				_.each(toUnset,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path,i</span>)</span>{
+						setTimeout(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+							<span class="hljs-keyword">this</span>.set( path, <span class="hljs-keyword">void</span>(<span class="hljs-number">0</span>) );</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>make sure we timeout the 0 index</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>						}.bind(<span class="hljs-keyword">this</span>),timeout*(i+<span class="hljs-number">1</span>));
+				},<span class="hljs-keyword">this</span>);
+			}<span class="hljs-keyword">else</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>unset all together after timeout</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				setTimeout(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					_.each(toUnset,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path</span>)</span>{
+						<span class="hljs-keyword">this</span>.set( path, <span class="hljs-keyword">void</span>(<span class="hljs-number">0</span>) );
+					},<span class="hljs-keyword">this</span>);
+				}.bind(<span class="hljs-keyword">this</span>),timeout);
+			}
+		} <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>else if timeout wasn’t set, unset all immediately</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			_.each(toUnset,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path</span>)</span>{
+				<span class="hljs-keyword">this</span>.set( path, <span class="hljs-keyword">void</span>(<span class="hljs-number">0</span>) );
+			},<span class="hljs-keyword">this</span>);
+		}
+	},
+
+	_destroy: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+		<span class="hljs-keyword">var</span>  keys = <span class="hljs-built_in">Object</span>.keys(<span class="hljs-keyword">this</span>.data);
+		<span class="hljs-keyword">var</span> n = keys.length;
+
+		<span class="hljs-keyword">while</span>(n--){
+			<span class="hljs-keyword">this</span>.data[keys[n]] = <span class="hljs-literal">null</span>;
+		}
+		<span class="hljs-keyword">this</span>.clearEventCache();
+		<span class="hljs-keyword">this</span>.alias &amp;&amp; <span class="hljs-keyword">this</span>.detach();
+	},
+
+	_get: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path</span>)</span>{
+
+		<span class="hljs-keyword">if</span>(_.isString(path)){
+			<span class="hljs-keyword">return</span> _.get(<span class="hljs-keyword">this</span>.data,path);
+		} <span class="hljs-keyword">else</span> {
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.data;
+		}
+	},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>deprecated by lodash 3.9 _.get</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	_getAt: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">path,index</span>)</span>{
+
+		<span class="hljs-keyword">var</span> prop = <span class="hljs-keyword">this</span>._get(path);
+		<span class="hljs-keyword">if</span>(_.isArray(prop)){
+			<span class="hljs-keyword">return</span> prop[index];
+		}<span class="hljs-keyword">else</span>{
+			<span class="hljs-keyword">return</span> prop;
+		}
+
+	},
+
+	_clear: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+		<span class="hljs-keyword">var</span> alias = <span class="hljs-keyword">this</span>.alias;
+
+		_.forOwn(<span class="hljs-keyword">this</span>.data,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">value,key</span>)</span>{
+			<span class="hljs-keyword">this</span>.data[key] = <span class="hljs-literal">null</span>;
+			alias &amp;&amp; <span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+alias+<span class="hljs-string">'.'</span>+key);
+		});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>alert any subscribers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="hljs-keyword">if</span>(alias) <span class="hljs-keyword">this</span>.fire(<span class="hljs-string">'modelchange:'</span>+alias );
+
+		<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+	},
+
+	_reset: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">defaults</span>)</span>{
+		<span class="hljs-keyword">this</span>.clear()
+		<span class="hljs-keyword">this</span>.set(defaults || <span class="hljs-keyword">this</span>.defaults);
+	}
+});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>create overwritable aliases for extension classes</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> modelProtoProps = [<span class="hljs-string">'get'</span>,<span class="hljs-string">'set'</span>,<span class="hljs-string">'unset'</span>,<span class="hljs-string">'clear'</span>,<span class="hljs-string">'getAt'</span>,<span class="hljs-string">'destroy'</span>,<span class="hljs-string">'reset'</span>];
+_.each(modelProtoProps,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">method</span>)</span>{
+	OctaneModel.prototype[method] = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+		<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>[<span class="hljs-string">'_'</span>+method].apply(<span class="hljs-keyword">this</span>,<span class="hljs-built_in">arguments</span>);
+	};
+});
+OctaneModel.prototype.constructor = OctaneModel;
+OctaneModel.prototype.initialize = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{};
+
+
+<span class="hljs-built_in">module</span>.exports = OctaneModel;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

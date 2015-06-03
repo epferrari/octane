@@ -12,16 +12,17 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"watch": "watchify ./src/**/*.js -o ./octane.js && npm run build",
-		"predocs": "rm -rf ./docs/*",
-		"docs:source": "docco -o ./docs ./src/**/*.js",
-		"docs:main": "jsdoc2md  ./src/**/*.js --property-list-format list --separators true --sort-by name > readme.md",
-		"docs": "mkdir -p ./docs && npm run docs:source & npm run docs:main",
+		"predocs": "rm -rf ./docs/* && mkdir -p ./docs/annotated ./docs/md",
+		"docs:source": "docco -o ./docs/annotated ./src/**/*.js",
+		"docs:md": "jsdoc2md  ./src/**/*.js --property-list-format list --separators true --sort-by name > ./docs/markdown",
+		"docs:modules":"node ./scripts/docs-md.js",
+		"docs:readme":"cp ./src/README.md ./docs/md/README.md & node ./scripts/readme.js",
+		"docs": "npm run docs:source & npm run docs:modules && npm run docs:readme",
 		"prebuild": "npm run build:modernizr && eslint ./src/lib/Octane.js",
 		"build:modernizr": "node ./scripts/build-modernizr.js",
 		"build:browserify": "browserify -t browserify-css ./src/lib/Octane.js > ./octane.js",
 		"build:css": "node-sass ./src/scss/octane.scss ./src/css/octane.css | autoprefixer ./src/css/octane.css",
-		"build:html": "cp ./src/index.html ./index.html",
-		"build": "npm run build:css && npm run build:browserify && npm run build:html",
+		"build": "npm run build:css && npm run build:browserify",
 		"postbuild": "npm run dist",
 		"predist": "rm -rf ./dist/* & npm run add-license",
 		"dist:img": "mkdir -p ./dist/img && cp ./src/img/* ./dist/img",
@@ -29,17 +30,20 @@
 		"dist:js": "uglifyjs --compress --mangle -o ./dist/octane-min.js ./octane.js",
 		"dist": "npm run dist:js & npm run dist:css & npm run dist:img",
 		"postdist": "npm run docs & node ./scripts/octane-ignited.js",
-		"add-license": "node ./scripts/add-license-boilerplate.js"
+		"add-license": "node ./scripts/add-license-text.js"
 	},
-	"browserify":{
-		"transform":["browserify-css"]
+	"browserify": {
+		"transform": [
+			"browserify-css"
+		]
 	},
-	"browserify-css":{
-		"autoInject":true,
-		"minify":true
+	"browserify-css": {
+		"autoInject": true,
+		"minify": true
 	},
 	"dependencies": {
 		"bluebird": "^2.9.26",
+		"dmd": "^1.1.1",
 		"fastclick": "^1.0.6",
 		"lodash": "^3.9.1",
 		"velocity-animate": "^1.2.2",

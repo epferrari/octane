@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>events.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="Collection.html">
+                  Collection.js
+                </a>
+              
+                
+                <a class="source" href="Controller.html">
+                  Controller.js
+                </a>
+              
+                
+                <a class="source" href="Dictionary.html">
+                  Dictionary.js
+                </a>
+              
+                
+                <a class="source" href="Factory.html">
+                  Factory.js
+                </a>
+              
+                
+                <a class="source" href="Octane.html">
+                  Octane.js
+                </a>
+              
+                
+                <a class="source" href="OctaneBase.html">
+                  OctaneBase.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModal.html">
+                  OctaneModal.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModel.html">
+                  OctaneModel.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModule.html">
+                  OctaneModule.js
+                </a>
+              
+                
+                <a class="source" href="OctanePage.html">
+                  OctanePage.js
+                </a>
+              
+                
+                <a class="source" href="Template.html">
+                  Template.js
+                </a>
+              
+                
+                <a class="source" href="Translator.html">
+                  Translator.js
+                </a>
+              
+                
+                <a class="source" href="ViewFrame.html">
+                  ViewFrame.js
+                </a>
+              
+                
+                <a class="source" href="ViewModel.html">
+                  ViewModel.js
+                </a>
+              
+                
+                <a class="source" href="_octane.html">
+                  _octane.js
+                </a>
+              
+                
+                <a class="source" href="app-model.html">
+                  app-model.js
+                </a>
+              
+                
+                <a class="source" href="compiler.html">
+                  compiler.js
+                </a>
+              
+                
+                <a class="source" href="component.html">
+                  component.js
+                </a>
+              
+                
+                <a class="source" href="debug.html">
+                  debug.js
+                </a>
+              
+                
+                <a class="source" href="dom.html">
+                  dom.js
+                </a>
+              
+                
+                <a class="source" href="events.html">
+                  events.js
+                </a>
+              
+                
+                <a class="source" href="extend.html">
+                  extend.js
+                </a>
+              
+                
+                <a class="source" href="filters.html">
+                  filters.js
+                </a>
+              
+                
+                <a class="source" href="http.html">
+                  http.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="quarterback.html">
+                  quarterback.js
+                </a>
+              
+                
+                <a class="source" href="router.html">
+                  router.js
+                </a>
+              
+                
+                <a class="source" href="ui-layers.html">
+                  ui-layers.js
+                </a>
+              
+                
+                <a class="source" href="uiMessages.html">
+                  uiMessages.js
+                </a>
+              
+                
+                <a class="source" href="utils.html">
+                  utils.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>events.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-comment">/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/</span>
+
+
+
+	<span class="hljs-keyword">var</span> _           = <span class="hljs-built_in">require</span>(<span class="hljs-string">"lodash"</span>);
+	<span class="hljs-keyword">var</span> utils       = <span class="hljs-built_in">require</span>(<span class="hljs-string">"./utils.js"</span>);
+	<span class="hljs-keyword">var</span> Quarterback = <span class="hljs-built_in">require</span>(<span class="hljs-string">'./Quarterback.js'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>Mixin for objects to interface with the Quarterback</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> Events = {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>2 args: add a callback to be executed when THIS object fires an event
+3 args: add a callback to be executed when SRC object fires an event</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		on: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">event,src,handler</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">if</span>(<span class="hljs-built_in">arguments</span>.length === <span class="hljs-number">2</span>){
+				handler = src;
+				src = <span class="hljs-keyword">this</span>;
+			}
+			<span class="hljs-keyword">this</span>._registerHandler(event,src,handler);
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>chainable</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>add a callback to execute whenever event is fired, from any object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		any: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">event,handler</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">this</span>._registerHandler(event,<span class="hljs-literal">null</span>,handler);
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>chainable</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>handle a callback from an event one time</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		once: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">eventType,src,handler</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">if</span>(<span class="hljs-built_in">arguments</span>.length === <span class="hljs-number">2</span>){
+				handler = src;
+				src = <span class="hljs-keyword">this</span>;
+			}
+			<span class="hljs-keyword">var</span> events = <span class="hljs-keyword">this</span>._events_;
+			<span class="hljs-keyword">var</span> srcId = <span class="hljs-keyword">this</span>.guid(src);
+			<span class="hljs-keyword">var</span> wrapper = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+				_.pull(events[srcId][eventType],wrapper);
+				handler.apply(<span class="hljs-keyword">this</span>,<span class="hljs-built_in">arguments</span>);
+			};
+			<span class="hljs-keyword">this</span>._registerHandler(eventType,src,wrapper);
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>stop listening for event on THIS</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		off: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">eventType</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">var</span> events = <span class="hljs-keyword">this</span>._events_;
+			<span class="hljs-keyword">var</span> thisId = <span class="hljs-keyword">this</span>.guid();
+			<span class="hljs-keyword">if</span>(events[thisId]){
+				events[thisId][eventType] = [];
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>call with eventType and src: stop listening for event on SRC
+call with only eventType: stop listening for an event anywhere</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		forget: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">eventType,src</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">var</span> events = <span class="hljs-keyword">this</span>._events_;
+			<span class="hljs-keyword">if</span>(<span class="hljs-built_in">arguments</span>.length === <span class="hljs-number">2</span>){
+				<span class="hljs-keyword">var</span> srcId = <span class="hljs-keyword">this</span>.guid(src);
+				<span class="hljs-keyword">if</span>(events[srcId]){
+					<span class="hljs-keyword">delete</span> events[srcId][eventType];
+				}
+			}<span class="hljs-keyword">else</span>{
+				_.pull(<span class="hljs-keyword">this</span>._listening_,eventType);
+				_.forOwn(events,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">src</span>)</span>{
+					<span class="hljs-keyword">delete</span> src[eventType];
+				});
+				Quarterback.unregister(<span class="hljs-keyword">this</span>.guid(),eventType);
+			}
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>fire an interal event from this object</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		fire: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">event</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			Quarterback.normalizeOctaneEvent(event,<span class="hljs-keyword">this</span>);
+		},
+		_registerHandler: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">event,src,handler</span>)</span>{
+			<span class="hljs-keyword">this</span>._ensureEventInterface();
+			<span class="hljs-keyword">var</span> eventTypes = event ? event.split(<span class="hljs-string">' '</span>) : [];
+			<span class="hljs-keyword">var</span> src_id;
+
+			src_id = src ? utils.guid(src) : <span class="hljs-string">'ANY'</span>;
+
+			_.each(eventTypes,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">eventType</span>)</span>{
+				<span class="hljs-keyword">var</span> events = <span class="hljs-keyword">this</span>._events_;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>add handler to this.<em>events</em> under the correct id (or “ANY”)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				((events[src_id]||(events[src_id]={}))[eventType]||(events[src_id][eventType]=[])).push(handler);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>make sure the Quarterback will normalize the event</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">if</span>(!_.contains(Quarterback._listening_,eventType)){
+					Quarterback._listening_.push(eventType);
+					global.addEventListener(eventType,Quarterback.normalizeDOMEvent,<span class="hljs-literal">false</span>);
+				}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>register this object with the Quarterback</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">if</span>(!_.contains(<span class="hljs-keyword">this</span>._listening_,eventType)){
+					<span class="hljs-keyword">this</span>._listening_.push(eventType);
+					Quarterback.register(eventType,<span class="hljs-keyword">this</span>);
+				}
+			},<span class="hljs-keyword">this</span>);
+			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>initialize Event interface instance properties on an implementing object
+invoked the first time an implementor uses an iterface method</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		_ensureEventInterface: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+
+			<span class="hljs-keyword">if</span>(<span class="hljs-keyword">this</span>.eventsInitialized) <span class="hljs-keyword">return</span>;
+			<span class="hljs-keyword">if</span>(!<span class="hljs-keyword">this</span>.guid){
+				<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'guid'</span>,{
+					value: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">obj</span>)</span>{
+						utils.guid.apply(<span class="hljs-keyword">this</span>,[obj]);
+					},
+					writable: <span class="hljs-literal">false</span>,
+					configurable:<span class="hljs-literal">false</span>
+				});
+				<span class="hljs-keyword">this</span>.guid();
+			}
+			<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'__listening__'</span>,{
+				value: [],
+				writable: <span class="hljs-literal">false</span>,
+				configurable: <span class="hljs-literal">false</span>,
+				enumerable: <span class="hljs-literal">false</span>
+			});
+			<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'__events__'</span>,{
+				value: {ANY:{}},
+				writable: <span class="hljs-literal">false</span>,
+				configurable: <span class="hljs-literal">false</span>,
+				enumerable: <span class="hljs-literal">false</span>
+			});
+			<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'_events_'</span>,{
+				get: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.__events__;
+				}
+			});
+			<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'_listening_'</span>,{
+				get: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.__listening__;
+				}
+			});
+			<span class="hljs-keyword">this</span>.clearEventCache = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+				<span class="hljs-keyword">var</span> events = <span class="hljs-keyword">this</span>.__events__;
+				_.forOwn(events,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">prop,key</span>)</span>{
+					<span class="hljs-keyword">delete</span> events[key];
+				},<span class="hljs-keyword">this</span>);
+				events.ANY = {};
+				Quarterback.unregister(<span class="hljs-keyword">this</span>.guid());
+			};
+			<span class="hljs-built_in">Object</span>.defineProperty(<span class="hljs-keyword">this</span>,<span class="hljs-string">'eventsInitialized'</span>,{
+				value: <span class="hljs-literal">true</span>,
+				writable: <span class="hljs-literal">false</span>,
+				configurable: <span class="hljs-literal">false</span>
+			});
+		}
+	};
+
+	<span class="hljs-built_in">module</span>.exports = Events;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

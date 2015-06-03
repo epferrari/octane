@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>quarterback.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page_wrapper">
+            <div id="jump_page">
+              
+                
+                <a class="source" href="Collection.html">
+                  Collection.js
+                </a>
+              
+                
+                <a class="source" href="Controller.html">
+                  Controller.js
+                </a>
+              
+                
+                <a class="source" href="Dictionary.html">
+                  Dictionary.js
+                </a>
+              
+                
+                <a class="source" href="Factory.html">
+                  Factory.js
+                </a>
+              
+                
+                <a class="source" href="Octane.html">
+                  Octane.js
+                </a>
+              
+                
+                <a class="source" href="OctaneBase.html">
+                  OctaneBase.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModal.html">
+                  OctaneModal.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModel.html">
+                  OctaneModel.js
+                </a>
+              
+                
+                <a class="source" href="OctaneModule.html">
+                  OctaneModule.js
+                </a>
+              
+                
+                <a class="source" href="OctanePage.html">
+                  OctanePage.js
+                </a>
+              
+                
+                <a class="source" href="Template.html">
+                  Template.js
+                </a>
+              
+                
+                <a class="source" href="Translator.html">
+                  Translator.js
+                </a>
+              
+                
+                <a class="source" href="ViewFrame.html">
+                  ViewFrame.js
+                </a>
+              
+                
+                <a class="source" href="ViewModel.html">
+                  ViewModel.js
+                </a>
+              
+                
+                <a class="source" href="_octane.html">
+                  _octane.js
+                </a>
+              
+                
+                <a class="source" href="app-model.html">
+                  app-model.js
+                </a>
+              
+                
+                <a class="source" href="compiler.html">
+                  compiler.js
+                </a>
+              
+                
+                <a class="source" href="component.html">
+                  component.js
+                </a>
+              
+                
+                <a class="source" href="debug.html">
+                  debug.js
+                </a>
+              
+                
+                <a class="source" href="dom.html">
+                  dom.js
+                </a>
+              
+                
+                <a class="source" href="events.html">
+                  events.js
+                </a>
+              
+                
+                <a class="source" href="extend.html">
+                  extend.js
+                </a>
+              
+                
+                <a class="source" href="filters.html">
+                  filters.js
+                </a>
+              
+                
+                <a class="source" href="http.html">
+                  http.js
+                </a>
+              
+                
+                <a class="source" href="logger.html">
+                  logger.js
+                </a>
+              
+                
+                <a class="source" href="quarterback.html">
+                  quarterback.js
+                </a>
+              
+                
+                <a class="source" href="router.html">
+                  router.js
+                </a>
+              
+                
+                <a class="source" href="ui-layers.html">
+                  ui-layers.js
+                </a>
+              
+                
+                <a class="source" href="uiMessages.html">
+                  uiMessages.js
+                </a>
+              
+                
+                <a class="source" href="utils.html">
+                  utils.js
+                </a>
+              
+            </div>
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>quarterback.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-comment">/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/</span>
+
+
+
+	<span class="hljs-keyword">var</span> _     = <span class="hljs-built_in">require</span>(<span class="hljs-string">"lodash"</span>);
+	<span class="hljs-keyword">var</span> utils = <span class="hljs-built_in">require</span>(<span class="hljs-string">"./utils.js"</span>);
+	<span class="hljs-keyword">var</span> log   = <span class="hljs-built_in">require</span>(<span class="hljs-string">"./logger.js"</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>An Event Delegator using inversion of control</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="hljs-keyword">var</span> Quarterback = {
+
+		_listening_: [],
+		delegateMap: {},
+
+		normalizeDOMEvent: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">DOMevent</span>)</span>{
+			<span class="hljs-keyword">if</span>(!DOMevent) <span class="hljs-keyword">return</span>;
+			<span class="hljs-keyword">var</span> target = DOMevent.target||DOMevent.srcElement;
+			<span class="hljs-keyword">var</span> e = {
+				preventDefault: DOMevent.preventDefault.bind(DOMevent),
+				stopPropagation: DOMevent.stopPropagation.bind(DOMevent),
+				stopImmediatePropagation: DOMevent.stopImmediatePropagation.bind(DOMevent),
+				target: target,
+				type: DOMevent.type,
+				detail: DOMevent.detail
+			}
+			Quarterback.dispatch(e);
+		},
+
+		normalizeOctaneEvent: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">event,src,detail</span>)</span>{
+			<span class="hljs-keyword">var</span> noop = _.noop;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>return an object that dummies a DOMevent</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">var</span> e = {
+					type: event,
+					target: src,
+					detail: detail,
+					preventDefault: noop,
+					stopPropagation: noop,
+					stopImmediatePropagation: noop
+			};
+			Quarterback.dispatch(e);
+		},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>register an object that invokes delegateEvent when event comes in</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		register: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">eventType,delegate</span>)</span>{
+			<span class="hljs-keyword">var</span> map = <span class="hljs-keyword">this</span>.delegateMap;
+			(map[eventType]||(map[eventType]={}))[utils.guid(delegate)] = delegate;
+		},
+
+		unregister: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">delegateId,eventType</span>)</span>{
+			<span class="hljs-keyword">var</span> map = <span class="hljs-keyword">this</span>.delegateMap;
+			<span class="hljs-keyword">if</span>(eventType &amp;&amp; map[eventType]){
+					<span class="hljs-keyword">delete</span> map[eventType][delegateId];
+					<span class="hljs-keyword">return</span>;
+			} <span class="hljs-keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>only delegate id was passed, remove it from all events</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				_.forOwn(map,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">delegateGroup</span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>an object where keys = delegateIds</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>						<span class="hljs-keyword">delete</span> delegateGroup[delegateId];
+				});
+			}
+		},
+
+		dispatch: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+			<span class="hljs-keyword">var</span> eventType = e.type;
+			<span class="hljs-keyword">var</span> delegates = <span class="hljs-keyword">this</span>.delegateMap[eventType];
+			<span class="hljs-keyword">if</span>(delegates){
+				<span class="hljs-built_in">Promise</span>.all(
+					_.map(delegates,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">delegate,id</span>)</span>{
+						<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.delegateEvent.apply(delegate,[e]);
+					},<span class="hljs-keyword">this</span>)
+				)
+				.catch(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">err</span>)</span>{
+					log.apply(<span class="hljs-keyword">this</span>,[err.detail,err.error]);
+				}.bind(<span class="hljs-keyword">this</span>));
+			}
+		},
+
+		target: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e,delegate</span>)</span>{
+			delegate &amp;&amp; <span class="hljs-keyword">this</span>.delegateEvent.apply(delegate,[e]);
+		},
+
+		delegateEvent: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+			<span class="hljs-keyword">var</span> events    = <span class="hljs-keyword">this</span>._events_;
+			<span class="hljs-keyword">var</span> eventType = e.type;
+			<span class="hljs-keyword">var</span> src       = e.target;
+			<span class="hljs-keyword">var</span> src_id    = src.octane_id;
+			<span class="hljs-keyword">var</span> handlers  = (events[src_id] &amp;&amp; events[src_id][eventType]) ? events[src_id][eventType] : [];
+			<span class="hljs-keyword">var</span> errDetail = <span class="hljs-string">'A handler function failed for event '</span>+eventType+<span class="hljs-string">' at dispatch to '</span>+utils.guid(<span class="hljs-keyword">this</span>)+<span class="hljs-string">'. Check event map.'</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>concat event handlers that are called regardless of event src</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			handlers = handlers.concat(events.ANY[eventType]);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>execute handlers with “this” binding as the delegate (applied at .dispatch);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.all(_.map(handlers,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">handler</span>)</span>{
+
+				<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{
+					<span class="hljs-keyword">var</span> toh = utils.typeOf(handler);
+					<span class="hljs-keyword">var</span> result;
+
+					<span class="hljs-keyword">if</span>(toh === <span class="hljs-string">'function'</span>){
+						<span class="hljs-keyword">try</span> {
+							result = handler.apply(<span class="hljs-keyword">this</span>,[e,src]);
+						} <span class="hljs-keyword">catch</span>(exc){
+							<span class="hljs-keyword">return</span> reject({
+								error:exc,
+								detail:detail
+							});
+						}
+					}<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(toh === <span class="hljs-string">'object'</span>){
+						<span class="hljs-keyword">try</span> {
+							result = handler.handleEvent(e,src);
+						}<span class="hljs-keyword">catch</span>(exc){
+							<span class="hljs-keyword">return</span> reject({
+								error:exc,
+								detail:detail
+							});
+						}
+					}
+					<span class="hljs-keyword">return</span> resolve(result);
+				}.bind(<span class="hljs-keyword">this</span>));
+
+			},<span class="hljs-keyword">this</span>));
+		}
+	};
+
+	<span class="hljs-built_in">module</span>.exports = Quarterback;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
