@@ -41,7 +41,6 @@
 	var routingLocked     = false;
 	// track the number of times in a row unlocking failed
 	var unlockAttempts    = 0;
-
 	// store routes called while another route is executing its loading animation
 	var queuedPages       = [];
 	// the history stack of page views, separate of data state history

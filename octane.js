@@ -1,5 +1,23 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 (function(module,exports){
 	'use strict';
 
@@ -7,12 +25,12 @@
 	/*                 OCTANE MVC FRAMEWORK                    */
 	/* ------------------------------------------------------- */
 
-		// @author Ethan Ferrari <ethan@ethanferrari.com>
-		// ethanferrari.com/octane
-		// http://onefiremedia.com
-		// https://github.com/epferrari/octane.git
-		// @version 1.0.0
-		// 1 June 2015
+		/**
+		* @author Ethan Ferrari (http://onefiremedia.com) <ethan@ethanferrari.com>
+		* @version 1.0.3
+		* @license Apache
+		*
+		* @repository https://github.com/epferrari/octane.git
 
 
 	/* ------------------------------------------------------- */
@@ -706,9 +724,13 @@
 				_.isPlainObject(appConfig) || (appConfig = {});
 				Octane.defaultRoute	= appConfig.Route;
 				Octane.env = appConfig.env;
+
 				_octane.animateBy = _.contains(['js','css'],appConfig.animateBy) ?
 					appConfig.animateBy : 'css';
-
+				_octane.maxRouterUnlockAttempts = _.isNumber(appConfig.maxRouterUnlockAttempts) ?
+					appConfig.maxRouterUnlockAttempts : 10;
+				_octane.pollingInterval = _.isNumber(appConfig.pollingInterval) ? appConfig.pollingInterval : 50;
+				_octane.legacyRouting = _.isBoolean(appConfig.legacyRouting) ? appConfig.legacyRouting : false;
 
 
 
@@ -781,6 +803,7 @@
 						debug.getBootlog();
 					});
 					Octane.Reflection = _octane;
+					global.octane = Octane;
 					debug.showConsole();
 
 				} else {
@@ -832,7 +855,7 @@
 
 
 
-module.exports = global.octane = Octane;
+module.exports = Octane;
 
 })(module,module.exports);
 
@@ -23803,6 +23826,24 @@ return function (global, window, document, undefined) {
 },{}],9:[function(require,module,exports){
 var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:translateX(-100%);transform:translateX(-100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-right{-webkit-transform:translateX(100%);-ms-transform:translateX(100%);transform:translateX(100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-top{-webkit-transform:translateY(-100%);-ms-transform:translateY(-100%);transform:translateY(-100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-bottom{-webkit-transform:translateY(100%);-ms-transform:translateY(100%);transform:translateY(100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-fade{opacity:0;-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-queued{opacity:1;visibility:visible;display:block;z-index:10;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0)}.frame-active{opacity:1;visibility:visible;display:block;z-index:100;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0);-webkit-transition:-webkit-transform .2s cubic-bezier(0.465,.183,.153,.946),opacity .2s cubic-bezier(0.465,.183,.153,.946);transition:transform .2s cubic-bezier(0.465,.183,.153,.946),opacity .2s cubic-bezier(0.465,.183,.153,.946)}.frame-animating{opacity:1;visibility:visible;display:block;z-index:100}o-page-container{position:relative;display:block;width:100%;z-index:10;overflow-x:hidden;overflow-y:hidden}o-page{position:absolute;visibility:hidden;opacity:0;width:100%;height:100%;top:0;left:0;overflow-x:hidden;overflow-y:scroll;z-index:1;background-color:#fff}o-modal-container{position:fixed;height:100%;width:100%;left:0;pointer-events:none;overflow-y:hidden;overflow-x:hidden;opacity:0;will-change:opacity;-webkit-transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);background-repeat:repeat}o-modal-container:before{background-color:#000;opacity:.8;-ms-filter:\"alpha(Opacity=80)\";filter:alpha(opacity=80);z-index:-1;content:\"\";position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%}o-modal-container.active{z-index:999999998;pointer-events:auto;opacity:1;-webkit-transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:opacity .5s cubic-bezier(0.465,.183,.153,.946)}o-modal{position:absolute;height:100%;width:100%;opacity:0;top:0;left:0;z-index:-1;overflow-y:scroll;will-change:transform;-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.modal-active{opacity:1;z-index:999999999;visibility:visible;display:block;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0);-webkit-transition:-webkit-transform .4s cubic-bezier(0.465,.183,.153,.946),opacity .4s cubic-bezier(0.465,.183,.153,.946);transition:transform .4s cubic-bezier(0.465,.183,.153,.946),opacity .4s cubic-bezier(0.465,.183,.153,.946)}o-loading-container{position:fixed;height:100%;width:100%;top:0;left:0;z-index:99999999999}.loading:after{content:\"\";position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%;background-image:url(src/css/img/loader-light.gif);background-size:100px auto;background-position:center;background-repeat:no-repeat}octane-debugger{font-family:'Source Code Pro'!important;padding-left:10px;display:block;height:25px;position:fixed;z-index:999999999999;bottom:0;left:0;right:0;background-color:#000;border-top:thin #fff solid;color:#fff;opacity:.6}octane-debugger li,octane-debugger ul{margin-top:0!important;margin-left:10px;list-style:none;display:inline-block;font-size:14px!important}octane-debugger li{font-family:'Source Code Pro'!important;padding-right:5px;padding-top:1.5px;cursor:pointer}octane-debugger li:hover{color:#24ffed}octane-debugger i{padding-right:3px}body,html{height:100%}body.octane{overflow-x:hidden;padding-left:0!important;padding-right:0!important;margin:0!important}div.row,footer.row,header.row{margin-left:0!important;margin-right:0!important}o-background{z-index:-1;position:fixed;height:100%;width:100%;top:0;left:0;opacity:0;will-change:opacity}o-background.active{opacity:1}o-background.active canvas{width:101%;margin-left:-.5%;margin-top:-.5%;-webkit-filter:blur(3px);filter:blur(3px);-webkit-transform:translate-3d(0,0,0);-ms-transform:translate-3d(0,0,0);transform:translate-3d(0,0,0)}o-app-container{z-index:1;float:left;height:auto;width:100%;overflow-x:hidden;overflow-y:hidden;background-color:#fff;opacity:1;-webkit-transition:opacity .3s cubic-bezier(0.465,.183,.153,.946);transition:opacity .3s cubic-bezier(0.465,.183,.153,.946)}o-app-container.hidden{opacity:0;-webkit-transition:opacity .3s cubic-bezier(0.465,.183,.153,.946);transition:opacity .3s cubic-bezier(0.465,.183,.153,.946)}.o-back,.o-btn,.o-modal-dismiss{cursor:pointer;min-height:30px;min-width:30px}[o-route]{cursor:pointer}.hidden{visibility:hidden!important}.display-none{display:none}[o-model]{visibility:hidden}[o-model].compiled{visibility:visible}"; (require("browserify-css").createStyle(css, { "href": "src/css/octane.css"})); module.exports = css;
 },{"browserify-css":3}],10:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var Promise    = require("bluebird");
 	var _          = require("lodash");
@@ -23878,6 +23919,24 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 	module.exports = Compiler;
 
 },{"./OctaneBase.js":16,"bluebird":2,"lodash":6}],11:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 var _           = require('lodash');
 var OctaneBase  = require('./OctaneBase.js');
 var _octane     = require('./_octane.js');
@@ -23916,6 +23975,24 @@ Object.defineProperty(OctaneController,'extend',{
 module.exports = OctaneController;
 
 },{"./OctaneBase.js":16,"./_octane.js":26,"./extend.js":29,"lodash":6}],12:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 	var OctaneBase = require('./OctaneBase.js');
 	var getByTag = document.getElementsByTagName.bind(document);
 	var createElement = document.createElement.bind(document);
@@ -23954,6 +24031,24 @@ module.exports = OctaneController;
 	module.exports = DOM;
 
 },{"./OctaneBase.js":16}],13:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _          = require('lodash');
 	var Promise    = require('bluebird');
@@ -23991,6 +24086,24 @@ module.exports = OctaneController;
 
 },{"./OctaneBase.js":16,"./_octane.js":26,"bluebird":2,"lodash":6}],14:[function(require,module,exports){
 (function (global){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _           = require("lodash");
 	var utils       = require("./utils.js");
@@ -24158,6 +24271,24 @@ module.exports = OctaneController;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./Quarterback.js":21,"./utils.js":34,"lodash":6}],15:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 var OctaneBase = require('./OctaneBase.js');
 
 var Factory = function(){
@@ -24167,6 +24298,24 @@ var Factory = function(){
 module.exports = Factory;
 
 },{"./OctaneBase.js":16}],16:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var define   = Object.defineProperty;
 	var _        = require('lodash');
@@ -24343,6 +24492,24 @@ module.exports = Factory;
 	module.exports = OctaneBase;
 
 },{"./Events.js":14,"./_octane.js":26,"./extend.js":29,"./logger.js":31,"./utils.js":34,"bluebird":2,"lodash":6}],17:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 	var _            = require('lodash');
 	var Promise      = require('bluebird');
 	var Velocity     = require('velocity-animate');
@@ -24570,6 +24737,24 @@ module.exports = Factory;
 	module.exports = OctaneModal;
 
 },{"./Compiler.js":10,"./Controller.js":11,"./DOM.js":12,"./Router.js":22,"./ViewFrame.js":24,"./_octane.js":26,"./ui-layers.js":32,"bluebird":2,"lodash":6,"velocity-animate":7,"velocity-ui-pack":8}],18:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 var _           = require('lodash');
 var _octane     = require('./_octane.js');
 var OctaneBase  = require('./OctaneBase.js');
@@ -24882,6 +25067,24 @@ OctaneModel.prototype.initialize = function(){};
 module.exports = OctaneModel;
 
 },{"./OctaneBase.js":16,"./_octane.js":26,"./extend.js":29,"./logger.js":31,"./utils.js":34,"lodash":6}],19:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var select            = document.querySelector.bind(document);
 	var selectAll         = document.querySelectorAll.bind(document);
@@ -25084,6 +25287,24 @@ module.exports = OctaneModel;
 	module.exports = OctaneModule;
 
 },{"./Controller.js":11,"./OctaneBase.js":16,"./ViewModel.js":25,"./_octane.js":26,"./utils.js":34,"bluebird":2,"lodash":6}],20:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _          = require('lodash');
 	var Promise    = require('bluebird');
@@ -25164,6 +25385,24 @@ module.exports = OctaneModel;
 	module.exports = OctanePage;
 
 },{"./Controller.js":11,"./DOM.js":12,"./OctaneBase.js":16,"./ViewFrame.js":24,"./_octane.js":26,"bluebird":2,"lodash":6,"velocity-animate":7,"velocity-ui-pack":8}],21:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _     = require("lodash");
 	var utils = require("./utils.js");
@@ -25291,6 +25530,24 @@ module.exports = OctaneModel;
 
 },{"./logger.js":31,"./utils.js":34,"lodash":6}],22:[function(require,module,exports){
 (function (global){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	/**
 	* @module Octane.Router
@@ -25316,7 +25573,6 @@ module.exports = OctaneModel;
 	var routingLocked     = false;
 	// track the number of times in a row unlocking failed
 	var unlockAttempts    = 0;
-
 	// store routes called while another route is executing its loading animation
 	var queuedPages       = [];
 	// the history stack of page views, separate of data state history
@@ -26136,6 +26392,24 @@ module.exports = OctaneModel;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../../vendor/modernizr.js":36,"./Compiler.js":10,"./OctaneBase.js":16,"./OctanePage.js":20,"./_octane.js":26,"./app-model.js":27,"./utils.js":34,"bluebird":2,"lodash":6}],23:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _           = require('lodash');
 	var appFilters  = require('./_octane.js').filters;
@@ -26363,6 +26637,24 @@ module.exports = OctaneModel;
 	module.exports = Template;
 
 },{"./Compiler.js":10,"./Factory.js":15,"./_octane.js":26,"./utils.js":34,"lodash":6}],24:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _        = require('lodash');
 	var Promise  = require('bluebird');
@@ -26470,6 +26762,24 @@ module.exports = OctaneModel;
 	module.exports = Frame;
 
 },{"./OctaneBase.js":16,"bluebird":2,"lodash":6,"velocity-animate":7,"velocity-ui-pack":8}],25:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _           = require('lodash');
 	var Factory     = require('./Factory.js');
@@ -26700,6 +27010,22 @@ module.exports = OctaneModel;
 	module.exports = ViewModel;
 
 },{"./Compiler.js":10,"./Events.js":14,"./Factory.js":15,"./OctaneModel.js":18,"./Template.js":23,"./_octane.js":26,"./utils.js":34,"lodash":6}],26:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
 
 var _octane = {
 	appInitialized: false,
@@ -26730,6 +27056,24 @@ var _octane = {
 module.exports = _octane;
 
 },{}],27:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 var OctaneModel = require('./OctaneModel.js');
 
 var AppModel = new OctaneModel().become('App');
@@ -26737,6 +27081,24 @@ var AppModel = new OctaneModel().become('App');
 module.exports = AppModel;
 
 },{"./OctaneModel.js":18}],28:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 		var _           = require('lodash');
 		var _octane     = require('./_octane.js');
@@ -26812,6 +27174,24 @@ module.exports = AppModel;
 	module.exports = debug;
 
 },{"./Controller.js":11,"./Quarterback.js":21,"./Template.js":23,"./_octane.js":26,"lodash":6}],29:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 var _ 		= require("lodash");
 var utils = require("./utils.js");
 
@@ -26859,6 +27239,24 @@ module.exports = function extend(){
 };
 
 },{"./utils.js":34,"lodash":6}],30:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _octane = require('./_octane.js');
 	var utils 	= require('./utils.js');
@@ -26892,6 +27290,24 @@ module.exports = function extend(){
 	module.exports = filter;
 
 },{"./_octane.js":26,"./utils.js":34}],31:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 	var _ 			= require('lodash');
 	var _octane = require('./_octane.js');
 	var utils   = require('./utils.js');
@@ -26912,6 +27328,24 @@ module.exports = function extend(){
 	}
 
 },{"./_octane.js":26,"./utils.js":34,"lodash":6}],32:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 	var _           = require('lodash');
 	var Promise     = require('bluebird');
 	var Velocity    = require('velocity-animate');
@@ -27102,6 +27536,24 @@ module.exports = function extend(){
 	module.exports = UiLayers;
 
 },{"../../vendor/html2canvas.js":35,"./Controller.js":11,"./DOM.js":12,"./Router.js":22,"./_octane.js":26,"bluebird":2,"lodash":6,"velocity-animate":7}],33:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 	var _           = require('lodash');
 	var OctaneModel = require('./OctaneModel.js');
@@ -27135,6 +27587,24 @@ module.exports = function extend(){
 	module.exports = uiMessages;
 
 },{"./OctaneModel.js":18,"lodash":6}],34:[function(require,module,exports){
+/*
+* Copyright 2015 Ethan Ferrari, OneFire Media Inc.
+*
+*	Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*		http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+*/
+
+
 
 var utils = {
 

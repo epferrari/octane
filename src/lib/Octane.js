@@ -722,9 +722,13 @@
 				_.isPlainObject(appConfig) || (appConfig = {});
 				Octane.defaultRoute	= appConfig.Route;
 				Octane.env = appConfig.env;
+
 				_octane.animateBy = _.contains(['js','css'],appConfig.animateBy) ?
 					appConfig.animateBy : 'css';
-
+				_octane.maxRouterUnlockAttempts = _.isNumber(appConfig.maxRouterUnlockAttempts) ?
+					appConfig.maxRouterUnlockAttempts : 10;
+				_octane.pollingInterval = _.isNumber(appConfig.pollingInterval) ? appConfig.pollingInterval : 50;
+				_octane.legacyRouting = _.isBoolean(appConfig.legacyRouting) ? appConfig.legacyRouting : false;
 
 
 
@@ -797,6 +801,7 @@
 						debug.getBootlog();
 					});
 					Octane.Reflection = _octane;
+					global.octane = Octane;
 					debug.showConsole();
 
 				} else {
@@ -848,6 +853,6 @@
 
 
 
-module.exports = global.octane = Octane;
+module.exports = Octane;
 
 })(module,module.exports);
