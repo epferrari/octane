@@ -49,23 +49,23 @@
 	// Private, non-enumerable API
 
 	/**
-	* Remove the root from a URL, using Application webRoot or localRoot, if defined, depending on context
-	* webRoot is defined as `appConfig.webRoot` in **Octane.initialize**, else defaults to `location.origin + '/' + location.pathname`
-	* localRoot is defined as `appConfig.localRoot` in **Octane.initialize**, else defaults to local filepath up to 'index.html'
+	* Remove the root from a URL, using Application webroot or localroot, if defined, depending on context
+	* webroot is defined as `appConfig.webRoot` in **Octane.initialize**, else defaults to `location.origin`
+	* localroot is defined as `appConfig.localroot` in **Octane.initialize**, else defaults to local filepath up to 'index.html'
 	*
 	* @private
 	* @static
-	* @method _pruneRoot
+	* @method _getPath
 	* @returns {string} the URL with root removed
 	*/
-	Router.defineProp('_pruneRoot',function(url){
+	Router.defineProp('_getPath',function(url){
 
-		var root,localRoot;
-		if(localRouting){
-			localRoot = _octane.localRoot ? new RegExp('^.*'+_octane.localRoot) : /^(.*index.html)/;
-			return url.replace(localRoot,'');
+		var root,localroot;
+		if(Router.mode.local){
+			localroot =  Router.localroot ? new RegExp('^.*'+ Router.localroot+'(?:#\/|\/)') : /^.*index.html(?:#\/|\/)?/;
+			return url.replace(localroot,'');
 		} else {
-			root = _octane.webRoot || location.origin+'/'+location.pathname;
+			root = Router.webroot ? location.protocol + '//' + (Router.webroot) : location.origin + '/';
 			return url.replace(root,'');
 		}
 	});
@@ -78,19 +78,14 @@
 	*
 	* @private
 	* @static
-	* @method _pushState
+	* @method _upateState
 	* @param {object} state An object representing the Application state
 	* @param {string} title Set the document title and history entry title
 	* @param {string} route Root-relative URL to be matched and executed by the Router
 	*/
-	Router.defineProp(false,'_pushState',function(state,title,route){
-		document.title = title;
-		if(historyAPI){
-			history.pushState(_.merge({},state),title,route);
-			Router.fire('popstate');
-		} else {
-			location.hash = route;
-		}
+	Router.defineProp(false,'_updateState',function(route){
+
+
 	});
 
 
@@ -105,23 +100,24 @@
 	*/
 	Router.defineProp(false,'_executeRoute',function(url){
 		currentRoute = url;
-		var path = Router._pruneRoot(url);
-		/*
-		var routesExecuted = _.map(routes,function(route){
-			if(route.re.test(path)) {
-				var params = path.match(route.re);
-				params.shift();
-				return route.fn.apply(Object.create(null),params);
-			}
-		});
-		*/
-		_.each(routes,function(route){
-			if(route.re.test(path)) {
-				var params = path.match(route.re);
-				params.shift();
-				route.fn.apply(Object.create(null),params);
-			}
-		});
+		var path = Router._getPath(url);
+
+		var routesExecuted = _.chain(routes)
+			.map(function(route){
+				var matches;
+				if(matches = path.match(route.re)) {
+					matches.shift();
+					return route.fn.apply(Object.create(null),matches);
+				}
+			})
+			.compact()
+			.value();
+
+		if(!routesExecuted.length && !Router.atRoot) {
+			Router.onUndefined && Router.onUndefined();
+		}
+
+		return Promise.all(routesExecuted);
 		/*console.log(routesExecuted);
 		if(routesExectuted.length === 0){
 			Router.route('home');
@@ -238,7 +234,7 @@
 				})
 				// reconcile any difference between the url and App pageHistory stack caused by hyper-clicking
 				.then(function(lastLoadedPg){
-					var urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					var urlPage = Router._parsePage(Router._getPath(location.href));
 					if(urlPage !== lastLoadedPg.id) {
 						return Router._loadPage(urlPage);
 					} else{
@@ -248,6 +244,7 @@
 				// Resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
 				// Fire `routing:complete` for any subscribers, like Modal, who is locked until the page routing process completes.
 				.then(function(lastLoadedPg){
+					if(document && lastLoadedPg) document.title = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
 					Router.fire('routing:complete');
 				})
@@ -299,7 +296,7 @@
 				})
 				// reconcile any difference between the url and App pageHistory stack caused by hyper-clicking
 				.then(function(lastLoadedPg){
-					var urlPage = Router._parsePage(Router._pruneRoot(location.href));
+					var urlPage = Router._parsePage(Router._getPath(location.href));
 					if(urlPage !== lastLoadedPg.id) {
 						return Router._loadPage(urlPage);
 					} else {
@@ -309,6 +306,7 @@
 				// resolve with the last page loaded, either the original `requested`, or the last loaded from the queue.
 				// Fire `routing:complete` for any subscribers, like Modal, who is locked until the page routing process completes
 				.then(function(lastLoadedPg){
+					if(document && lastLoadedPg) document.title  = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
 					Router.fire('routing:complete');
 				})
@@ -343,7 +341,9 @@
 		return page;
 	});
 
-
+	Router.defineProp(false,'_stripSlashes',function(route){
+		return route.replace(/^(\/)/,'').replace(/(\/)$/,'');
+	});
 
 
 	// Public API
@@ -351,40 +351,56 @@
 
 
 		/**
-		* Determine hashing format and page from fragment, then send params to `Router._pushState`
+		* Determine hashing format and page from fragment, then use history.pushState or hashchange to set the route
 		*
 		* @public
 		* @static
 		* @method route
-		* @param {string} route Root-relative URL fragment to be sent to `Router._pushState` and executed by `Router._executeRoute`
+		* @param {string} route Root-relative URL fragment to be mapped by `Router._executeRoute`
 		*/
 		route: function(route){
 
-			route = Router._pruneRoot(route);
+			route = Router._getPath(route);
 
-			var useHash = (!historyAPI || localRouting);
-			var pageRequested = Router._parsePage(route);
-			var pageExists = _octane.pages[pageRequested];
-			var currentPage = Router.currentPage;
-			var page;
+			var rootRelRe = /^(?:#\/?|\/)(.*)/;
+			var pathRelRe = /^(?:[.]\/)?(.*)/;
+			var trailingRe = /(?:#\/|\/)$/;
+			var path,match;
 
-			if(!pageRequested || pageRequested === '.'){
-				// page was not passed to route, need to sub it in
-				page = currentPage ? currentPage.id : 'home';
-			} else if (pageRequested && !pageExists){
-				alert('Page ' + pageRequested + ' does not exist!');
-				page = currentPage ? currentPage.id : 'home';
+			if(localRouting || Router.mode.hash){
+				if( route === '/' ){
+					// path is the application root
+					path = (localRouting ? location.pathname : '') + '#/';
+				} else if(/^\.*$/.test(route)){
+					// route to the root of current path
+					var href = location.href;
+					path = Router.atRoot ? href : href.replace(/^(.*\/)(.*)/,'$1');
+				} else if( match = route.match(rootRelRe) ){
+					// route was /xxx | #/xxx | #xxx, path is relative to application root
+					match = Router._stripSlashes(match[1]);
+					path = (localRouting ? location.pathname : '') + '#/' + match;
+				} else if( match = route.match(pathRelRe) ){
+					// route was ./xxx or xxx, path is relative to the current path
+					var href = location.href.replace(trailingRe,'');
+					var slash = Router.atRoot ? '#/' : '/';
+					path = Router._stripSlashes(match[1] || '');
+					path = href + slash + path;
+				}
 			} else {
-				page = pageRequested;
+				// strip any forward slash for historyAPI enabled browsers
+				path = route.replace(/^(#)/,'');
 			}
 
-			page = (useHash ? '#' : './') + page;
-			route = route.replace(/^(.*?)(?=[\/]|$)/,page);
+			// normalize any double slashes
+			path = path.replace(/(\/){2,}/g,'$1');
 
-
-			var title = App.get('name') + ' | ' + utils.titleize(page);
-
-			Router._pushState({},title,route);
+			if(Router.mode.history){
+				history.pushState(null,null,path);
+				// fire popstate manually
+				Router.fire('popstate');
+			} else {
+				location.hash = path;
+			}
 		},
 
 
@@ -395,11 +411,12 @@
 		* @public
 		* @static
 		* @method
-		* @param {regexp} pattern The regexp pattern that matches the route against a URL
+		* @param {regexp|string} pattern A regexp pattern that matches a route against a URL. If passed as a string, beginning and trailing slashes will be stripped before being added to the routes array.
 		* @param {function} callback The callback to execute on a matching route, will be applied with the matched values of the route regexp
 		* @returns {this} for method chaining
 		*/
 		add: function(pattern,callback){
+			_.isString(pattern) && (pattern = Router._stripSlashes(pattern));
 			routes.push({
 				re:pattern,
 				fn:callback
@@ -413,6 +430,7 @@
 		* Remove a route from the array of saved routes
 		*
 		* @public
+		* @name remove
 		* @static
 		* @method
 		* @param {regexp} pattern The pattern to remove
@@ -423,6 +441,18 @@
 					_.pull(routes,route);
 				}
 			});
+		},
+
+		/**
+		* Remove all routes from the Router
+		*
+		* @public
+		* @name clearRoutes
+		* @static
+		* @method
+		*/
+		clearRoutes: function(){
+			routes = [];
 		},
 
 
@@ -665,7 +695,8 @@
 	});
 
 
-	// Public Getters
+	// Public Read Only Getters
+
 
 	/**
 	* Get the current page of the Application
@@ -678,6 +709,45 @@
 	Router.defineGetter('currentPage',function(){
 		return pageHistory[0];
 	});
+
+
+	/**
+	* Determine if the current location is the Application's root
+	*
+	* @name atRoot
+	* @public
+	* @static
+	* @returns {boolean}
+	* @readonly
+	*/
+	Router.defineGetter('atRoot',function(){
+		var localroot,webroot;
+		if(Router.mode.local){
+			return !!location.href.match(new RegExp('^'+location.origin+location.pathname+'#?\/?$'));
+		} else {
+			webroot = Router.webroot || _octane.webroot || location.origin;
+			return !!location.href.match(new RegExp('^'+ webroot + '\/?(?!\/)#?\/?$'));
+		}
+	});
+
+
+	/**
+	* Get the mode details of the application
+	*
+	* @name mode
+	* @public
+	* @static
+	* @returns {object} Returns an object with keys history, hash, and local. Values are booleans
+	* @readonly
+	*/
+	Router.defineGetter('mode',function(){
+		return {
+			history: historyAPI,
+			hash: !historyAPI,
+			local: localRouting
+		}
+	});
+
 
 	/**
 	* Is the router locked?
@@ -692,18 +762,32 @@
 		return routingLocked;
 	});
 
+
 	/**
 	* Queued Pages waiting to load during a lock
 	*
 	* @name queue
 	* @readonly
 	* @public
-	* @static
 	* @returns {array} the array of queued pages
 	* @static
 	*/
 	Router.defineGetter('queue',function(){
 		return queuedPages;
+	});
+
+
+	/**
+	* List of routes registered with the Router
+	*
+	* @name routes
+	* @readonly
+	* @public
+	* @returns {array} the array of registered routes
+	* @static
+	*/
+	Router.defineGetter('routes',function(){
+		return routes;
 	});
 
 	Object.defineProperty(Page,'current',{
@@ -713,8 +797,18 @@
 		configurable:false
 	});
 
-
-
+	/**
+	* Define a function to call in the event no routes exist on the specified path
+	*
+	* @name onUndefined
+	* @public
+	* @static
+	* @method
+	*/
+	Router.onUndefined = function(){
+		alert('404: The page you\'re looking for doesn\'t exist. Routing back to safety...');
+		history.go(-1);
+	};
 
 
 

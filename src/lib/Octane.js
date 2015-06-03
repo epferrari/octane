@@ -541,10 +541,7 @@
 
 		Octane.defineProp('Page',Page);
 
-		Compiler.assign('o-page',function(elem){
-			var page = new Page(elem);
-			page;
-		});
+
 
 
 	/*-------------------------------------------------------	*/
@@ -562,10 +559,14 @@
 		});
 		Octane.addRoute = Router.add;
 
-		// set up animations for all Pages defined in HTML markup
-		Router.add(/^#?(.*?)(?=[\/]|$)/,function(page){
-			return Router._loadPage(page);
+
+		Compiler.assign('o-page',function(elem){
+			var page = new Page(elem);
+			Router.add(new RegExp('^('+page.id+').*'),function(id){
+				return Router._loadPage(id);
+			});
 		});
+
 
 	/* ------------------------------------------------------- */
 	/*                       MODALS                            */
@@ -665,7 +666,9 @@
 			if(Octane.defaultRoute){
 				Router.route(Octane.defaultRoute);
 			} else {
-				Router._executeRoute(global.location.href);
+				Router._executeRoute(global.location.href).then(function(){
+					if(Router.atRoot) Router.route('home');
+				});
 			}
 
 			setTimeout(function(){

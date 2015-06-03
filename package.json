@@ -1,6 +1,6 @@
 {
 	"name": "octane",
-	"version": "1.0.1",
+	"version": "1.0.3",
 	"description": "MVCVM UI-Routing app framework with uni-directional dataflow",
 	"main": "./octane.js",
 	"license": "MIT",

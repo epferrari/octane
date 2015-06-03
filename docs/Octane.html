@@ -209,7 +209,7 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>@author Ethan Ferrari <a href="&#109;&#x61;&#x69;&#x6c;&#116;&#x6f;&#58;&#x65;&#116;&#104;&#x61;&#110;&#x40;&#101;&#116;&#x68;&#x61;&#x6e;&#x66;&#x65;&#x72;&#x72;&#97;&#x72;&#x69;&#x2e;&#x63;&#x6f;&#109;">&#x65;&#116;&#104;&#x61;&#110;&#x40;&#101;&#116;&#x68;&#x61;&#x6e;&#x66;&#x65;&#x72;&#x72;&#97;&#x72;&#x69;&#x2e;&#x63;&#x6f;&#109;</a>
+              <p>@author Ethan Ferrari <a href="&#x6d;&#97;&#x69;&#108;&#116;&#111;&#58;&#x65;&#116;&#104;&#x61;&#110;&#64;&#101;&#116;&#104;&#x61;&#110;&#102;&#101;&#x72;&#x72;&#x61;&#114;&#x69;&#46;&#99;&#x6f;&#x6d;">&#x65;&#116;&#104;&#x61;&#110;&#64;&#101;&#116;&#104;&#x61;&#110;&#102;&#101;&#x72;&#x72;&#x61;&#114;&#x69;&#46;&#99;&#x6f;&#x6d;</a>
 ethanferrari.com/octane
 <a href="http://onefiremedia.com">http://onefiremedia.com</a>
 <a href="https://github.com/epferrari/octane.git">https://github.com/epferrari/octane.git</a>
@@ -1044,10 +1044,7 @@ A hook is applied at set time to a binding</p>
 
 		Octane.defineProp(<span class="hljs-string">'Page'</span>,Page);
 
-		Compiler.assign(<span class="hljs-string">'o-page'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">elem</span>)</span>{
-			<span class="hljs-keyword">var</span> page = <span class="hljs-keyword">new</span> Page(elem);
-			page;
-		});
+
 
 
 	<span class="hljs-comment">/*-------------------------------------------------------	*/</span>
@@ -1075,24 +1072,16 @@ A hook is applied at set time to a binding</p>
 		_.each(routerMethods,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">method</span>)</span>{
 			Octane[method] = Router[method];
 		});
-		Octane.addRoute = Router.add;</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-28">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
-              </div>
-              <p>set up animations for all Pages defined in HTML markup</p>
+		Octane.addRoute = Router.add;
 
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>		Router.add(<span class="hljs-regexp">/^#?(.*?)(?=[\/]|$)/</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">page</span>)</span>{
-			<span class="hljs-keyword">return</span> Router._loadPage(page);
+
+		Compiler.assign(<span class="hljs-string">'o-page'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">elem</span>)</span>{
+			<span class="hljs-keyword">var</span> page = <span class="hljs-keyword">new</span> Page(elem);
+			Router.add(<span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">'^('</span>+page.id+<span class="hljs-string">').*'</span>),<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">id</span>)</span>{
+				<span class="hljs-keyword">return</span> Router._loadPage(id);
+			});
 		});
+
 
 	<span class="hljs-comment">/* ------------------------------------------------------- */</span>
 	<span class="hljs-comment">/*                       MODALS                            */</span>
@@ -1141,11 +1130,11 @@ A hook is applied at set time to a binding</p>
         </li>
         
         
-        <li id="section-29">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
               <p>a model with method .hint that unsets itself after 5 seconds,
 or the number of ms passed in as second param to .hint</p>
@@ -1171,11 +1160,11 @@ or the number of ms passed in as second param to .hint</p>
         </li>
         
         
-        <li id="section-30">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <p>Getter and setter for environment,
 used for feature detection.
@@ -1212,11 +1201,11 @@ Set to either ‘web’ or ‘cordova’</p>
         </li>
         
         
-        <li id="section-31">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <p>unhide the app content hidden behind the loader</p>
 
@@ -1229,7 +1218,9 @@ Set to either ‘web’ or ‘cordova’</p>
 			<span class="hljs-keyword">if</span>(Octane.defaultRoute){
 				Router.route(Octane.defaultRoute);
 			} <span class="hljs-keyword">else</span> {
-				Router._executeRoute(global.location.href);
+				Router._executeRoute(global.location.href).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
+					<span class="hljs-keyword">if</span>(Router.atRoot) Router.route(<span class="hljs-string">'home'</span>);
+				});
 			}
 
 			setTimeout(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{
@@ -1248,11 +1239,11 @@ Set to either ‘web’ or ‘cordova’</p>
         </li>
         
         
-        <li id="section-32">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
               <p>don’t reinitialize</p>
 
@@ -1263,11 +1254,11 @@ Set to either ‘web’ or ‘cordova’</p>
         </li>
         
         
-        <li id="section-33">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <p>attach fastclick.js for mobile touch</p>
 
@@ -1291,11 +1282,11 @@ Set to either ‘web’ or ‘cordova’</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>start the Router</p>
 
@@ -1306,11 +1297,11 @@ Set to either ‘web’ or ‘cordova’</p>
         </li>
         
         
-        <li id="section-35">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>establish module configuration
 configs passed at init are used over those passed earlier
@@ -1328,11 +1319,11 @@ by individual calls to octane.configureModule</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <p>parse the DOM initially to create virtual DOM model</p>
 
@@ -1352,11 +1343,11 @@ by individual calls to octane.configureModule</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <p>hook for loading screens</p>
 
@@ -1370,11 +1361,11 @@ by individual calls to octane.configureModule</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <p>compile DOM templates</p>
 
@@ -1390,11 +1381,11 @@ by individual calls to octane.configureModule</p>
         </li>
         
         
-        <li id="section-39">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-39">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>add debugging support
 set to false in production</p>
@@ -1432,11 +1423,11 @@ set to false in production</p>
         </li>
         
         
-        <li id="section-40">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-40">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>load runtime modules -&gt; compile -&gt; ready!</p>
 
@@ -1474,11 +1465,11 @@ set to false in production</p>
         </li>
         
         
-        <li id="section-41">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-41">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
               <p>Octane initialize returns a Promise!</p>
 
