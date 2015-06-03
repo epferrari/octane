@@ -23,12 +23,13 @@
 		"build:html": "cp ./src/index.html ./index.html",
 		"build": "npm run build:css && npm run build:browserify && npm run build:html",
 		"postbuild": "npm run dist",
-		"predist": "rm -rf ./dist/*",
+		"predist": "rm -rf ./dist/* & npm run add-license",
 		"dist:img": "mkdir -p ./dist/img && cp ./src/img/* ./dist/img",
 		"dist:css": "node-sass --output-style compressed ./src/scss/octane.scss ./dist/octane-min.css | autoprefixer > ./dist/octane-min.css",
 		"dist:js": "uglifyjs --compress --mangle -o ./dist/octane-min.js ./octane.js",
 		"dist": "npm run dist:js & npm run dist:css & npm run dist:img",
-		"postdist": "npm run docs & node ./scripts/octane-ignited.js"
+		"postdist": "npm run docs & node ./scripts/octane-ignited.js",
+		"add-license": "node ./scripts/add-license-boilerplate.js"
 	},
 	"browserify":{
 		"transform":["browserify-css"]
