@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+
+
+
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title o-update="Translations.header-title"></title>
+
+    <link type="text/css" rel="stylesheet" href="assets/css/_bower.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/app.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/octane-min.css" />
+</head>
+
+<body class="container-fluid octane">
+
+    <o-loading-container>
+
+        <!-- Loading View -->
+
+        <div id="initial-loading">
+
+
+            <div class="progress">
+                <div o-model="appLoading" class="progress-bar progress-bar-warning progress-bar-striped active" role="progressbar" aria-valuenow="{{progress}}" aria-valuemin=0 aria-valuemax=0 style="width: {{progress}}%">
+                </div>
+                <span o-model='appLoading' class="sr-only">{{progress @default(0)}}% Complete</span>
+            </div>
+
+            <div class="loading-message">
+                <p o-model='Bootlog'>{{status @default(Loading...)}}</p>
+                <p o-model="appLoading">{{progress @default(0)}}%</p>
+            </div>
+
+
+        </div>
+
+    </o-loading-container>
+
+    <o-app-container class="hidden">
+
+        <!-- header -->
+        <header class="header" role="banner">
+
+            <div class="row">
+
+                <div class="col-md-2" o-model="App">
+                    <img o-src="{{logo}}" class="logo" o-route="home" />
+                </div>
+
+                <div class="col-md-7" o-model="App">
+                    <h1>{{viewTitle}}</h1>
+                </div>
+
+            </div>
+
+        </header>
+
+        <o-view-container>
+
+            <o-view id="home" title="Welcome to Octane">
+
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+
+                        <button class="btn btn-primary" o-route="recipe-list">Recipe List Demo</button>
+                        <button class="btn btn-primary" o-route="login-form">Login Form Demo</button>
+                    </div>
+                </div>
+
+            </o-view>
+
+
+            <o-view id="login-form" title="Login Form Demo">
+
+                <form class="form-horizontal">
+                    <div class="form-group">
+                        <label for="username" class="col-sm-2 control-label">
+                            Email
+                        </label>
+                        <div class="col-sm-4">
+                            <input id="username" type="text" class="form-control" placeholder="Username" o-bind="User.username" />
+                        </div>
+                        <div class="col-sm-4" o-model="User">
+                            {{username}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userpass" class="col-sm-2 control-label">Password</label>
+                        <div class="col-sm-4">
+                            <input type="password" class="form-control" id="userpass" placeholder="Password" o-bind="User.userpass">
+                        </div>
+                        <div class="col-sm-offset-2 col-sm-10" o-model="User">
+                            {{userpass @filter:hidePassword(*)}}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" o-bind="User.showPassword"> Show Password
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <button class="btn btn-default" o-route="home">Home</button>
+                    </div>
+                </div>
+
+            </o-view>
+
+            <o-view id="recipe-list" title="Recipe List Demo">
+
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <label>Enter a Recipe Name</label>
+                        <input o-bind="Recipe.name" class="form-control" />
+                        <ul id="recipe-list">
+
+                            <o-template name="recipe-item">
+                                <li data-recipe-id="{{id}}">
+                                    <span>Recipe: {{name}}</span>
+                                    <button class="btn btn-danger" o-control="(click)[RecipeList.delete,{{id}}]">Delete</button>
+                                </li>
+                            </o-template>
+
+                        </ul>
+                        <button class="btn btn-default" o-control="(click)[RecipeList.clear]">Clear</button>
+                        <button class="btn btn-success" o-control="(click)[RecipeList.add]">Add</button>
+                    </div>
+                </div>
+
+
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <button class="btn btn-default" o-route="home">Home</button>
+                    </div>
+                </div>
+
+            </o-view>
+
+        </o-view-container>
+
+        <!-- partial: footer -->
+        <footer class="row footer">
+
+            <div class="row" style="padding-right:0px; width:100%">
+                <div class="col-md-10 col-md-push-1" o-model="Translations">
+
+                    <ul>
+                        <li class="btn o-btn" o-route="home">
+                            {{btn-home @default(Home)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page1">
+                            {{btn-choose-conditions @default(Choose Conditions)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page2">
+                            {{btn-results @default(Results)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                        <li class="btn o-btn" o-route="page3">
+                            {{btn-legal @default(Legal)}}
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+        </footer>
+
+    </o-app-container>
+
+    <o-modal-container>
+
+    </o-modal-container>
+
+    <o-background>
+    </o-background>
+
+    <script type="text/javascript" src="assets/js/_bower.js"></script>
+    <script type="text/javascript" src="assets/js/octane/doubleUnder.js"></script>
+    <script type="text/javascript" src="assets/js/octane/octane.js"></script>
+    <script type="text/javascript" src="assets/js/octane/filters.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.AppLoading.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Modals.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Router.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Translator.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Views.base.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Views.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.Views.overlays.js"></script>
+    <script type="text/javascript" src="assets/js/octane/module.debug.js"></script>
+    <script type="text/javascript" src="assets/js/octane/startup_utilities.js"></script>
+    <script type="text/javascript" src="assets/js/octane_modules/ParseSync/module.js"></script>
+    <script type="text/javascript" src="assets/js/octane_modules/cordova/module.js"></script>
+    <script type="text/javascript" src="assets/js/octane_modules/mobile-web-app/module.js"></script>
+    <script type="text/javascript" src="assets/js/octane_modules/recipe-list/module.RecipeList.js"></script>
+    <script type="text/javascript" src="assets/js/octane_modules/widgets/module.js"></script>
+    <script type="text/javascript" src="octane-initialize.js"></script>
+</body>
+
+</html>

@@ -26,66 +26,130 @@
 	Compiler.extend({
 		ordinances: {},
 		nodeMap: {},
-		assign: function(qselector,task){
+		disposers:{},
+		assign: function(qselector,onRender,onDispose){
 
-			var guid = this.guid(task);
+			var compilerId = this.guid(onRender);
+			var disposerId = this.guid(onDispose);
 			var ords = this.ordinances;
-			(ords[qselector]||(ords[qselector]={}))[guid] = task;
+			this.disposers[disposerId] = onDispose;
+			(ords[qselector]||(ords[qselector]={}))[compilerId] = {
+				onRender: onRender,
+				onDispose: disposerId
+			};
 			return this;
 		},
 
-		compile: function(context,qselector){
-
-			if(!qselector){
-					qselector = context;
-					context = document;
-			}
-			var tasks = this.ordinances[qselector];
+		compile: function(scope,qselector){
 
 			return new Promise(function(resolve,reject){
-				_.each(context.querySelectorAll(qselector),function(elem,index){
+				if(!qselector){
+						qselector = scope;
+						scope = document;
+				}
+				var taskGroup = Compiler.ordinances[qselector];
+				var scopeId = Compiler.guid(scope);
+				var disposers = (Compiler.disposers[scopeId]||(Compiler.disposers[scopeId] = []));
+				var map = Compiler.nodeMap;
 
-					var guid 		= Compiler.guid(elem);
-					var tasks	 	= Compiler.ordinances[qselector];
+				_.each(taskGroup,function(taskSet,taskSetId){
 
-					_.each(tasks,function(task,taskId){
+					// push disposal handlers for this task to the scope to be run on flush
+					taskSet.onDispose && disposers.push(taskSet.onDispose);
 
-						var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
-						var map = Compiler.nodeMap;
+					_.each(scope.querySelectorAll(qselector),function(DOMnode,index){
 
-						// task has already been run, return early
-						if((map[guid]||{})[taskId]) return;
+						var nodeId 	  = Compiler.guid(DOMnode);
+						var val,attr;
+
+						// node has already been compiled on this render, return early
+						if((((map[scopeId]||{})[nodeId])||(map[scopeId][nodeId]={}))[taskSetId]) return;
 
 						// pass the value of the ordinance to the task
 						// *if the ordinance is an attribute, selected by wrapped []
-						var ord = qselector.match(/\[(.*)\]/);
-						_.isArray(ord) && (ord = ord[1]);
-						ordValue = elem.getAttribute(ord);
+						if(attr = qselector.match(/\[(.*)\]/){
+							attr = attr[1];
+							val = DOMnode.getAttribute(attr);
+						}
 
 						try{
-							// run the task
-							task(elem,ordValue);
+							// run the task, which may return an object with an .onDispose handler
+							var compiled = taskSet.onRender(DOMnode,val);
 							// set hashed taskId to true so it doesn't re-run on the same element
-							(map[guid]||(map[guid]={}))[taskId] = true;
+							((map[scopeId]||(map[scopeId]={}))[nodeId]||(map[scopeId][nodeId]={}))[taskSetId] = true;
+							// push onDispose handler to the flusher
+							if(compiled.onDispose) disposers.push(compiled.onDispose);
 						} catch (ex){
 							Compiler.log(ex);
 						}
-						elem = null;
+						DOMnode = null;
 					});
 				});
 				resolve();
 			});
 		},
 
-		compileAll: function(context){
-			context || (context = document);
+		compileAll: function(scope){
+			scope || (scope = document);
 
 			var compilationTasks = _.map(this.ordinances,function(ord,qselector){
-				return this.compile(context,qselector);
+				return this.compile(scope,qselector);
 			},this);
 
 			return Promise.all(compilationTasks);
+		},
+
+		flush: function(scope){
+
+			if(scope && scope !== document){
+
+				// flush a single scope
+				var identify = this.guid;
+				var scopeID = identify(scope);
+				var disposed = _.map(this.disposers[scopeId],function(disposer){
+					return new Promise(function(resolve,reject){
+						disposer();
+						resolve();
+					});
+				});
+
+				Promise.all(disposed).bind(this).then(function(){
+					// flush the scope's cache of compiled elements and disposer handlers
+					this.disposers[scopeId] = null;
+					this.nodeMap[scopeId] = null;
+				});
+
+			} else {
+
+				var disposed = _.chain(this.disposers)
+					.map(function(scoped,id){
+						return _.map(scoped,function(disposers){
+							return new Promise(function(resolve,reject){
+								disposer();
+								resolve();
+							});
+						});
+					})
+					.flatten()
+					.value();
+
+				Promise.all(disposed).bind(this).then(function(){
+					// flush entire cache
+					this.disposers = {};
+					this.nodeMap = {};
+				});
+			}
 		}
 	});
+
+	Compiler
+	.any('routing:begin',function(e){
+		var page = e.detail.page;
+		Compiler.flush(page);
+	})
+	.any('routing:complete',function(e){
+		var page = e.detail.page;
+		Compiler.compileAll(page);
+	})
 
 	module.exports = Compiler;

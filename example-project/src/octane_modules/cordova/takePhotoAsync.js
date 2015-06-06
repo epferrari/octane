@@ -3,7 +3,7 @@
 	var Promise = require('bluebird');
 	var Camera  = require('cordova-plugin-camera');
 
-	module.exports =  takePhotoAsync = function(options){
+	module.exports = function(options){
 		return new Promise(function(resolve,reject){
 
 			if(device.isReady) reject('cannot call CordovaAdapter.takePhotoAsync, device is not ready.');
@@ -22,4 +22,5 @@
 			navigator.camera.getPicture(resolve,reject,options);
 		});
 	};
+
 })(module,exports);
