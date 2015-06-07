@@ -30,7 +30,7 @@
 
 
 
-	var ViewModel = Factory({
+	var ViewModel = Factory('ViewModel',{
 
 		initialize: function(elem,binding){
 			this.DOM_Element = elem;

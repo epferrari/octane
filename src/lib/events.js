@@ -94,9 +94,9 @@
 		},
 
 		// fire an interal event from this object
-		fire: function(event){
+		fire: function(event,detail){
 			this._ensureEventInterface();
-			Quarterback.normalizeOctaneEvent(event,this);
+			Quarterback.normalizeOctaneEvent(event,this,detail);
 		},
 		_registerHandler: function(event,src,handler){
 			this._ensureEventInterface();

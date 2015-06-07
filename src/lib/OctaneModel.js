@@ -90,6 +90,7 @@ function OctaneModel(dataset){
 OctaneBase.prototype.defineProp.call(OctaneModel,{
 
 	extend: extend,
+	__loggerId__: 'OctaneModel',
 
 	// mixin the logger
 	log: function(message,err){

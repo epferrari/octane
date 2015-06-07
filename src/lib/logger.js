@@ -25,12 +25,13 @@
 		if(!_octane.debugMode) return;
 
 		if(arguments.length === 1 && _.isObject(message)){
+			// just the error object was caught and passed
 			error = message;
 			message = error.message || 'Additional details unavailable';
 		}
 		_octane.logfile.push({
 			message: message,
 			error: (error||{}),
-			caller: this.name || this.id || utils.guid.apply(this)
+			caller: this.__loggerId__ || this.name || this.id || utils.guid.apply(this)
 		});
-	}
+	};

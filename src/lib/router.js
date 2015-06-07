@@ -61,7 +61,7 @@
 	var poll;
 
 	// Singleton Router
-	var Router = new OctaneBase();
+	var Router = new OctaneBase('Router');
 
 	// Private, non-enumerable API
 
@@ -183,7 +183,7 @@
 			Router.fire('routing:called');
 
 			if(!requested || pageIsCurrent) {
-				Router.fire('routing:complete');
+				Router.fire('routing:complete',{page:page});
 				return resolve(requested);
 			}
 
@@ -208,7 +208,7 @@
 				// First ensure all requested's predicates are met and before-load promises are resolved
 				return requested.frameWillLoad()
 				.then(function(pgReady){
-					Router.fire('routing:begin');
+					Router.fire('routing:begin',{page:page});
 					pageAnimating = pgReady;
 					return pgReady._queue();
 				})
@@ -216,6 +216,7 @@
 				.then(function(){
 					var currentPage = Router.currentPage;
 					if(currentPage){
+						Router.fire('page:exiting',{page:currentPage.id});
 						currentPage.elem.classList.add('frame-animating');
 						return currentPage._exit();
 					}
@@ -263,7 +264,7 @@
 				.then(function(lastLoadedPg){
 					if(document && lastLoadedPg) document.title = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
-					Router.fire('routing:complete');
+					Router.fire('routing:complete',{page:lastLoadedPg.id});
 				})
 				.catch(function(err){
 					Router.log(err);
@@ -276,7 +277,10 @@
 				.then(function(pgReady){
 					Router.fire('routing:begin');
 					pageAnimating = pgReady;
-					if(Router.currentPage) return Router.currentPage._queue();
+					if(Router.currentPage) {
+						Router.fire('page:exiting',{page:Router.currentPage.id});
+						return Router.currentPage._queue();
+					}
 				})
 				// load `requested` over the now-queued current page
 				.then(function(){
@@ -325,7 +329,7 @@
 				.then(function(lastLoadedPg){
 					if(document && lastLoadedPg) document.title  = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
-					Router.fire('routing:complete');
+					Router.fire('routing:complete',{page:lastLoadedPg.id});
 				})
 				.catch(function(err){
 					Router.log(err);

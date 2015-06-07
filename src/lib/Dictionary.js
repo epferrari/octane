@@ -22,7 +22,7 @@
 	var OctaneBase = require('./OctaneBase.js');
 	var _octane    = require('./_octane.js');
 
-	var Dictionary = OctaneBase.extend({
+	var Dictionary = OctaneBase.extend('Dictionary',{
 
 		initialize: function(name,data){
 			if(_.isObject(data) && !_octane.dicts[name]){

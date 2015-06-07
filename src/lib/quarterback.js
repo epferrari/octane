@@ -24,7 +24,7 @@
 
 	// An Event Delegator using inversion of control
 	var Quarterback = {
-
+		__loggerId__: 'QuarterBack',
 		_listening_: [],
 		delegateMap: {},
 
@@ -86,14 +86,10 @@
 						return this.delegateEvent.apply(delegate,[e]);
 					},this)
 				)
-				.catch(function(err){
-					log.apply(this,[err.detail,err.error]);
+				.catch(function(ex){
+					log.apply(this,[ex.detail,ex.error]);
 				}.bind(this));
 			}
-		},
-
-		target: function(e,delegate){
-			delegate && this.delegateEvent.apply(delegate,[e]);
 		},
 
 		delegateEvent: function(e){
@@ -102,7 +98,7 @@
 			var src       = e.target;
 			var src_id    = src.octane_id;
 			var handlers  = (events[src_id] && events[src_id][eventType]) ? events[src_id][eventType] : [];
-			var errDetail = 'A handler function failed for event '+eventType+' at dispatch to '+utils.guid(this)+'. Check event map.';
+			var errDetail = 'An event handler failed for "'+eventType+'" at dispatch to '+utils.guid(this)+'. Check event map.';
 
 			// concat event handlers that are called regardless of event src
 			handlers = handlers.concat(events.ANY[eventType]);
@@ -116,19 +112,19 @@
 					if(toh === 'function'){
 						try {
 							result = handler.apply(this,[e,src]);
-						} catch(exc){
+						} catch(err){
 							return reject({
-								error:exc,
-								detail:detail
+								error:err,
+								detail:errDetail
 							});
 						}
 					}else if(toh === 'object'){
 						try {
 							result = handler.handleEvent(e,src);
-						}catch(exc){
+						}catch(err){
 							return reject({
-								error:exc,
-								detail:detail
+								error:err,
+								detail:errDetail
 							});
 						}
 					}

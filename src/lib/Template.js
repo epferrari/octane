@@ -24,7 +24,7 @@
 	var Compiler    = require('./Compiler.js');
 	var Factory     = require('./Factory.js');
 
-	var Template    = Factory({
+	var Template    = Factory('Template',{
 
 		//Proto Methods
 

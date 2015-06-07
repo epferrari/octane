@@ -27,7 +27,7 @@
 	var Frame      = require('./ViewFrame.js');
 	var _octane    = require('./_octane.js');
 
-	var OctanePage = Frame.extend({
+	var OctanePage = Frame.extend('OctanePage',{
 
 		initialize: function(elem){
 
@@ -39,7 +39,7 @@
 			_octane.pages[this.id] = this;
 		},
 
-		constructor: function OctaneView(){
+		constructor: function OctanePage(){
 			return Controller.apply(this,arguments);
 		},
 

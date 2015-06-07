@@ -34,7 +34,7 @@
 	var currentModal = false;
 	var block        = false;
 
-	var OctaneModal  = Frame.extend({
+	var OctaneModal  = Frame.extend('OctaneModal',{
 
 		// Instance Methods
 
@@ -203,6 +203,7 @@
 		},
 		configurable: false
 	});
+
 
 
 

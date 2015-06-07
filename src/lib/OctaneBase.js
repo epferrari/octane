@@ -28,7 +28,8 @@
 
 
 
-	function OctaneBase(){
+	function OctaneBase(name){
+		this.__loggerId__ = name;
 		this.guid();
 		this.initialize.apply(this,arguments);
 	}
@@ -53,8 +54,8 @@
 
 
 	define(OctaneBase.prototype,'Proto',{
-		value: 			function(){
-			return new OctaneBase();
+		value: 			function(name){
+			return new OctaneBase(name);
 		},
 		writable: 	false,
 		configurable: false

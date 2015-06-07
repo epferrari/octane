@@ -31,7 +31,7 @@
 
 				_.each(_octane.logfile,function(entry){
 					console.log(entry.error);
-					console.log('additional details:',entry.message);
+					console.log('additional details: ',entry.message);
 					console.log('logged by: '+entry.caller);
 				});
 			},

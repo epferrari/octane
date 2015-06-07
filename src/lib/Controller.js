@@ -25,10 +25,10 @@ var extend      = require('./extend.js');
 
 
 function OctaneController(name,config){
-	_.isString(name) && (this.name = name);
+	_.isString(name) && (this.name = this.__loggerId__ = name);
 
 	_.isPlainObject(config) && _.extend(this,config);
-
+	this.guid();
 	this.initialize && this.initialize.apply(this,arguments);
 	// add this Controller instance to the _octane controllers hash
 	this.name && (_octane.controllers[this.name] = this);

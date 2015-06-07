@@ -59,5 +59,7 @@ module.exports = function extend(){
 
 	o.__super__ = P.prototype;
 
+	if(className) o.className = o.__loggerId__ = className;
+
 	return o;
 };

@@ -24,7 +24,7 @@
 	var Factory  = require('./OctaneBase.js');
 
 
-	var Frame = Factory.extend({
+	var Frame = Factory.extend('PageFrame',{
 		defaultPos: 'left',
 		prepareFrame: function(elem){
 
