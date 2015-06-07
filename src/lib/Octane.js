@@ -16,7 +16,7 @@
 */
 
 
-(function(module,exports){
+(function(module){
 	'use strict';
 
 	/* ------------------------------------------------------- */
@@ -819,14 +819,14 @@
 
 				// load runtime modules -> compile -> ready!
 
-				return Compiler.compile('o-view')
-					.then(function(){
-						return Compiler.compile('o-modal');
-					})
-					.then(function(){
-						return Promise.resolve(Object.keys(modules));
-					})
-					.each(function(m){
+				//return Compiler.compile('o-view')
+					//.then(function(){
+					//	return Compiler.compile('o-modal');
+					//})
+					//.then(function(){
+						//return Promise.resolve(Object.keys(modules));
+					//})
+					Promise.resolve(Object.keys(modules)).each(function(m){
 						return modules[m]._load();
 					})
 					.then(function(){
@@ -853,6 +853,6 @@
 
 
 
-module.exports = Octane;
+module.exports = global.octane = Octane;
 
-})(module,module.exports);
+})(module);
