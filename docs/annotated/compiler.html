@@ -221,32 +221,33 @@
 	Compiler.extend({
 		ordinances: {},
 		nodeMap: {},
-		assign: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">qselector,task</span>)</span>{
+		disposers:{},
+		assign: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">qselector,onRender,onDispose</span>)</span>{
 
-			<span class="hljs-keyword">var</span> guid = <span class="hljs-keyword">this</span>.guid(task);
+			<span class="hljs-keyword">var</span> compilerId = <span class="hljs-keyword">this</span>.guid(onRender);
+			<span class="hljs-keyword">var</span> disposerId = <span class="hljs-keyword">this</span>.guid(onDispose);
 			<span class="hljs-keyword">var</span> ords = <span class="hljs-keyword">this</span>.ordinances;
-			(ords[qselector]||(ords[qselector]={}))[guid] = task;
+			<span class="hljs-keyword">this</span>.disposers[disposerId] = onDispose;
+			(ords[qselector]||(ords[qselector]={}))[compilerId] = {
+				onRender: onRender,
+				onDispose: disposerId
+			};
 			<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
 		},
 
-		compile: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">context,qselector</span>)</span>{
-
-			<span class="hljs-keyword">if</span>(!qselector){
-					qselector = context;
-					context = <span class="hljs-built_in">document</span>;
-			}
-			<span class="hljs-keyword">var</span> tasks = <span class="hljs-keyword">this</span>.ordinances[qselector];
+		compile: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">scope,qselector</span>)</span>{
 
 			<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{
-				_.each(context.querySelectorAll(qselector),<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">elem,index</span>)</span>{
+				<span class="hljs-keyword">if</span>(!qselector){
+						qselector = scope;
+						scope = <span class="hljs-built_in">document</span>;
+				}
+				<span class="hljs-keyword">var</span> taskGroup = Compiler.ordinances[qselector];
+				<span class="hljs-keyword">var</span> scopeId = Compiler.guid(scope);
+				<span class="hljs-keyword">var</span> disposers = (Compiler.disposers[scopeId]||(Compiler.disposers[scopeId] = []));
+				<span class="hljs-keyword">var</span> map = Compiler.nodeMap;
 
-					<span class="hljs-keyword">var</span> guid 		= Compiler.guid(elem);
-					<span class="hljs-keyword">var</span> tasks	 	= Compiler.ordinances[qselector];
-
-					_.each(tasks,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">task,taskId</span>)</span>{
-
-						<span class="hljs-keyword">var</span> ordValue; <span class="hljs-comment">// the value of a selector's attribute, ex o-sync="ordValue"</span>
-						<span class="hljs-keyword">var</span> map = Compiler.nodeMap;</pre></div></div>
+				_.each(taskGroup,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">taskSet,taskSetId</span>)</span>{</pre></div></div>
             
         </li>
         
@@ -257,11 +258,16 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>task has already been run, return early</p>
+              <p>push disposal handlers for this task to the scope to be run on flush</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>						<span class="hljs-keyword">if</span>((map[guid]||{})[taskId]) <span class="hljs-keyword">return</span>;</pre></div></div>
+            <div class="content"><div class='highlight'><pre>					taskSet.onDispose &amp;&amp; disposers.push(taskSet.onDispose);
+
+					_.each(scope.querySelectorAll(qselector),<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">DOMnode,index</span>)</span>{
+
+						<span class="hljs-keyword">var</span> nodeId 	  = Compiler.guid(DOMnode);
+						<span class="hljs-keyword">var</span> val,attr;</pre></div></div>
             
         </li>
         
@@ -272,16 +278,11 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>pass the value of the ordinance to the task
-*if the ordinance is an attribute, selected by wrapped []</p>
+              <p>node has already been compiled on this render, return early</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>						<span class="hljs-keyword">var</span> ord = qselector.match(<span class="hljs-regexp">/\[(.*)\]/</span>);
-						_.isArray(ord) &amp;&amp; (ord = ord[<span class="hljs-number">1</span>]);
-						ordValue = elem.getAttribute(ord);
-
-						<span class="hljs-keyword">try</span>{</pre></div></div>
+            <div class="content"><div class='highlight'><pre>						<span class="hljs-keyword">if</span>((((map[scopeId]||{})[nodeId])||(map[scopeId][nodeId]={}))[taskSetId]) <span class="hljs-keyword">return</span>;</pre></div></div>
             
         </li>
         
@@ -292,11 +293,17 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
-              <p>run the task</p>
+              <p>pass the value of the ordinance to the task
+*if the ordinance is an attribute, selected by wrapped []</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>							task(elem,ordValue);</pre></div></div>
+            <div class="content"><div class='highlight'><pre>						<span class="hljs-keyword">if</span>(attr = qselector.match(<span class="hljs-regexp">/\[(.*)\]/</span>)){
+							attr = attr[<span class="hljs-number">1</span>];
+							val = DOMnode.getAttribute(attr);
+						}
+
+						<span class="hljs-keyword">try</span>{</pre></div></div>
             
         </li>
         
@@ -307,31 +314,151 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
+              <p>run the task, which may return an object with an .onDispose handler</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>							<span class="hljs-keyword">var</span> compiled = taskSet.onRender(DOMnode,val);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
               <p>set hashed taskId to true so it doesn’t re-run on the same element</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>							(map[guid]||(map[guid]={}))[taskId] = <span class="hljs-literal">true</span>;
+            <div class="content"><div class='highlight'><pre>							((map[scopeId]||(map[scopeId]={}))[nodeId]||(map[scopeId][nodeId]={}))[taskSetId] = <span class="hljs-literal">true</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>push onDispose handler to the flusher</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>							<span class="hljs-keyword">if</span>(compiled.onDispose) disposers.push(compiled.onDispose);
 						} <span class="hljs-keyword">catch</span> (ex){
 							Compiler.log(ex);
 						}
-						elem = <span class="hljs-literal">null</span>;
+						DOMnode = <span class="hljs-literal">null</span>;
 					});
 				});
 				resolve();
 			});
 		},
 
-		compileAll: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">context</span>)</span>{
-			context || (context = <span class="hljs-built_in">document</span>);
+		compileAll: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">scope</span>)</span>{
+			scope || (scope = <span class="hljs-built_in">document</span>);
 
 			<span class="hljs-keyword">var</span> compilationTasks = _.map(<span class="hljs-keyword">this</span>.ordinances,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">ord,qselector</span>)</span>{
-				<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.compile(context,qselector);
+				<span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.compile(scope,qselector);
 			},<span class="hljs-keyword">this</span>);
 
 			<span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.all(compilationTasks);
+		},
+
+		flush: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">scope</span>)</span>{
+
+			<span class="hljs-keyword">if</span>(scope &amp;&amp; scope !== <span class="hljs-built_in">document</span>){</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>flush a single scope</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="hljs-keyword">var</span> identify = <span class="hljs-keyword">this</span>.guid;
+				<span class="hljs-keyword">var</span> scopeID = identify(scope);
+				<span class="hljs-keyword">var</span> disposed = _.map(<span class="hljs-keyword">this</span>.disposers[scopeId],<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">disposer</span>)</span>{
+					<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{
+						disposer();
+						resolve();
+					});
+				});
+
+				<span class="hljs-built_in">Promise</span>.all(disposed).bind(<span class="hljs-keyword">this</span>).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>flush the scope’s cache of compiled elements and disposer handlers</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					<span class="hljs-keyword">this</span>.disposers[scopeId] = <span class="hljs-literal">null</span>;
+					<span class="hljs-keyword">this</span>.nodeMap[scopeId] = <span class="hljs-literal">null</span>;
+				});
+
+			} <span class="hljs-keyword">else</span> {
+
+				<span class="hljs-keyword">var</span> disposed = _.chain(<span class="hljs-keyword">this</span>.disposers)
+					.map(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">scoped,id</span>)</span>{
+						<span class="hljs-keyword">return</span> _.map(scoped,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">disposers</span>)</span>{
+							<span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Promise</span>(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>)</span>{
+								disposer();
+								resolve();
+							});
+						});
+					})
+					.flatten()
+					.value();
+
+				<span class="hljs-built_in">Promise</span>.all(disposed).bind(<span class="hljs-keyword">this</span>).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>flush entire cache</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>					<span class="hljs-keyword">this</span>.disposers = {};
+					<span class="hljs-keyword">this</span>.nodeMap = {};
+				});
+			}
 		}
 	});
+
+	Compiler
+	.any(<span class="hljs-string">'routing:begin'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+		<span class="hljs-keyword">var</span> page = e.detail.page;
+		Compiler.flush(page);
+	})
+	.any(<span class="hljs-string">'routing:complete'</span>,<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">e</span>)</span>{
+		<span class="hljs-keyword">var</span> page = e.detail.page;
+		Compiler.compileAll(page);
+	})
 
 	<span class="hljs-built_in">module</span>.exports = Compiler;</pre></div></div>
             

@@ -24,205 +24,196 @@
 
 	var Compiler   = new OctaneBase('Compiler');
 
-	function addScope(node,parentScopeRef){
-		console.log('node',node);
-		console.log('parentScopeRef',parentScopeRef);
-		var scope;
-		if(node === document){
-			scope = node.scope = 0;
-		} else if(parent){
-			var parentScope = _.get(Compiler.scopes,parentScopeRef);
-			var pos = parentScope.length;
-			scope = node.scope = node.dataset.scope = parentScopeRef + '.' + pos;
-			_.set(Compiler.scopes,scope,{
-				id: Compiler.guid(node),
-				compiled: [],
-				length: 0
-			});
-			parentScope.length++;
-		}
-		return scope;
-	}
 
 
 	document.scope = 0;
 	Compiler.extend({
-		scopes: {
-			0:{
-				nodeDidCompile: [],
-				id:Compiler.guid(document),
-				length:0
-			}
-		},
+		scopes: {},
 		ordinances: {},
 		nodeMap: {},
+
+		compilers:{},
 		disposers:{},
-		assign: function(qselector,onRender,onDispose){
-			var compilerId = this.guid(onRender);
+
+		traverse: function(node,parentNode){
+			var n = 0;
+			if(!parentNode){
+				node = document;
+				node.dataset = {octaneScope:n};
+				this.traverse(node.firstElementChild,node);
+			} else {
+				var n = _.indexOf(parentNode.children,node);
+				while(node){
+					node.dataset.octaneScope = parentNode.dataset.octaneScope + '.' + n;
+					if(node.children) this.traverse(node.firstElementChild,node);
+					n++;
+					node = node.nextElementSibling;
+				}
+			}
+		},
+
+		assign: function(qselector,onCompile,onDispose){
 			var ords = this.ordinances;
 			(ords[qselector]||(ords[qselector]=[])).push({
-				id: qselector,
-				onRender: onRender,
+				groupName: qselector,
+				onCompile: onCompile,
 				onDispose: onDispose
 			});
 			return this;
 		},
 
-		compile: function(scope,qselector){
-
-			return new Promise(function(resolve,reject){
-				if(!qselector){
-						qselector = scope;
-						scope = document;
-				}
-				var taskGroup = Compiler.ordinances[qselector];
-				var scopeId = Compiler.guid(scope);
-				var disposers = (Compiler.disposers[scopeId]||(Compiler.disposers[scopeId] = []));
-				var map = Compiler.nodeMap;
-
-				var scopes = _.flatten(scope.querySelectorAll(qselector));
-				scopes = _.flatten(scopes);
-				scopes = _.map(scopes,function(DOMnode,index){
-					console.log(DOMnode);
-					return Compiler.compileAll(DOMnode).then(function(){
-						var nodeId = Compiler.guid(DOMnode);
-						if(!DOMnode.scope) addScope(DOMnode,scope);
-						var nodeScope = _.get(Compile.scopes,DOMnode.scope);
-
-						_.each(taskGroup,function(taskSet,taskSetId){
-
-							// push disposal handlers for this task to the scope to be run on flush
-							//taskSet.onDispose && disposers.push(taskSet.onDispose);
-
-
-							var val,attr;
-
-
-							if(_.contains(nodeScope.nodeDidCompile,taskSetId)) return;
-
-
-							//if (_.get(map,scopeId+'.'+nodeId+'.'+taskSetId)) return;
-							// node has already been compiled on this render, return early
-							//map[scopeId]||(map[scopeId]={});
-							//map[scopeId][nodeId]||(map[scopeId][nodeId] = {});
-							//if(map[scopeId][nodeId][taskSetId]) return;
-
-
-							// pass the value of the ordinance to the task
-							// *if the ordinance is an attribute, selected by wrapped []
-							if(attr = qselector.match(/\[(.*)\]/)){
-								attr = attr[1];
-								val = DOMnode.getAttribute(attr);
-							}
-
-							try{
-								// run the task, which may return an object with an .onDispose handler
-								var compiled = taskSet.onRender(DOMnode,val);
-								nodeScope.nodeDidCompile.push(taskSetId);
-								// set hashed taskId to true so it doesn't re-run on the same element
-								//_.set(map,scopeId+'.'+nodeId+'.'taskSetId,true);
-								//map[scopeId]||( map[scopeId]={} );
-								//map[scopeId][nodeId]||(	map[scopeId][nodeId]={} );
-								//map[scopeId][nodeId][taskSetId] = true;
-								// push onDispose handler to the flusher
-							} catch (ex){
-								Compiler.log(ex);
-							}
-							DOMnode = null;
-						});
-					});
-				});
-
-				console.log(scopes);
-				scopes.then(resolve);
-			});
+		getScopedNodes: function(node){
+			return _.chain(this.ordinances)
+			.map(function(ord,qselector){
+				var nodes = node.querySelectorAll(qselector);
+				if(nodes.length > 0) return {
+					id: qselector,
+					nodes: _.toArray(nodes)
+				};
+			})
+			.flatten()
+			.compact()
+			.value();
 		},
 
-		compileAll: function(node,parentScope){
+		// teardown anything left from a previous compile using the onDispose handler passed by .assign
+		cleanUp: function(node){
 			return new Promise(function(resolve){
-				node || (node = document);
-				//var parentScope = _.get(Compiler.scopes,parentScopeRef) || {};
-				parentScope || (parentScope = []);
-				var toCompile = _.chain(Compiler.ordinances)
-				.map(function(ord,qselector){
-					var nodes = node.querySelectorAll(qselector);
-					if(nodes.length > 0) return {
-						id: qselector,
-						nodes: nodes
-					};
+				var lastCompile;
+				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope)) && lastCompile.nodeId !== this.guid(node) ){
+						_.each(lastCompile.onDispose,function(fn){
+							fn(lastCompile.element);
+						});
+						// clear the onDispose handlers, they will be replenished at the next compile
+						lastCompile.applied = [];
+						lastCompile.onDispose = [];
+						lastCompile.rendered = null;
+				}
+				resolve();
+			}.bind(this));
+		},
+
+		compileAll: function($node){
+			//console.log('compiling',$node);
+			return new Promise(function(resolve){
+
+				$node || ($node = document);
+				var ready = this.cleanUp($node);
+
+				// reconcile the scope
+				this.traverse($node,$node.parentElement);
+
+				var scopedNodes;
+				return ready.bind(this)
+				.then(function(){
+					return scopedNodes = this.getScopedNodes($node);
+				})
+				.bind(this)
+				.then(this._compileChildScopes)
+				.then(function(childScopes){
+					if(childScopes.length){
+						_.each(scopedNodes,function(nodeObject){
+							nodeObject.nodes = _.difference(nodeObject.nodes,childScopes);
+						});
+					}
+					return _.map(scopedNodes,function(nodeObj){
+						return Compiler._compile(nodeObj);
+					});
+				}).then(function(compiled){
+					resolve(Promise.all(
+						_(compiled)
+						.chain()
+						.flattenDeep()
+						.compact()
+						.value()
+					));
+				});
+			}.bind(this));
+		},
+
+		// recursively run compilation on nodes to create child scopes
+		_compileChildScopes: function(scopes){
+			return Promise.all(
+				_(scopes)
+				.chain()
+				.map(function(scope){
+					if(scope.nodes && scope.nodes.length){
+						return _(scope.nodes)
+						.chain()
+						.map(Compiler.compileAll,Compiler)
+						.compact()
+						.flattenDeep()
+						.value();
+					}
 				})
 				.flatten()
 				.compact()
-				.each(function(n){
-					Compiler.guid(n);
-				})
-				.value();
-
-				//if(!node.scope) addScope(node,parentScopeRef);
-				// remove nodes in this scope from the parent scope
-				// so they are only in this scope
-				function removeNodesFromParentScope(toCompile,parentScope){
-					return new Promise(function(resolve){
-						_.each(toCompile,function(object){
-
-							var id = object.id;
-							var nodeList = object.nodes;
-							var parentObject = _.find(parentScope,{id: id});
-							var index = parentScope.indexOf(parentObject);
-							if(index > 0){
-								parentScope[index].nodes = _.difference(parentObject.nodes,_.toArray(nodeList));
-							}
-						});
-						resolve(toCompile);
-					});
-				}
-
-
-				// recursively run compilation on nodes to create child scopes
-				var compileChildNodes = function(toCompile){
-					return Promise.all(_.map(toCompile,function(obj){
-						if(obj.nodes){
-							return Promise.all(_.map(obj.nodes,function(node){
-								return Compiler.compileAll(node,toCompile);
-							}))
-							.then(function(){
-								return Promise.all(_(Compiler.ordinances)
-								.chain()
-								.map(function(arr,qselector){
-									/* arr = [{id:'o-view',onRender:fn,onDispose:fn},{id:'o-modal',onRender:fn,onDispose:fn}] */
-									return arr;
-								})
-								.flatten()
-								.map(function(group){
-									if(obj.id === group.id){
-										return Promise.all(_.map(obj.nodes,function(node){
-											return new Promise(function(resolve){
-												//addScope(node,parentScope);
-												var val,attr;
-												if(attr = group.id.match(/\[(.*)\]/)){
-													attr = attr[1];
-													val = node.getAttribute(attr);
-												}
-												group.onRender(node,val);
-												resolve();
-											});
-										}));
-									}
-								})
-								.value());
-							});
-						}
-					}));
-				};
-
-				compileChildNodes(toCompile).then(function(){
-					return removeNodesFromParentScope(toCompile,parentScope);
-				}).then(function(){
-					console.log('scope',node);
-					console.log('toCompile',toCompile);
-				}).then(resolve);
-
+				.value()
+			).then(function(res){
+				return Promise.all(_(res)
+				.chain()
+				.flattenDeep()
+				.compact()
+				.value());
 			});
+		},
+
+		_compile: function(obj){
+			return _(Compiler.ordinances)
+				.chain()
+				.map(function(arr,qselector){
+					return arr;
+				})
+				.flatten()
+				.map(function(fnGroup){
+
+					if(obj.id === fnGroup.groupName){
+						return _.map(obj.nodes,function(node){
+							return new Promise(function(resolve){
+
+								var fnGroupId = Compiler.guid(fnGroup);
+								var $scopes = Compiler.scopes;
+								var octaneScope = node.dataset.octaneScope;
+								var nodeId = Compiler.guid(node);
+								var path = octaneScope+'.compiled';
+								var compiled = _.get($scopes,path);
+								var val,attr;
+
+								if(compiled && compiled.nodeId === nodeId && _.contains(compiled.applied,fnGroupId)){
+									// already compiled, return early
+									resolve(node);
+								} else {
+
+									if(attr = fnGroup.groupName.match(/\[(.*)\]/)){
+										attr = attr[1];
+										val = node.getAttribute(attr);
+									}
+									var rendered = fnGroup.onCompile(node,val);
+
+									if(!compiled){
+										_.set($scopes,path,{
+											applied: [],
+											onDispose: [],
+											get element(){
+												return Compiler.find(octaneScope);
+											}
+										});
+										compiled = _.get(Compiler.scopes,path);
+									}
+
+									compiled.nodeId = nodeId;
+									compiled.rendered = rendered;
+									compiled.applied.push(fnGroupId);
+									compiled.onDispose.push(fnGroup.onDispose);
+									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
+									resolve(node);
+								}
+							});
+						});
+					}
+				})
+				.flatten()
+				.value();
 		},
 
 		flush: function(scope){
@@ -265,7 +256,33 @@
 					this.nodeMap = {};
 				});
 			}
-		}
+		},
+
+		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
+		// precision querySelection
+		find: function(octaneScope){
+			var DATA_OCTANE_SCOPE = '[data-octane-scope="';
+			var CLOSE_BRACKET = '"]>';
+			var FINAL_BRACKET = '"]';
+			var split = octaneScope.toString().split('.');
+			split.shift();
+			var len = split.length;
+			var query = split.reduce(function(prev,curr,index){
+				var currN = prev.n + '.' + curr;
+				if(index !== len-1){
+					return {
+						n: currN,
+						q: prev.q + DATA_OCTANE_SCOPE + currN + CLOSE_BRACKET
+					};
+				} else {
+					return {
+						n: currN,
+						q: prev.q + DATA_OCTANE_SCOPE + currN + FINAL_BRACKET
+					};
+				}
+			},{n: 0,q:''});
+			return document.querySelector(query.q);
+		},
 	});
 
 	Compiler
@@ -273,14 +290,14 @@
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			Compiler.flush(page);
+			//Compiler.flush(page);
 		}
 	})
 	.any('routing:complete',function(e){
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			Compiler.compileAll(scope);
+			//Compiler.compileAll(scope);
 		}
 	});
 

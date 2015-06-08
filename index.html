@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<title></title>
+
+		<link href="docs/docco.css" type="text/css" rel="stylesheet" />
+
+	</head>
+
+	<body class="container-fluid octane">
+
+		<o-loading-container style="color:grey">
+			<p>Loading</p>
+		</o-loading-container>
+
+		<o-app-container class="hidden">
+
+			<o-page-container>
+
+				<o-page id="home" style="border:black thin solid">
+
+					<h1>Welcome to Octane</h1>
+					<p>This demo doesn't do much now, but you can click some buttons and route around.</p>
+					<p><input o-bind="App.input1"/></p>
+					<p><textarea o-bind="App.input2">Enter some text</textarea></p>
+
+					<div o-model="App">
+						<p>{{input1}}</p>
+						<p>{{input2}}</p>
+					</div>
+
+					<a href="/page1" class="route"><button >Page 1</button></a>
+					<a href="/page2" class="route"><button>Page 2</button></a>
+					<a href="/page3" class="route"><button>Page 3</button></a>
+					<a href="/docs" class="route"><button>API Docs Coming Soon</button></a>
+					<a href="/todo-mvc" class="route"><button>To Do MVC Coming Soon</button></a>
+					<a href="./some/new/view" class="route"><button>Some New View</button></a>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+
+				</o-page>
+
+				<o-page id="page1" style="border:black thin solid">
+					<h1>View 1</h1>
+					<a href="/home" class="route"><button >Home</button></a>
+					<a href="/page2" class="route"><button>Page 2</button></a>
+					<a href="/page3" class="route"><button>Page 3</button></a>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+				</o-page>
+
+				<o-page id="page2" style="border:black thin solid">
+					<h1>View 2</h1>
+					<a href="/home" class="route"><button >Home</button></a>
+					<a href="/page1" class="route"><button >Page 1</button></a>
+					<a href="/page3" class="route"><button>Page 3</button></a>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+				</o-page>
+
+				<o-page id="page3" style="border:black thin solid">
+					<h1>View 3</h1>
+					<a href="/home" class="route"><button >Home</button></a>
+					<a href="/page1" class="route"><button >Page 1</button></a>
+					<a href="/page2" class="route"><button>Page 2</button></a>
+					<button o-modal="modal1">Modal 1</button>
+					<button o-modal="modal2">Modal 2</button>
+				</o-page>
+
+			</o-page-container>
+
+		</o-app-container>
+
+		<o-modal-container>
+				<o-modal id="modal1" style="color:white">
+					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
+					<h1>Modal 1</h1>
+
+					<a href="/home" class="route"><button >Home</button></a>
+					<a href="/page1" class="route"><button >Page 1</button></a>
+					<a href="/page2" class="route"><button>Page 2</button></a>
+					<a href="/page3" class="route"><button>Page 3</button></a>
+					<button o-modal="modal2">Modal 2</button>
+				</o-modal>
+				<o-modal id="modal2" style="color:white">
+					<button style="float:right;" class="o-modal-dismiss">DISMISS</button>
+					<h1>Modal 2</h1>
+
+					<a href="/home" class="route"><button >Home</button></a>
+					<a href="/page1" class="route"><button >Page 1</button></a>
+					<a href="/page2" class="route"><button>Page 2</button></a>
+					<a href="/page3" class="route"><button>Page 3</button></a>
+					<button o-modal="modal1">Modal 1</button>
+				</o-modal>
+		</o-modal-container>
+
+		<o-background>
+		</o-background>
+
+		<script type="text/javascript" src="octane.js"></script>
+		<script tyle="text/javascript">
+			octane.initialize({
+				appName:'Octane Application',
+				debugMode:true,
+				animateBy: 'css'
+			});
+		</script>
+	</body>
+</html>

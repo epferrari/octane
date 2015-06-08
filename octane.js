@@ -18,7 +18,7 @@
 */
 
 
-(function(module,exports){
+(function(module){
 	'use strict';
 
 	/* ------------------------------------------------------- */
@@ -821,14 +821,14 @@
 
 				// load runtime modules -> compile -> ready!
 
-				return Compiler.compile('o-view')
-					.then(function(){
-						return Compiler.compile('o-modal');
-					})
-					.then(function(){
-						return Promise.resolve(Object.keys(modules));
-					})
-					.each(function(m){
+				//return Compiler.compile('o-view')
+					//.then(function(){
+					//	return Compiler.compile('o-modal');
+					//})
+					//.then(function(){
+						//return Promise.resolve(Object.keys(modules));
+					//})
+					Promise.resolve(Object.keys(modules)).each(function(m){
 						return modules[m]._load();
 					})
 					.then(function(){
@@ -855,9 +855,9 @@
 
 
 
-module.exports = Octane;
+module.exports = global.octane = Octane;
 
-})(module,module.exports);
+})(module);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../css/octane.css":9,"./Compiler.js":10,"./Controller.js":11,"./DOM.js":12,"./Dictionary.js":13,"./OctaneBase.js":16,"./OctaneModal.js":17,"./OctaneModel.js":18,"./OctaneModule.js":19,"./OctanePage.js":20,"./Router.js":22,"./Template.js":23,"./ViewModel.js":25,"./_octane.js":26,"./app-model.js":27,"./debug.js":28,"./filters.js":30,"./uiMessages.js":33,"./utils.js":34,"bluebird":2,"fastclick":5,"lodash":6,"velocity-animate":7,"velocity-ui-pack":8}],2:[function(require,module,exports){
@@ -887,7 +887,7 @@ module.exports = Octane;
  * 
  */
 /**
- * bluebird build version 2.9.27
+ * bluebird build version 2.9.26
  * Features enabled: core, race, call_get, generators, map, nodeify, promisify, props, reduce, settle, some, cancel, using, filter, any, each, timers
 */
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Promise=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
@@ -4722,16 +4722,23 @@ Promise.reduce = function (promises, fn, initialValue, _each) {
 },{"./async.js":2,"./util.js":38}],31:[function(_dereq_,module,exports){
 "use strict";
 var schedule;
-var util = _dereq_("./util");
 var noAsyncScheduler = function() {
     throw new Error("No async scheduler available\u000a\u000a    See http://goo.gl/m3OTXk\u000a");
 };
-if (util.isNode && typeof MutationObserver === "undefined") {
-    var GlobalSetImmediate = global.setImmediate;
-    var ProcessNextTick = process.nextTick;
-    schedule = util.isRecentNode
-                ? function(fn) { GlobalSetImmediate.call(global, fn); }
-                : function(fn) { ProcessNextTick.call(process, fn); };
+if (_dereq_("./util.js").isNode) {
+    var version = process.versions.node.split(".").map(Number);
+    schedule = (version[0] === 0 && version[1] > 10) || (version[0] > 0)
+        ? function(fn) { global.setImmediate(fn); } : process.nextTick;
+
+    if (!schedule) {
+        if (typeof setImmediate !== "undefined") {
+            schedule = setImmediate;
+        } else if (typeof setTimeout !== "undefined") {
+            schedule = setTimeout;
+        } else {
+            schedule = noAsyncScheduler;
+        }
+    }
 } else if (typeof MutationObserver !== "undefined") {
     schedule = function(fn) {
         var div = document.createElement("div");
@@ -4753,7 +4760,7 @@ if (util.isNode && typeof MutationObserver === "undefined") {
 }
 module.exports = schedule;
 
-},{"./util":38}],32:[function(_dereq_,module,exports){
+},{"./util.js":38}],32:[function(_dereq_,module,exports){
 "use strict";
 module.exports =
     function(Promise, PromiseArray) {
@@ -5652,10 +5659,6 @@ var ret = {
     isNode: typeof process !== "undefined" &&
         classString(process).toLowerCase() === "[object process]"
 };
-ret.isRecentNode = ret.isNode && (function() {
-    var version = process.versions.node.split(".").map(Number);
-    return (version[0] === 0 && version[1] > 10) || (version[0] > 0);
-})();
 try {throw new Error(); } catch (e) {ret.lastLineError = e;}
 module.exports = ret;
 
@@ -23826,6 +23829,7 @@ return function (global, window, document, undefined) {
 },{}],9:[function(require,module,exports){
 var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:translateX(-100%);transform:translateX(-100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-right{-webkit-transform:translateX(100%);-ms-transform:translateX(100%);transform:translateX(100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-top{-webkit-transform:translateY(-100%);-ms-transform:translateY(-100%);transform:translateY(-100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-bottom{-webkit-transform:translateY(100%);-ms-transform:translateY(100%);transform:translateY(100%);-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-fade{opacity:0;-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.frame-queued{opacity:1;visibility:visible;display:block;z-index:10;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0)}.frame-active{opacity:1;visibility:visible;display:block;z-index:100;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0);-webkit-transition:-webkit-transform .2s cubic-bezier(0.465,.183,.153,.946),opacity .2s cubic-bezier(0.465,.183,.153,.946);transition:transform .2s cubic-bezier(0.465,.183,.153,.946),opacity .2s cubic-bezier(0.465,.183,.153,.946)}.frame-animating{opacity:1;visibility:visible;display:block;z-index:100}o-page-container{position:relative;display:block;width:100%;z-index:10;overflow-x:hidden;overflow-y:hidden}o-page{position:absolute;visibility:hidden;opacity:0;width:100%;height:100%;top:0;left:0;overflow-x:hidden;overflow-y:scroll;z-index:1;background-color:#fff}o-modal-container{position:fixed;height:100%;width:100%;left:0;pointer-events:none;overflow-y:hidden;overflow-x:hidden;opacity:0;will-change:opacity;-webkit-transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);background-repeat:repeat}o-modal-container:before{background-color:#000;opacity:.8;-ms-filter:\"alpha(Opacity=80)\";filter:alpha(opacity=80);z-index:-1;content:\"\";position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%}o-modal-container.active{z-index:999999998;pointer-events:auto;opacity:1;-webkit-transition:opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:opacity .5s cubic-bezier(0.465,.183,.153,.946)}o-modal{position:absolute;height:100%;width:100%;opacity:0;top:0;left:0;z-index:-1;overflow-y:scroll;will-change:transform;-webkit-transition:-webkit-transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946);transition:transform .3s cubic-bezier(0.465,.183,.153,.946),opacity .5s cubic-bezier(0.465,.183,.153,.946)}.modal-active{opacity:1;z-index:999999999;visibility:visible;display:block;-webkit-transform:translateX(0) translateY(0);-ms-transform:translateX(0) translateY(0);transform:translateX(0) translateY(0);-webkit-transition:-webkit-transform .4s cubic-bezier(0.465,.183,.153,.946),opacity .4s cubic-bezier(0.465,.183,.153,.946);transition:transform .4s cubic-bezier(0.465,.183,.153,.946),opacity .4s cubic-bezier(0.465,.183,.153,.946)}o-loading-container{position:fixed;height:100%;width:100%;top:0;left:0;z-index:99999999999}.loading:after{content:\"\";position:absolute;top:0;bottom:0;left:0;right:0;width:100%;height:100%;background-image:url(src/css/img/loader-light.gif);background-size:100px auto;background-position:center;background-repeat:no-repeat}octane-debugger{font-family:'Source Code Pro'!important;padding-left:10px;display:block;height:25px;position:fixed;z-index:999999999999;bottom:0;left:0;right:0;background-color:#000;border-top:thin #fff solid;color:#fff;opacity:.6}octane-debugger li,octane-debugger ul{margin-top:0!important;margin-left:10px;list-style:none;display:inline-block;font-size:14px!important}octane-debugger li{font-family:'Source Code Pro'!important;padding-right:5px;padding-top:1.5px;cursor:pointer}octane-debugger li:hover{color:#24ffed}octane-debugger i{padding-right:3px}body,html{height:100%}body.octane{overflow-x:hidden;padding-left:0!important;padding-right:0!important;margin:0!important}div.row,footer.row,header.row{margin-left:0!important;margin-right:0!important}o-background{z-index:-1;position:fixed;height:100%;width:100%;top:0;left:0;opacity:0;will-change:opacity}o-background.active{opacity:1}o-background.active canvas{width:101%;margin-left:-.5%;margin-top:-.5%;-webkit-filter:blur(3px);filter:blur(3px);-webkit-transform:translate-3d(0,0,0);-ms-transform:translate-3d(0,0,0);transform:translate-3d(0,0,0)}o-app-container{z-index:1;float:left;height:auto;width:100%;overflow-x:hidden;overflow-y:hidden;background-color:#fff;opacity:1;-webkit-transition:opacity .3s cubic-bezier(0.465,.183,.153,.946);transition:opacity .3s cubic-bezier(0.465,.183,.153,.946)}o-app-container.hidden{opacity:0;-webkit-transition:opacity .3s cubic-bezier(0.465,.183,.153,.946);transition:opacity .3s cubic-bezier(0.465,.183,.153,.946)}.o-back,.o-btn,.o-modal-dismiss{cursor:pointer;min-height:30px;min-width:30px}[o-route]{cursor:pointer}.hidden{visibility:hidden!important}.display-none{display:none}[o-model]{visibility:hidden}[o-model].compiled{visibility:visible}"; (require("browserify-css").createStyle(css, { "href": "src/css/octane.css"})); module.exports = css;
 },{"browserify-css":3}],10:[function(require,module,exports){
+(function (global){
 /*
 * Copyright 2015 Ethan Ferrari, OneFire Media Inc.
 *
@@ -23848,77 +23852,297 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 	var Promise    = require("bluebird");
 	var _          = require("lodash");
 	var OctaneBase = require('./OctaneBase.js');
+	var _octane    = require('./_octane.js');
 
-	var Compiler   = new OctaneBase();
+	var Compiler   = new OctaneBase('Compiler');
 
+
+
+	document.scope = 0;
 	Compiler.extend({
+		scopes: {},
 		ordinances: {},
 		nodeMap: {},
-		assign: function(qselector,task){
 
-			var guid = this.guid(task);
+		compilers:{},
+		disposers:{},
+
+		traverse: function(node,parentNode){
+			var n = 0;
+			if(!parentNode){
+				node = document;
+				node.dataset = {octaneScope:n};
+				this.traverse(node.firstElementChild,node);
+			} else {
+				var n = _.indexOf(parentNode.children,node);
+				while(node){
+					node.dataset.octaneScope = parentNode.dataset.octaneScope + '.' + n;
+					if(node.children) this.traverse(node.firstElementChild,node);
+					n++;
+					node = node.nextElementSibling;
+				}
+			}
+		},
+
+		assign: function(qselector,onCompile,onDispose){
 			var ords = this.ordinances;
-			(ords[qselector]||(ords[qselector]={}))[guid] = task;
+			(ords[qselector]||(ords[qselector]=[])).push({
+				groupName: qselector,
+				onCompile: onCompile,
+				onDispose: onDispose
+			});
 			return this;
 		},
 
-		compile: function(context,qselector){
+		getScopedNodes: function(node){
+			return _.chain(this.ordinances)
+			.map(function(ord,qselector){
+				var nodes = node.querySelectorAll(qselector);
+				if(nodes.length > 0) return {
+					id: qselector,
+					nodes: _.toArray(nodes)
+				};
+			})
+			.flatten()
+			.compact()
+			.value();
+		},
 
-			if(!qselector){
-					qselector = context;
-					context = document;
-			}
-			var tasks = this.ordinances[qselector];
-
-			return new Promise(function(resolve,reject){
-				_.each(context.querySelectorAll(qselector),function(elem,index){
-
-					var guid 		= Compiler.guid(elem);
-					var tasks	 	= Compiler.ordinances[qselector];
-
-					_.each(tasks,function(task,taskId){
-
-						var ordValue; // the value of a selector's attribute, ex o-sync="ordValue"
-						var map = Compiler.nodeMap;
-
-						// task has already been run, return early
-						if((map[guid]||{})[taskId]) return;
-
-						// pass the value of the ordinance to the task
-						// *if the ordinance is an attribute, selected by wrapped []
-						var ord = qselector.match(/\[(.*)\]/);
-						_.isArray(ord) && (ord = ord[1]);
-						ordValue = elem.getAttribute(ord);
-
-						try{
-							// run the task
-							task(elem,ordValue);
-							// set hashed taskId to true so it doesn't re-run on the same element
-							(map[guid]||(map[guid]={}))[taskId] = true;
-						} catch (ex){
-							Compiler.log(ex);
-						}
-						elem = null;
-					});
-				});
+		// teardown anything left from a previous compile using the onDispose handler passed by .assign
+		cleanUp: function(node){
+			return new Promise(function(resolve){
+				var lastCompile;
+				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope)) && lastCompile.nodeId !== this.guid(node) ){
+						_.each(lastCompile.onDispose,function(fn){
+							fn(lastCompile.element);
+						});
+						// clear the onDispose handlers, they will be replenished at the next compile
+						lastCompile.applied = [];
+						lastCompile.onDispose = [];
+						lastCompile.rendered = null;
+				}
 				resolve();
+			}.bind(this));
+		},
+
+		compileAll: function($node){
+			//console.log('compiling',$node);
+			return new Promise(function(resolve){
+
+				$node || ($node = document);
+				var ready = this.cleanUp($node);
+
+				// re-parse the scope
+				this.traverse($node,$node.parentElement);
+
+				var scopedNodes;
+				return ready.bind(this)
+				.then(function(){
+					return scopedNodes = this.getScopedNodes($node);
+				})
+				.bind(this)
+				.then(this.compileChildScopes)
+				.then(function(childScopes){
+					if(childScopes.length){
+						_.each(scopedNodes,function(nodeObject){
+							nodeObject.nodes = _.difference(nodeObject.nodes,childScopes);
+						});
+					}
+					return _.map(scopedNodes,function(nodeObj){
+						return Compiler._compile(nodeObj);
+					});
+				}).then(function(ret){
+					resolve(Promise.all(
+						_(ret)
+						.chain()
+						.flattenDeep()
+						.compact()
+						.value()
+					));
+				});
+			}.bind(this));
+		},
+
+		// recursively run compilation on nodes to create child scopes
+		compileChildScopes: function(scopes){
+			return Promise.all(
+				_(scopes)
+				.chain()
+				.map(function(scope){
+					if(scope.nodes && scope.nodes.length){
+						//console.log('in scope nodes',scope.nodes);
+						return _(scope.nodes)
+							.chain()
+							.map(Compiler.compileAll,Compiler)
+							.compact()
+							.flattenDeep()
+							.value();
+					}
+				})
+				.flatten()
+				.compact()
+				.value()
+			).then(function(res){
+				return Promise.all(_(res)
+				.chain()
+				.flattenDeep()
+				.compact()
+				.value());
 			});
 		},
 
-		compileAll: function(context){
-			context || (context = document);
+		_compile: function(obj){
+			return _(Compiler.ordinances)
+				.chain()
+				.map(function(arr,qselector){
+					return arr;
+				})
+				.flatten()
+				.map(function(fnGroup){
 
-			var compilationTasks = _.map(this.ordinances,function(ord,qselector){
-				return this.compile(context,qselector);
-			},this);
+					if(obj.id === fnGroup.groupName){
+						//console.log('groupName',fnGroup.groupName);
+						//console.log('obj.id',obj.id);
+						return _.map(obj.nodes,function(node){
+							//console.log('node being compiled',node);
+							return new Promise(function(resolve){
 
-			return Promise.all(compilationTasks);
+								var fnGroupId = Compiler.guid(fnGroup);
+								var $scopes = Compiler.scopes;
+								var octaneScope = node.dataset.octaneScope;
+								var nodeId = Compiler.guid(node);
+								var path = octaneScope+'.compiled';
+								var compiled = _.get($scopes,path);
+								var val,attr;
+
+								if(compiled && compiled.nodeId === nodeId && _.contains(compiled.applied,fnGroupId)){
+									// already compiled, return early
+									resolve(node);
+								} else {
+
+									if(attr = fnGroup.groupName.match(/\[(.*)\]/)){
+										attr = attr[1];
+										val = node.getAttribute(attr);
+									}
+									var rendered = fnGroup.onCompile(node,val);
+
+									if(!compiled){
+										_.set($scopes,path,{
+											applied: [],
+											onDispose: [],
+											get element(){
+												return Compiler.find(octaneScope);
+											}
+										});
+										compiled = _.get(Compiler.scopes,path);
+									}
+
+									compiled.nodeId = nodeId;
+									compiled.rendered = rendered;
+									compiled.applied.push(fnGroupId);
+									compiled.onDispose.push(fnGroup.onDispose);
+									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
+									resolve(node);
+								}
+							});
+						});
+					}
+				})
+				.flatten()
+				.value();
+		},
+
+		flush: function(scope){
+
+			if(scope && scope !== document){
+
+				// flush a single scope
+				var identify = this.guid;
+				var scopeId = identify(scope);
+				var disposed = _.map(this.disposers[scopeId],function(disposer){
+					return new Promise(function(resolve,reject){
+						disposer();
+						resolve();
+					});
+				});
+
+				Promise.all(disposed).bind(this).then(function(){
+					// flush the scope's cache of compiled elements and disposer handlers
+					this.disposers[scopeId] = null;
+					this.nodeMap[scopeId] = null;
+				});
+
+			} else {
+
+				var disposed = _.chain(this.disposers)
+					.map(function(scoped,id){
+						return _.map(scoped,function(disposers){
+							return new Promise(function(resolve,reject){
+								disposer();
+								resolve();
+							});
+						});
+					})
+					.flatten()
+					.value();
+
+				Promise.all(disposed).bind(this).then(function(){
+					// flush entire cache
+					this.disposers = {};
+					this.nodeMap = {};
+				});
+			}
+		},
+
+		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
+		// precision querySelection
+		find: function(octaneScope){
+			var DATA_OCTANE_SCOPE = '[data-octane-scope="';
+			var CLOSE_BRACKET = '"]>';
+			var FINAL_BRACKET = '"]';
+			var split = octaneScope.toString().split('.');
+			split.shift();
+			var len = split.length;
+			var query = split.reduce(function(prev,curr,index){
+				var currN = prev.n + '.' + curr;
+				if(index !== len-1){
+					return {
+						n: currN,
+						q: prev.q + DATA_OCTANE_SCOPE + currN + CLOSE_BRACKET
+					};
+				} else {
+					return {
+						n: currN,
+						q: prev.q + DATA_OCTANE_SCOPE + currN + FINAL_BRACKET
+					};
+				}
+			},{n: 0,q:''});
+			return document.querySelector(query.q);
+		},
+	});
+
+	Compiler
+	.any('page:exiting',function(e){
+		if(e.detail){
+			var page = e.detail.page;
+			var scope = _octane.pages[page].view;
+			//Compiler.flush(page);
+		}
+	})
+	.any('routing:complete',function(e){
+		if(e.detail){
+			var page = e.detail.page;
+			var scope = _octane.pages[page].view;
+			//Compiler.compileAll(scope);
 		}
 	});
 
+	global.Compiler = Compiler;
+
 	module.exports = Compiler;
 
-},{"./OctaneBase.js":16,"bluebird":2,"lodash":6}],11:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./OctaneBase.js":16,"./_octane.js":26,"bluebird":2,"lodash":6}],11:[function(require,module,exports){
 /*
 * Copyright 2015 Ethan Ferrari, OneFire Media Inc.
 *
@@ -23946,10 +24170,10 @@ var extend      = require('./extend.js');
 
 
 function OctaneController(name,config){
-	_.isString(name) && (this.name = name);
+	_.isString(name) && (this.name = this.__loggerId__ = name);
 
 	_.isPlainObject(config) && _.extend(this,config);
-
+	this.guid();
 	this.initialize && this.initialize.apply(this,arguments);
 	// add this Controller instance to the _octane controllers hash
 	this.name && (_octane.controllers[this.name] = this);
@@ -24055,7 +24279,7 @@ module.exports = OctaneController;
 	var OctaneBase = require('./OctaneBase.js');
 	var _octane    = require('./_octane.js');
 
-	var Dictionary = OctaneBase.extend({
+	var Dictionary = OctaneBase.extend('Dictionary',{
 
 		initialize: function(name,data){
 			if(_.isObject(data) && !_octane.dicts[name]){
@@ -24182,9 +24406,9 @@ module.exports = OctaneController;
 		},
 
 		// fire an interal event from this object
-		fire: function(event){
+		fire: function(event,detail){
 			this._ensureEventInterface();
-			Quarterback.normalizeOctaneEvent(event,this);
+			Quarterback.normalizeOctaneEvent(event,this,detail);
 		},
 		_registerHandler: function(event,src,handler){
 			this._ensureEventInterface();
@@ -24328,7 +24552,8 @@ module.exports = Factory;
 
 
 
-	function OctaneBase(){
+	function OctaneBase(name){
+		this.__loggerId__ = name;
 		this.guid();
 		this.initialize.apply(this,arguments);
 	}
@@ -24353,8 +24578,8 @@ module.exports = Factory;
 
 
 	define(OctaneBase.prototype,'Proto',{
-		value: 			function(){
-			return new OctaneBase();
+		value: 			function(name){
+			return new OctaneBase(name);
 		},
 		writable: 	false,
 		configurable: false
@@ -24528,7 +24753,7 @@ module.exports = Factory;
 	var currentModal = false;
 	var block        = false;
 
-	var OctaneModal  = Frame.extend({
+	var OctaneModal  = Frame.extend('OctaneModal',{
 
 		// Instance Methods
 
@@ -24700,6 +24925,7 @@ module.exports = Factory;
 
 
 
+
 	Compiler.assign('o-modal',function(elem){
 		OctaneModal.create(elem);
 	})
@@ -24829,6 +25055,7 @@ function OctaneModel(dataset){
 OctaneBase.prototype.defineProp.call(OctaneModel,{
 
 	extend: extend,
+	__loggerId__: 'OctaneModel',
 
 	// mixin the logger
 	log: function(message,err){
@@ -25316,7 +25543,7 @@ module.exports = OctaneModel;
 	var Frame      = require('./ViewFrame.js');
 	var _octane    = require('./_octane.js');
 
-	var OctanePage = Frame.extend({
+	var OctanePage = Frame.extend('OctanePage',{
 
 		initialize: function(elem){
 
@@ -25328,7 +25555,7 @@ module.exports = OctaneModel;
 			_octane.pages[this.id] = this;
 		},
 
-		constructor: function OctaneView(){
+		constructor: function OctanePage(){
 			return Controller.apply(this,arguments);
 		},
 
@@ -25411,7 +25638,7 @@ module.exports = OctaneModel;
 
 	// An Event Delegator using inversion of control
 	var Quarterback = {
-
+		__loggerId__: 'QuarterBack',
 		_listening_: [],
 		delegateMap: {},
 
@@ -25473,14 +25700,10 @@ module.exports = OctaneModel;
 						return this.delegateEvent.apply(delegate,[e]);
 					},this)
 				)
-				.catch(function(err){
-					log.apply(this,[err.detail,err.error]);
+				.catch(function(ex){
+					log.apply(this,[ex.detail,ex.error]);
 				}.bind(this));
 			}
-		},
-
-		target: function(e,delegate){
-			delegate && this.delegateEvent.apply(delegate,[e]);
 		},
 
 		delegateEvent: function(e){
@@ -25489,7 +25712,7 @@ module.exports = OctaneModel;
 			var src       = e.target;
 			var src_id    = src.octane_id;
 			var handlers  = (events[src_id] && events[src_id][eventType]) ? events[src_id][eventType] : [];
-			var errDetail = 'A handler function failed for event '+eventType+' at dispatch to '+utils.guid(this)+'. Check event map.';
+			var errDetail = 'An event handler failed for "'+eventType+'" at dispatch to '+utils.guid(this)+'. Check event map.';
 
 			// concat event handlers that are called regardless of event src
 			handlers = handlers.concat(events.ANY[eventType]);
@@ -25503,19 +25726,19 @@ module.exports = OctaneModel;
 					if(toh === 'function'){
 						try {
 							result = handler.apply(this,[e,src]);
-						} catch(exc){
+						} catch(err){
 							return reject({
-								error:exc,
-								detail:detail
+								error:err,
+								detail:errDetail
 							});
 						}
 					}else if(toh === 'object'){
 						try {
 							result = handler.handleEvent(e,src);
-						}catch(exc){
+						}catch(err){
 							return reject({
-								error:exc,
-								detail:detail
+								error:err,
+								detail:errDetail
 							});
 						}
 					}
@@ -25593,7 +25816,7 @@ module.exports = OctaneModel;
 	var poll;
 
 	// Singleton Router
-	var Router = new OctaneBase();
+	var Router = new OctaneBase('Router');
 
 	// Private, non-enumerable API
 
@@ -25715,7 +25938,7 @@ module.exports = OctaneModel;
 			Router.fire('routing:called');
 
 			if(!requested || pageIsCurrent) {
-				Router.fire('routing:complete');
+				Router.fire('routing:complete',{page:page});
 				return resolve(requested);
 			}
 
@@ -25740,7 +25963,7 @@ module.exports = OctaneModel;
 				// First ensure all requested's predicates are met and before-load promises are resolved
 				return requested.frameWillLoad()
 				.then(function(pgReady){
-					Router.fire('routing:begin');
+					Router.fire('routing:begin',{page:page});
 					pageAnimating = pgReady;
 					return pgReady._queue();
 				})
@@ -25748,6 +25971,7 @@ module.exports = OctaneModel;
 				.then(function(){
 					var currentPage = Router.currentPage;
 					if(currentPage){
+						Router.fire('page:exiting',{page:currentPage.id});
 						currentPage.elem.classList.add('frame-animating');
 						return currentPage._exit();
 					}
@@ -25795,7 +26019,7 @@ module.exports = OctaneModel;
 				.then(function(lastLoadedPg){
 					if(document && lastLoadedPg) document.title = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
-					Router.fire('routing:complete');
+					Router.fire('routing:complete',{page:lastLoadedPg.id});
 				})
 				.catch(function(err){
 					Router.log(err);
@@ -25808,7 +26032,10 @@ module.exports = OctaneModel;
 				.then(function(pgReady){
 					Router.fire('routing:begin');
 					pageAnimating = pgReady;
-					if(Router.currentPage) return Router.currentPage._queue();
+					if(Router.currentPage) {
+						Router.fire('page:exiting',{page:Router.currentPage.id});
+						return Router.currentPage._queue();
+					}
 				})
 				// load `requested` over the now-queued current page
 				.then(function(){
@@ -25857,7 +26084,7 @@ module.exports = OctaneModel;
 				.then(function(lastLoadedPg){
 					if(document && lastLoadedPg) document.title  = App.get('name') + ' | ' + lastLoadedPg.title;
 					resolve(lastLoadedPg);
-					Router.fire('routing:complete');
+					Router.fire('routing:complete',{page:lastLoadedPg.id});
 				})
 				.catch(function(err){
 					Router.log(err);
@@ -26418,7 +26645,7 @@ module.exports = OctaneModel;
 	var Compiler    = require('./Compiler.js');
 	var Factory     = require('./Factory.js');
 
-	var Template    = Factory({
+	var Template    = Factory('Template',{
 
 		//Proto Methods
 
@@ -26663,7 +26890,7 @@ module.exports = OctaneModel;
 	var Factory  = require('./OctaneBase.js');
 
 
-	var Frame = Factory.extend({
+	var Frame = Factory.extend('PageFrame',{
 		defaultPos: 'left',
 		prepareFrame: function(elem){
 
@@ -26794,7 +27021,7 @@ module.exports = OctaneModel;
 
 
 
-	var ViewModel = Factory({
+	var ViewModel = Factory('ViewModel',{
 
 		initialize: function(elem,binding){
 			this.DOM_Element = elem;
@@ -27114,7 +27341,7 @@ module.exports = AppModel;
 
 				_.each(_octane.logfile,function(entry){
 					console.log(entry.error);
-					console.log('additional details:',entry.message);
+					console.log('additional details: ',entry.message);
 					console.log('logged by: '+entry.caller);
 				});
 			},
@@ -27235,6 +27462,8 @@ module.exports = function extend(){
 
 	o.__super__ = P.prototype;
 
+	if(className) o.className = o.__loggerId__ = className;
+
 	return o;
 };
 
@@ -27317,15 +27546,16 @@ module.exports = function extend(){
 		if(!_octane.debugMode) return;
 
 		if(arguments.length === 1 && _.isObject(message)){
+			// just the error object was caught and passed
 			error = message;
 			message = error.message || 'Additional details unavailable';
 		}
 		_octane.logfile.push({
 			message: message,
 			error: (error||{}),
-			caller: this.name || this.id || utils.guid.apply(this)
+			caller: this.__loggerId__ || this.name || this.id || utils.guid.apply(this)
 		});
-	}
+	};
 
 },{"./_octane.js":26,"./utils.js":34,"lodash":6}],32:[function(require,module,exports){
 /*
@@ -27562,24 +27792,24 @@ module.exports = function extend(){
 
 	uiMessages.hint =  function(){
 
-			var setObject,toUnset,timeout;
-			// handle key,value and {key:value}
-			if(_.isString(arguments[0])){
-				setObject = {};
-				setObject[arguments[0]] = arguments[1];
-				timeout = arguments[2];
-			} else if(_.isObject(arguments[0])){
-				setObject = arguments[0];
-				timeout = arguments[1];
-			} else {
-				return {};
-			}
-			timeout || (timeout = 5000);
+		var setObject,toUnset,timeout;
+		// handle key,value and {key:value}
+		if(_.isString(arguments[0])){
+			setObject = {};
+			setObject[arguments[0]] = arguments[1];
+			timeout = arguments[2];
+		} else if(_.isObject(arguments[0])){
+			setObject = arguments[0];
+			timeout = arguments[1];
+		} else {
+			return {};
+		}
+		timeout || (timeout = 5000);
 
-			// automatically unset after 5 seconds || passed-in time
-			toUnset = Object.keys(setObject);
-			this._set(setObject);
-			this._unset(toUnset,{timeout:timeout});
+		// automatically unset after 5 seconds || passed-in time
+		toUnset = Object.keys(setObject);
+		this._set(setObject);
+		this._unset(toUnset,{timeout:timeout});
 	};
 
 	uiMessages.become('UiMessages');
