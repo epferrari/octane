@@ -35,6 +35,7 @@
 		compilers:{},
 		disposers:{},
 
+		/*
 		traverse: function(node,parentNode){
 			var n = 0;
 			if(!parentNode){
@@ -49,6 +50,21 @@
 					n++;
 					node = node.nextElementSibling;
 				}
+			}
+		},
+		*/
+
+		traverse: function(node){
+			var n = 0;
+			if(node === document){
+				node.dataset = {octaneScope: n};
+			}
+			if(node.children){
+				_.each(node.children,function(child){
+					child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
+					this.traverse(child);
+					n++;
+				},this);
 			}
 		},
 
@@ -77,17 +93,17 @@
 		},
 
 		// teardown anything left from a previous compile using the onDispose handler passed by .assign
-		cleanUp: function(node){
+		tearDown: function(node){
 			return new Promise(function(resolve){
 				var lastCompile;
-				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope)) && lastCompile.nodeId !== this.guid(node) ){
-						_.each(lastCompile.onDispose,function(fn){
-							fn(lastCompile.element);
-						});
-						// clear the onDispose handlers, they will be replenished at the next compile
-						lastCompile.applied = [];
-						lastCompile.onDispose = [];
-						lastCompile.rendered = null;
+				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope+'.compiled')) && lastCompile.nodeId !== this.guid(node) ){
+					_.each(lastCompile.onDispose,function(fn){
+						fn(lastCompile.element);
+					});
+					// clear the onDispose handlers, they will be replenished at the next compile
+					lastCompile.applied = [];
+					lastCompile.onDispose = [];
+					lastCompile.rendered = null;
 				}
 				resolve();
 			}.bind(this));
@@ -98,10 +114,10 @@
 			return new Promise(function(resolve){
 
 				$node || ($node = document);
-				var ready = this.cleanUp($node);
+				var ready = this.tearDown($node);
 
 				// reconcile the scope
-				this.traverse($node,$node.parentElement);
+				this.traverse($node);
 
 				var scopedNodes;
 				return ready.bind(this)
@@ -204,7 +220,7 @@
 									compiled.nodeId = nodeId;
 									compiled.rendered = rendered;
 									compiled.applied.push(fnGroupId);
-									compiled.onDispose.push(fnGroup.onDispose);
+									fnGroup.onDispose && compiled.onDispose.push(fnGroup.onDispose);
 									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
 									resolve(node);
 								}
@@ -216,46 +232,25 @@
 				.value();
 		},
 
-		flush: function(scope){
+		flush: function($node){
 
-			if(scope && scope !== document){
-
-				// flush a single scope
-				var identify = this.guid;
-				var scopeId = identify(scope);
-				var disposed = _.map(this.disposers[scopeId],function(disposer){
-					return new Promise(function(resolve,reject){
-						disposer();
-						resolve();
-					});
-				});
-
-				Promise.all(disposed).bind(this).then(function(){
-					// flush the scope's cache of compiled elements and disposer handlers
-					this.disposers[scopeId] = null;
-					this.nodeMap[scopeId] = null;
-				});
-
-			} else {
-
-				var disposed = _.chain(this.disposers)
-					.map(function(scoped,id){
-						return _.map(scoped,function(disposers){
-							return new Promise(function(resolve,reject){
-								disposer();
-								resolve();
-							});
-						});
-					})
-					.flatten()
-					.value();
-
-				Promise.all(disposed).bind(this).then(function(){
-					// flush entire cache
-					this.disposers = {};
-					this.nodeMap = {};
-				});
-			}
+			var toDispose = this.getScopedNodes($node);
+			return Promise.all(
+				_(toDispose)
+				.chain()
+				.map(function(obj){
+					return obj.nodes;
+				})
+				.flatten()
+				.map(function(node){
+					return this.tearDown(node);
+				},this)
+				.value()
+			)
+			.bind(this)
+			.then(function(){
+				return this.tearDown($node);
+			});
 		},
 
 		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
@@ -290,14 +285,14 @@
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			//Compiler.flush(page);
+			Compiler.flush(page);
 		}
 	})
 	.any('routing:complete',function(e){
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			//Compiler.compileAll(scope);
+			Compiler.compileAll(scope);
 		}
 	});
 

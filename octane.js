@@ -23867,6 +23867,7 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		compilers:{},
 		disposers:{},
 
+		/*
 		traverse: function(node,parentNode){
 			var n = 0;
 			if(!parentNode){
@@ -23881,6 +23882,21 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 					n++;
 					node = node.nextElementSibling;
 				}
+			}
+		},
+		*/
+
+		traverse: function(node){
+			var n = 0;
+			if(node === document){
+				node.dataset = {octaneScope: n};
+			}
+			if(node.children){
+				_.each(node.children,function(child){
+					child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
+					this.traverse(child);
+					n++;
+				},this);
 			}
 		},
 
@@ -23909,17 +23925,17 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		},
 
 		// teardown anything left from a previous compile using the onDispose handler passed by .assign
-		cleanUp: function(node){
+		tearDown: function(node){
 			return new Promise(function(resolve){
 				var lastCompile;
-				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope)) && lastCompile.nodeId !== this.guid(node) ){
-						_.each(lastCompile.onDispose,function(fn){
-							fn(lastCompile.element);
-						});
-						// clear the onDispose handlers, they will be replenished at the next compile
-						lastCompile.applied = [];
-						lastCompile.onDispose = [];
-						lastCompile.rendered = null;
+				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope+'.compiled')) && lastCompile.nodeId !== this.guid(node) ){
+					_.each(lastCompile.onDispose,function(fn){
+						fn(lastCompile.element);
+					});
+					// clear the onDispose handlers, they will be replenished at the next compile
+					lastCompile.applied = [];
+					lastCompile.onDispose = [];
+					lastCompile.rendered = null;
 				}
 				resolve();
 			}.bind(this));
@@ -23930,9 +23946,9 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 			return new Promise(function(resolve){
 
 				$node || ($node = document);
-				var ready = this.cleanUp($node);
+				var ready = this.tearDown($node);
 
-				// re-parse the scope
+				// reconcile the scope
 				this.traverse($node,$node.parentElement);
 
 				var scopedNodes;
@@ -23941,7 +23957,7 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 					return scopedNodes = this.getScopedNodes($node);
 				})
 				.bind(this)
-				.then(this.compileChildScopes)
+				.then(this._compileChildScopes)
 				.then(function(childScopes){
 					if(childScopes.length){
 						_.each(scopedNodes,function(nodeObject){
@@ -23951,9 +23967,9 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 					return _.map(scopedNodes,function(nodeObj){
 						return Compiler._compile(nodeObj);
 					});
-				}).then(function(ret){
+				}).then(function(compiled){
 					resolve(Promise.all(
-						_(ret)
+						_(compiled)
 						.chain()
 						.flattenDeep()
 						.compact()
@@ -23964,19 +23980,18 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		},
 
 		// recursively run compilation on nodes to create child scopes
-		compileChildScopes: function(scopes){
+		_compileChildScopes: function(scopes){
 			return Promise.all(
 				_(scopes)
 				.chain()
 				.map(function(scope){
 					if(scope.nodes && scope.nodes.length){
-						//console.log('in scope nodes',scope.nodes);
 						return _(scope.nodes)
-							.chain()
-							.map(Compiler.compileAll,Compiler)
-							.compact()
-							.flattenDeep()
-							.value();
+						.chain()
+						.map(Compiler.compileAll,Compiler)
+						.compact()
+						.flattenDeep()
+						.value();
 					}
 				})
 				.flatten()
@@ -24001,10 +24016,7 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 				.map(function(fnGroup){
 
 					if(obj.id === fnGroup.groupName){
-						//console.log('groupName',fnGroup.groupName);
-						//console.log('obj.id',obj.id);
 						return _.map(obj.nodes,function(node){
-							//console.log('node being compiled',node);
 							return new Promise(function(resolve){
 
 								var fnGroupId = Compiler.guid(fnGroup);
@@ -24040,7 +24052,7 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 									compiled.nodeId = nodeId;
 									compiled.rendered = rendered;
 									compiled.applied.push(fnGroupId);
-									compiled.onDispose.push(fnGroup.onDispose);
+									fnGroup.onDispose && compiled.onDispose.push(fnGroup.onDispose);
 									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
 									resolve(node);
 								}
@@ -24052,46 +24064,25 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 				.value();
 		},
 
-		flush: function(scope){
+		flush: function($node){
 
-			if(scope && scope !== document){
-
-				// flush a single scope
-				var identify = this.guid;
-				var scopeId = identify(scope);
-				var disposed = _.map(this.disposers[scopeId],function(disposer){
-					return new Promise(function(resolve,reject){
-						disposer();
-						resolve();
-					});
-				});
-
-				Promise.all(disposed).bind(this).then(function(){
-					// flush the scope's cache of compiled elements and disposer handlers
-					this.disposers[scopeId] = null;
-					this.nodeMap[scopeId] = null;
-				});
-
-			} else {
-
-				var disposed = _.chain(this.disposers)
-					.map(function(scoped,id){
-						return _.map(scoped,function(disposers){
-							return new Promise(function(resolve,reject){
-								disposer();
-								resolve();
-							});
-						});
-					})
-					.flatten()
-					.value();
-
-				Promise.all(disposed).bind(this).then(function(){
-					// flush entire cache
-					this.disposers = {};
-					this.nodeMap = {};
-				});
-			}
+			var toDispose = this.getScopedNodes($node);
+			return Promise.all(
+				_(toDispose)
+				.chain()
+				.map(function(obj){
+					return obj.nodes;
+				})
+				.flatten()
+				.map(function(node){
+					return this.tearDown(node);
+				},this)
+				.value()
+			)
+			.bind(this)
+			.then(function(){
+				return this.tearDown($node);
+			});
 		},
 
 		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
@@ -24126,14 +24117,14 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			//Compiler.flush(page);
+			Compiler.flush(page);
 		}
 	})
 	.any('routing:complete',function(e){
 		if(e.detail){
 			var page = e.detail.page;
 			var scope = _octane.pages[page].view;
-			//Compiler.compileAll(scope);
+			Compiler.compileAll(scope);
 		}
 	});
 
