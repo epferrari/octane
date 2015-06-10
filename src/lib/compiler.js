@@ -54,7 +54,19 @@
 		},
 		*/
 
-		traverse: function(node){
+		traverseAsync: function(node){
+				var onComplete,onFail;
+				var promise = new Promise(function(res,rej){
+					onComplete = res;
+					onFail = rej;
+				});
+
+				this.traverse(node,onComplete);
+
+				return promise;
+		},
+
+		traverse: function(node,cb){
 			var n = 0;
 			if(node === document){
 				node.dataset = {octaneScope: n};
@@ -66,15 +78,19 @@
 					n++;
 				},this);
 			}
-		},
+			cb && cb();
+		}
 
 		assign: function(qselector,onCompile,onDispose){
 			var ords = this.ordinances;
-			(ords[qselector]||(ords[qselector]=[])).push({
-				groupName: qselector,
+			// give the assignment object a unique id
+			var ord = {
+				name: qselector,
 				onCompile: onCompile,
 				onDispose: onDispose
-			});
+			};
+			var key = Compiler.guid(ord);
+			(ords[qselector]||(ords[qselector]={}))[key] = ord;
 			return this;
 		},
 
@@ -90,6 +106,109 @@
 			.flatten()
 			.compact()
 			.value();
+		},
+
+		convertToScopesPath: function(path){
+			return octaneScopes.replace(/\./g,'.children');
+		},
+
+		// a temporary tree for diffing
+		getDiffTree: function($node){
+
+				// node is not in the same place on the DOM, so we don't even have to see if the ordinances are applied
+				// reject and recompile
+				if($node !== this.find($node.dataset.octaneScope)) return Promise.reject($node);
+
+				// ensure the DOM nodes have the proper data-octane-scope attribute
+				return this.traverseAsync($node)
+				.bind(this)
+				.then(function(){
+
+					_(this.ordinances)
+					.chain()
+					.map(function(ord,qselector){
+						// return an array of objects
+						return ord;
+					})
+					/**
+					*
+					* [
+					*		{
+					*			id*:{groupName:*,onCompile:*,onDispose:*},
+					*			id*:{groupName:*,onCompile:*,onDispose:*},
+					*			id*:{groupName:*,onCompile:*,onDispose:*}
+					*		},
+					*		{
+					*			id*:{groupName:*,onCompile:*,onDispose:*},
+					*			id*:{groupName:*,onCompile:*,onDispose:*},
+					*			id*:{groupName:*,onCompile:*,onDispose:*}
+					*		}
+					* ]
+					*/
+					.map(function(ord,key)){
+						return new Promise(function(resolve){
+							ord.nodes = $node.querySelectorAll(ord.name);
+							ord.key = key;
+							resolve(ord);
+						});
+					})
+					.tap(Promise.all)
+					.value()
+					.map(function(ord){
+						var name = ord.name;
+						var key = ord.key;
+						return _.map(ord.nodes,function(node){
+							return {
+								node: node,
+								name: name,
+								key: key
+							};
+						})
+					})
+					.then(_.flatten);
+					})
+					.reduce(function(scopes,result)){
+							var scopeObject;
+							var domPath = res.node.dataset.octaneScope;
+							var path = Compiler.convertToScopesPath(domPath);
+
+							if(scopeObject = _.get(scopes,path)){
+								// add the ordinance key to a path nested in the
+								// temporary scopes tree
+								// we're assuming for comparison that the key has been compiled on node
+								// If there's a discrepancy with the actual Compiler.scopes when we diff,
+								// we recompile the node.
+								scopeObject.didCompile.push(res.key);
+							} else {
+								// create a new scopeObejct for the temp scope tree at scopePath
+								scopeObject = {
+									children: {},
+									didCompile: [key],
+									DOMnode: function(){
+										return Compiler.find(domPath);
+									}
+								};
+							}
+							// set the scopeObject into the temp scope tree
+							_.set(scopes,path,scopeObject);
+
+							return scopes;
+						})
+					},{});
+		},
+
+		compareDiffTree: function($node){
+			return this.getDiffTree($node)
+			.bind(this)
+			.then(function(cur){
+				var prev = _.get(this.scopes,this.convertToScopesPath($node.dataset.octaneScope));
+				if(cur !== prev){
+					return this.compileAll($node);
+				}
+			})
+			.catch(function(failedNode){
+				return this.compileAll(failedNode);
+			})
 		},
 
 		// teardown anything left from a previous compile using the onDispose handler passed by .assign
