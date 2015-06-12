@@ -76,6 +76,7 @@
 					'<li o-control="(click)[Debug.getModels]"><i class="fa fa-database"></i>Models</li>',
 					'<li o-control="(click)[Debug.getControllers]"><i class="fa fa-shield"></i>Controllers</li>',
 					'<li o-control="(click)[Debug.getEvents]"><i class="fa fa-bolt"></i>Events</li>',
+					'<li o-control="(click)[Debug.getEventMap]"><i class="fa fa-bolt"></i>EventsMap</li>',
 					'<li o-control="(click)[Debug.getFilters]"><i class="fa fa-filter"></i>Filters</li>',
 					'<li o-control="(click)[Debug.getModules]"><i class="fa fa-plug"></i>Modules</li>',
 					'<li o-control="(click)[Debug.hideConsole]"><i class="fa fa-remove"></i>Hide</li>',

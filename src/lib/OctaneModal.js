@@ -41,7 +41,7 @@
 		constructor: 	OctaneModal,
 		defaultPos: 'bottom',
 		initialize: function(elem){
-
+			
 			if(!elem) throw new Error('Must pass an HTMLElement to OctaneModal');
 
 			this.prepareFrame(elem);

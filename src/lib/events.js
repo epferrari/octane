@@ -27,8 +27,8 @@
 	// Mixin for objects to interface with the Quarterback
 	var Events = {
 
-		// 2 args: add a callback to be executed when THIS object fires an event
-		// 3 args: add a callback to be executed when SRC object fires an event
+		// 2 args: add a callback to be executed when `this` object fires an event
+		// 3 args: add a callback to be executed when `src` object fires an event
 		on: function(event,src,handler){
 			this._ensureEventInterface();
 			if(arguments.length === 2){
@@ -40,7 +40,7 @@
 			// chainable
 		},
 
-		// add a callback to execute whenever event is fired, from any object
+		// add a callback for `this` to execute whenever event is fired, from any object
 		any: function(event,handler){
 			this._ensureEventInterface();
 			this._registerHandler(event,null,handler);
@@ -48,7 +48,8 @@
 			//chainable
 		},
 
-		// handle a callback from an event one time
+		// make `this` handle an `eventType` one time
+		// pass third argument `src` to have `this` handle one `eventType` from `src`
 		once: function(eventType,src,handler){
 			this._ensureEventInterface();
 			if(arguments.length === 2){
@@ -64,7 +65,7 @@
 			this._registerHandler(eventType,src,wrapper);
 		},
 
-		// stop listening for event on THIS
+		// stop listening for event on `this`
 		off: function(eventType){
 			this._ensureEventInterface();
 			var events = this._events_;
@@ -74,30 +75,45 @@
 			}
 		},
 
-		// call with eventType and src: stop listening for event on SRC
-		// call with only eventType: stop listening for an event anywhere
-		forget: function(eventType,src){
+		// call with all three params: stop `this` from handling `eventType` from `src` with `handler`
+		// call with eventType and src: stop `this` from listening for `eventType` from `src`
+		// call with only eventType: stop `this` from listening for `eventType` completely
+		forget: function(eventType,src,handler){
 			this._ensureEventInterface();
 			var events = this._events_;
-			if(arguments.length === 2){
+			var aLength = arguments.length;
+			if(aLength === 3){
 				var srcId = this.guid(src);
 				if(events[srcId]){
-					delete events[srcId][eventType];
+					_.pull(events[srcId],handler)
+				}
+			} else if(aLength === 2){
+				var srcId = this.guid(src);
+				if(events[srcId]){
+					events[srcId][eventType] = null;
 				}
 			}else{
 				_.pull(this._listening_,eventType);
-				_.forOwn(events,function(src){
-					delete src[eventType];
+				_.forOwn(events,function(srcId){
+					srcId[eventType] = null;
 				});
 				Quarterback.unregister(this.guid(),eventType);
 			}
 		},
 
-		// fire an interal event from this object
+		forgetFrom: function(src){
+			this._ensureEventInterface();
+			var srcId = this.guid(src);
+			this._events_[srcId] = null;
+		},
+
+		// fire an interal event from `this`
 		fire: function(event,detail){
 			this._ensureEventInterface();
 			Quarterback.normalizeOctaneEvent(event,this,detail);
 		},
+
+		// private registration with the Quarterback
 		_registerHandler: function(event,src,handler){
 			this._ensureEventInterface();
 			var eventTypes = event ? event.split(' ') : [];
@@ -126,8 +142,8 @@
 			return this;
 		},
 
-		// initialize Event interface instance properties on an implementing object
-		// invoked the first time an implementor uses an iterface method
+		// initialize Event interface instance properties on `this`, ensuring it implements the Event API.
+		// invoked the first time the implementation uses an iterface method
 		_ensureEventInterface: function(){
 
 			if(this.eventsInitialized) return;

@@ -30,6 +30,9 @@
 
 		normalizeDOMEvent: function(DOMevent){
 			if(!DOMevent) return;
+			DOMevent.stopPropagation();
+			DOMevent.stopImmediatePropagation();
+			DOMevent.preventDefault();
 			var target = DOMevent.target||DOMevent.srcElement;
 			var e = {
 				preventDefault: DOMevent.preventDefault.bind(DOMevent),
@@ -93,10 +96,11 @@
 		},
 
 		delegateEvent: function(e){
+			console.log('event src',e.target);
 			var events    = this._events_;
 			var eventType = e.type;
 			var src       = e.target;
-			var src_id    = src.octane_id;
+			var src_id    = src.octane_id || (src.dataset && src.dataset.octaneScope);
 			var handlers  = (events[src_id] && events[src_id][eventType]) ? events[src_id][eventType] : [];
 			var errDetail = 'An event handler failed for "'+eventType+'" at dispatch to '+utils.guid(this)+'. Check event map.';
 
@@ -108,7 +112,9 @@
 				return new Promise(function(resolve,reject){
 					var toh = utils.typeOf(handler);
 					var result;
-
+					//console.log('handler',handler);
+					//console.log('event',e.type);
+					console.log('event src id',src_id);
 					if(toh === 'function'){
 						try {
 							result = handler.apply(this,[e,src]);

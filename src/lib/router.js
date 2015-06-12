@@ -843,10 +843,12 @@
 	Compiler
 	// send routes to Router onclick
 	.assign('a.route',function(elem){
+		console.log(elem.addEventListener);
 		elem.addEventListener('click',function(e){
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
+			console.log(e);
+				//e.preventDefault();
+				//e.stopPropagation();
+				//e.stopImmediatePropagation();
 				var route = this.getAttribute('href');
 
 				if(location.href !== this.href) Router.route(route);

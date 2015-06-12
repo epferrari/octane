@@ -23864,46 +23864,44 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		compilers:{},
 		disposers:{},
 
-		/*
-		traverse: function(node,parentNode){
-			var n = 0;
-			if(!parentNode){
-				node = document;
-				node.dataset = {octaneScope:n};
-				this.traverse(node.firstElementChild,node);
-			} else {
-				var n = _.indexOf(parentNode.children,node);
-				while(node){
-					node.dataset.octaneScope = parentNode.dataset.octaneScope + '.' + n;
-					if(node.children) this.traverse(node.firstElementChild,node);
-					n++;
-					node = node.nextElementSibling;
-				}
-			}
-		},
-		*/
+		traverseAsync: function(node){
+			var onComplete,onFail;
+			var promise = new Promise(function(res,rej){
+				onComplete = res;
+				onFail = rej;
+			});
 
-		traverse: function(node){
+			this.traverseSync(node,onComplete);
+			return promise;
+		},
+
+		traverseSync: function(node,cb){
 			var n = 0;
 			if(node === document){
-				node.dataset = {octaneScope: n};
+				node.dataset = {octaneScope: 0};
 			}
-			if(node.children){
-				_.each(node.children,function(child){
-					child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
-					this.traverse(child);
-					n++;
-				},this);
+			_.each(node.children,function(child){
+				child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
+				this.traverseSync(child);
+				n++;
+			},this);
+			if(cb){
+				cb(node);
+			} else {
+				return node;
 			}
 		},
 
 		assign: function(qselector,onCompile,onDispose){
 			var ords = this.ordinances;
-			(ords[qselector]||(ords[qselector]=[])).push({
-				groupName: qselector,
+			// give the assignment object a unique id
+			var ord = {
+				selector: qselector,
 				onCompile: onCompile,
 				onDispose: onDispose
-			});
+			};
+			var key = Compiler.guid(ord);
+			(ords[qselector]||(ords[qselector]={}))[key] = ord;
 			return this;
 		},
 
@@ -23921,166 +23919,182 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 			.value();
 		},
 
-		// teardown anything left from a previous compile using the onDispose handler passed by .assign
-		tearDown: function(node){
-			return new Promise(function(resolve){
-				var lastCompile;
-				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope+'.compiled')) && lastCompile.nodeId !== this.guid(node) ){
-					_.each(lastCompile.onDispose,function(fn){
-						fn(lastCompile.element);
-					});
-					// clear the onDispose handlers, they will be replenished at the next compile
-					lastCompile.applied = [];
-					lastCompile.onDispose = [];
-					lastCompile.rendered = null;
-				}
-				resolve();
-			}.bind(this));
+		convertToScopesPath: function(path){
+			//return path && path.replace(/\./g,'.children.');
+			return path;
 		},
+
+		// a temporary tree for diffing
+		getDiffTree: function($node){
+
+				// ensure the DOM nodes have the proper data-octane-scope attribute
+				return this.traverseAsync($node)
+				.bind(this)
+				.then(function(){
+					return _(this.ordinances)
+					.chain()
+					.reduce(function(acc,ords){
+						return _.merge(acc,ords);
+					})
+					.map(function(ord,key){
+						return new Promise(function(resolve){
+							var nodes = $node.querySelectorAll(ord.selector);
+							// cthe _.get() path for the ordinance object in Compiler.ordinances
+							var path = ord.selector + '.' + key;
+							var nodeMap = _.map(nodes,function(node){
+								return {
+									node: node,
+									ordinance: ord
+								};
+							});
+							resolve(nodeMap);
+						});
+					})
+					.thru(function(arr){
+						return Promise.all(arr);
+					})
+					.value()
+					.then(_.flatten)
+					.reduce(function(scopes,result){
+						var scopeObject;
+						var domPath = result.node.dataset.octaneScope;
+						console.log('DOM PATH',domPath);
+						if(scopeObject = _.get(scopes,domPath)){
+							// add the ordinance key to a path nested in the
+							// temporary scopes tree
+							// we're assuming for comparison that the key has been compiled on node
+							// If there's a discrepancy with the actual Compiler.scopes when we diff,
+							// we recompile the node.
+							(scopeObject.didCompile || (scopeObject.didCompile = [])).push(result.ordinance);
+						} else {
+							// create a new scopeObejct for the temp scope tree at scopePath
+							scopeObject = {
+								didCompile: [result.ordinance],
+							};
+						}
+							if(!scopeObject.DOMnode){
+								Object.defineProperty(scopeObject,'DOMnode',{
+									get: function(){
+										return Compiler.find(domPath);
+									}
+								});
+							}
+						// set the scopeObject into the temp scope tree
+						_.set(scopes,domPath,scopeObject);
+						return scopes;
+					},{});
+				});
+		},
+
+
+		/**
+		*
+		* @param diffTree {object} A temporary scope object created from a node with `.getDiffTree`
+		* @param atPath {string} The data-octane-scope path of a node, ex. `0.0.0.1.2`
+		*/
+		diff: function(diffTree,path){
+			//console.log('diffTree',diffTree);
+			console.log('path',path);
+			var prevScope = _.get(Compiler.scopes,path);
+
+			if(diffTree == prevScope || _.isEmpty(diffTree)) {
+				return Promise.resolve();
+			}else{
+
+				//console.log('diffing');
+				// else the tree is not the same as what's on the DOM at this level, diff it in 4 steps
+				return new Promise(function(resolve){
+
+
+
+					// (2) apply applicable ordinances at root level of the diffTree
+					_.each(diffTree.didCompile,function(ord){
+						if(!prevScope || (prevScope && !_.contains(prevScope.didCompile,ord))){
+							if(prevScope){
+
+								// (1) drop the data-octane-scope's handlers from the Event system to manage memory and performance
+								Compiler.forgetFrom({octane_id:path});
+								// call any additional dispose handlers defined by ordinances
+								prevScope && _.each(prevScope.didCompile,function(ord){
+									//var onDisposeFunc = _.get(Compiler.ordinances,ordId +'.onDispose');
+									//onDisposeFunc.call();
+									ord.onDispose && ord.onDispose();
+								});
+								//console.log('prevScope.didCompile',prevScope.didCompile);
+								//console.log('difftree.didCompile',diffTree.didCompile);
+							}
+							var onCompileFunc = ord.onCompile;
+							var elem,attr,val;
+
+							if( elem = diffTree.DOMnode ){
+								// elem now equals the current element at 0.x.x.x position on the DOM
+								// TODO: leaving pseudo-guid for now but will replace with data-octane-scope use in Quarterback
+								elem.octane_id = path;
+								if(attr = ord.selector.match(/^\[(.*)\]$/)){
+										attr = attr[1];
+										val = elem.getAttribute(attr);
+								}
+
+								// polymorph elem's native `.addEventListener` and `.removeEventListener`
+								// methods to use the Octane Event API
+								elem.addEventListener = function(event,handler,useCapture){
+									//console.log('event listener added',event);
+									//console.log('path',path);
+									//console.log('id',elem.octane_id);
+									console.log(path);
+									Compiler.on(event,{octane_id:path},handler);
+								};
+								elem.removeEventListener = function(event,handler){
+									Compiler.forget(event,{octane_id:path},handler);
+								};
+
+								// call the compiler function with on the current node
+								onCompileFunc(elem,val);
+							}
+						}
+					});
+					// (3) recursively apply diffs to children of this scope
+					// maybe this takes some time, so let's do it async
+					//console.log('diffTree',diffTree);
+					_(diffTree)
+					.chain()
+					.map(function(child,key){
+						//console.log('key',key);
+						//console.log('parsed int',parseInt(key));
+						if(key != 'didCompile' && key != 'DOMnode'){
+							var $path = path +'.'+key;
+							return Compiler.diff(child,$path);
+						}
+					})
+					.thru(function(arr){
+						return Promise.all(arr);
+					})
+					.value()
+					// (4) replace the Compiler.scopes tree with the diffTree
+					.then(function(){
+						diffTree = _.toPlainObject(diffTree);
+						//console.log('object ensured diffTree',diffTree)
+						//console.log(_.get(Compiler.scopes,path));
+
+						_.set(Compiler.scopes,path,diffTree);
+					})
+					// resolve this diff operation
+					.then(resolve);
+				}.bind(this));
+			}
+		},
+
 
 		compileAll: function($node){
-			//console.log('compiling',$node);
-			return new Promise(function(resolve){
-
-				$node || ($node = document);
-				var ready = this.tearDown($node);
-
-				// reconcile the scope
-				this.traverse($node);
-
-				var scopedNodes;
-				return ready.bind(this)
-				.then(function(){
-					return scopedNodes = this.getScopedNodes($node);
-				})
-				.bind(this)
-				.then(this._compileChildScopes)
-				.then(function(childScopes){
-					if(childScopes.length){
-						_.each(scopedNodes,function(nodeObject){
-							nodeObject.nodes = _.difference(nodeObject.nodes,childScopes);
-						});
-					}
-					return _.map(scopedNodes,function(nodeObj){
-						return Compiler._compile(nodeObj);
-					});
-				}).then(function(compiled){
-					resolve(Promise.all(
-						_(compiled)
-						.chain()
-						.flattenDeep()
-						.compact()
-						.value()
-					));
-				});
-			}.bind(this));
-		},
-
-		// recursively run compilation on nodes to create child scopes
-		_compileChildScopes: function(scopes){
-			return Promise.all(
-				_(scopes)
-				.chain()
-				.map(function(scope){
-					if(scope.nodes && scope.nodes.length){
-						return _(scope.nodes)
-						.chain()
-						.map(Compiler.compileAll,Compiler)
-						.compact()
-						.flattenDeep()
-						.value();
-					}
-				})
-				.flatten()
-				.compact()
-				.value()
-			).then(function(res){
-				return Promise.all(_(res)
-				.chain()
-				.flattenDeep()
-				.compact()
-				.value());
+			console.log($node);
+			$node || ($node = document);
+			var diffTree = this.getDiffTree($node);
+			// $node.dataset.octaneScope will be set on $node when `Compiler.traverseAsync`
+			return diffTree.bind(this).then(function(tree){
+				return this.diff(tree,$node.dataset.octaneScope);
 			});
 		},
 
-		_compile: function(obj){
-			return _(Compiler.ordinances)
-				.chain()
-				.map(function(arr,qselector){
-					return arr;
-				})
-				.flatten()
-				.map(function(fnGroup){
-
-					if(obj.id === fnGroup.groupName){
-						return _.map(obj.nodes,function(node){
-							return new Promise(function(resolve){
-
-								var fnGroupId = Compiler.guid(fnGroup);
-								var $scopes = Compiler.scopes;
-								var octaneScope = node.dataset.octaneScope;
-								var nodeId = Compiler.guid(node);
-								var path = octaneScope+'.compiled';
-								var compiled = _.get($scopes,path);
-								var val,attr;
-
-								if(compiled && compiled.nodeId === nodeId && _.contains(compiled.applied,fnGroupId)){
-									// already compiled, return early
-									resolve(node);
-								} else {
-
-									if(attr = fnGroup.groupName.match(/\[(.*)\]/)){
-										attr = attr[1];
-										val = node.getAttribute(attr);
-									}
-									var rendered = fnGroup.onCompile(node,val);
-
-									if(!compiled){
-										_.set($scopes,path,{
-											applied: [],
-											onDispose: [],
-											get element(){
-												return Compiler.find(octaneScope);
-											}
-										});
-										compiled = _.get(Compiler.scopes,path);
-									}
-
-									compiled.nodeId = nodeId;
-									compiled.rendered = rendered;
-									compiled.applied.push(fnGroupId);
-									fnGroup.onDispose && compiled.onDispose.push(fnGroup.onDispose);
-									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
-									resolve(node);
-								}
-							});
-						});
-					}
-				})
-				.flatten()
-				.value();
-		},
-
-		flush: function($node){
-
-			var toDispose = this.getScopedNodes($node);
-			return Promise.all(
-				_(toDispose)
-				.chain()
-				.map(function(obj){
-					return obj.nodes;
-				})
-				.flatten()
-				.map(function(node){
-					return this.tearDown(node);
-				},this)
-				.value()
-			)
-			.bind(this)
-			.then(function(){
-				return this.tearDown($node);
-			});
-		},
 
 		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
 		// precision querySelection
@@ -24109,6 +24123,7 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 		},
 	});
 
+	/*
 	Compiler
 	.any('page:exiting',function(e){
 		if(e.detail){
@@ -24124,6 +24139,8 @@ var css = ".frame-left{-webkit-transform:translateX(-100%);-ms-transform:transla
 			Compiler.compileAll(scope);
 		}
 	});
+	*/
+
 
 	global.Compiler = Compiler;
 
@@ -24327,8 +24344,8 @@ module.exports = OctaneController;
 	// Mixin for objects to interface with the Quarterback
 	var Events = {
 
-		// 2 args: add a callback to be executed when THIS object fires an event
-		// 3 args: add a callback to be executed when SRC object fires an event
+		// 2 args: add a callback to be executed when `this` object fires an event
+		// 3 args: add a callback to be executed when `src` object fires an event
 		on: function(event,src,handler){
 			this._ensureEventInterface();
 			if(arguments.length === 2){
@@ -24340,7 +24357,7 @@ module.exports = OctaneController;
 			// chainable
 		},
 
-		// add a callback to execute whenever event is fired, from any object
+		// add a callback for `this` to execute whenever event is fired, from any object
 		any: function(event,handler){
 			this._ensureEventInterface();
 			this._registerHandler(event,null,handler);
@@ -24348,7 +24365,8 @@ module.exports = OctaneController;
 			//chainable
 		},
 
-		// handle a callback from an event one time
+		// make `this` handle an `eventType` one time
+		// pass third argument `src` to have `this` handle one `eventType` from `src`
 		once: function(eventType,src,handler){
 			this._ensureEventInterface();
 			if(arguments.length === 2){
@@ -24364,7 +24382,7 @@ module.exports = OctaneController;
 			this._registerHandler(eventType,src,wrapper);
 		},
 
-		// stop listening for event on THIS
+		// stop listening for event on `this`
 		off: function(eventType){
 			this._ensureEventInterface();
 			var events = this._events_;
@@ -24374,30 +24392,45 @@ module.exports = OctaneController;
 			}
 		},
 
-		// call with eventType and src: stop listening for event on SRC
-		// call with only eventType: stop listening for an event anywhere
-		forget: function(eventType,src){
+		// call with all three params: stop `this` from handling `eventType` from `src` with `handler`
+		// call with eventType and src: stop `this` from listening for `eventType` from `src`
+		// call with only eventType: stop `this` from listening for `eventType` completely
+		forget: function(eventType,src,handler){
 			this._ensureEventInterface();
 			var events = this._events_;
-			if(arguments.length === 2){
+			var aLength = arguments.length;
+			if(aLength === 3){
 				var srcId = this.guid(src);
 				if(events[srcId]){
-					delete events[srcId][eventType];
+					_.pull(events[srcId],handler)
+				}
+			} else if(aLength === 2){
+				var srcId = this.guid(src);
+				if(events[srcId]){
+					events[srcId][eventType] = null;
 				}
 			}else{
 				_.pull(this._listening_,eventType);
-				_.forOwn(events,function(src){
-					delete src[eventType];
+				_.forOwn(events,function(srcId){
+					srcId[eventType] = null;
 				});
 				Quarterback.unregister(this.guid(),eventType);
 			}
 		},
 
-		// fire an interal event from this object
+		forgetFrom: function(src){
+			this._ensureEventInterface();
+			var srcId = this.guid(src);
+			this._events_[srcId] = null;
+		},
+
+		// fire an interal event from `this`
 		fire: function(event,detail){
 			this._ensureEventInterface();
 			Quarterback.normalizeOctaneEvent(event,this,detail);
 		},
+
+		// private registration with the Quarterback
 		_registerHandler: function(event,src,handler){
 			this._ensureEventInterface();
 			var eventTypes = event ? event.split(' ') : [];
@@ -24426,8 +24459,8 @@ module.exports = OctaneController;
 			return this;
 		},
 
-		// initialize Event interface instance properties on an implementing object
-		// invoked the first time an implementor uses an iterface method
+		// initialize Event interface instance properties on `this`, ensuring it implements the Event API.
+		// invoked the first time the implementation uses an iterface method
 		_ensureEventInterface: function(){
 
 			if(this.eventsInitialized) return;
@@ -24748,7 +24781,7 @@ module.exports = Factory;
 		constructor: 	OctaneModal,
 		defaultPos: 'bottom',
 		initialize: function(elem){
-
+			
 			if(!elem) throw new Error('Must pass an HTMLElement to OctaneModal');
 
 			this.prepareFrame(elem);
@@ -25632,6 +25665,9 @@ module.exports = OctaneModel;
 
 		normalizeDOMEvent: function(DOMevent){
 			if(!DOMevent) return;
+			DOMevent.stopPropagation();
+			DOMevent.stopImmediatePropagation();
+			DOMevent.preventDefault();
 			var target = DOMevent.target||DOMevent.srcElement;
 			var e = {
 				preventDefault: DOMevent.preventDefault.bind(DOMevent),
@@ -25695,10 +25731,11 @@ module.exports = OctaneModel;
 		},
 
 		delegateEvent: function(e){
+			console.log('event src',e.target);
 			var events    = this._events_;
 			var eventType = e.type;
 			var src       = e.target;
-			var src_id    = src.octane_id;
+			var src_id    = src.octane_id || (src.dataset && src.dataset.octaneScope);
 			var handlers  = (events[src_id] && events[src_id][eventType]) ? events[src_id][eventType] : [];
 			var errDetail = 'An event handler failed for "'+eventType+'" at dispatch to '+utils.guid(this)+'. Check event map.';
 
@@ -25710,7 +25747,9 @@ module.exports = OctaneModel;
 				return new Promise(function(resolve,reject){
 					var toh = utils.typeOf(handler);
 					var result;
-
+					//console.log('handler',handler);
+					//console.log('event',e.type);
+					console.log('event src id',src_id);
 					if(toh === 'function'){
 						try {
 							result = handler.apply(this,[e,src]);
@@ -26586,10 +26625,12 @@ module.exports = OctaneModel;
 	Compiler
 	// send routes to Router onclick
 	.assign('a.route',function(elem){
+		console.log(elem.addEventListener);
 		elem.addEventListener('click',function(e){
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
+			console.log(e);
+				//e.preventDefault();
+				//e.stopPropagation();
+				//e.stopImmediatePropagation();
 				var route = this.getAttribute('href');
 
 				if(location.href !== this.href) Router.route(route);
@@ -27374,6 +27415,7 @@ module.exports = AppModel;
 					'<li o-control="(click)[Debug.getModels]"><i class="fa fa-database"></i>Models</li>',
 					'<li o-control="(click)[Debug.getControllers]"><i class="fa fa-shield"></i>Controllers</li>',
 					'<li o-control="(click)[Debug.getEvents]"><i class="fa fa-bolt"></i>Events</li>',
+					'<li o-control="(click)[Debug.getEventMap]"><i class="fa fa-bolt"></i>EventsMap</li>',
 					'<li o-control="(click)[Debug.getFilters]"><i class="fa fa-filter"></i>Filters</li>',
 					'<li o-control="(click)[Debug.getModules]"><i class="fa fa-plug"></i>Modules</li>',
 					'<li o-control="(click)[Debug.hideConsole]"><i class="fa fa-remove"></i>Hide</li>',
@@ -27982,11 +28024,11 @@ var utils = {
 		if(obj.octane_id) return obj.octane_id;
 
 		var random4 = function() {
-			return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
+			return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toLowerCase();
 		};
 
 		Object.defineProperty(obj,'octane_id',{
-			value : random4() +'-'+ random4() +'-'+ random4() + random4(),
+			value : 'o' + random4() + random4() + random4() + random4(),
 			writable : false,
 			configurable : false,
 			enumerable : false

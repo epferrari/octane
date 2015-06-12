@@ -35,57 +35,39 @@
 		compilers:{},
 		disposers:{},
 
-		/*
-		traverse: function(node,parentNode){
-			var n = 0;
-			if(!parentNode){
-				node = document;
-				node.dataset = {octaneScope:n};
-				this.traverse(node.firstElementChild,node);
-			} else {
-				var n = _.indexOf(parentNode.children,node);
-				while(node){
-					node.dataset.octaneScope = parentNode.dataset.octaneScope + '.' + n;
-					if(node.children) this.traverse(node.firstElementChild,node);
-					n++;
-					node = node.nextElementSibling;
-				}
-			}
-		},
-		*/
-
 		traverseAsync: function(node){
-				var onComplete,onFail;
-				var promise = new Promise(function(res,rej){
-					onComplete = res;
-					onFail = rej;
-				});
+			var onComplete,onFail;
+			var promise = new Promise(function(res,rej){
+				onComplete = res;
+				onFail = rej;
+			});
 
-				this.traverse(node,onComplete);
-
-				return promise;
+			this.traverseSync(node,onComplete);
+			return promise;
 		},
 
-		traverse: function(node,cb){
+		traverseSync: function(node,cb){
 			var n = 0;
 			if(node === document){
-				node.dataset = {octaneScope: n};
+				node.dataset = {octaneScope: 0};
 			}
-			if(node.children){
-				_.each(node.children,function(child){
-					child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
-					this.traverse(child);
-					n++;
-				},this);
+			_.each(node.children,function(child){
+				child.dataset.octaneScope = node.dataset.octaneScope + '.' + n;
+				this.traverseSync(child);
+				n++;
+			},this);
+			if(cb){
+				cb(node);
+			} else {
+				return node;
 			}
-			cb && cb();
-		}
+		},
 
 		assign: function(qselector,onCompile,onDispose){
 			var ords = this.ordinances;
 			// give the assignment object a unique id
 			var ord = {
-				name: qselector,
+				selector: qselector,
 				onCompile: onCompile,
 				onDispose: onDispose
 			};
@@ -109,268 +91,181 @@
 		},
 
 		convertToScopesPath: function(path){
-			return octaneScopes.replace(/\./g,'.children');
+			//return path && path.replace(/\./g,'.children.');
+			return path;
 		},
 
 		// a temporary tree for diffing
 		getDiffTree: function($node){
 
-				// node is not in the same place on the DOM, so we don't even have to see if the ordinances are applied
-				// reject and recompile
-				if($node !== this.find($node.dataset.octaneScope)) return Promise.reject($node);
-
 				// ensure the DOM nodes have the proper data-octane-scope attribute
 				return this.traverseAsync($node)
 				.bind(this)
 				.then(function(){
-
-					_(this.ordinances)
+					return _(this.ordinances)
 					.chain()
-					.map(function(ord,qselector){
-						// return an array of objects
-						return ord;
+					.reduce(function(acc,ords){
+						return _.merge(acc,ords);
 					})
-					/**
-					*
-					* [
-					*		{
-					*			id*:{groupName:*,onCompile:*,onDispose:*},
-					*			id*:{groupName:*,onCompile:*,onDispose:*},
-					*			id*:{groupName:*,onCompile:*,onDispose:*}
-					*		},
-					*		{
-					*			id*:{groupName:*,onCompile:*,onDispose:*},
-					*			id*:{groupName:*,onCompile:*,onDispose:*},
-					*			id*:{groupName:*,onCompile:*,onDispose:*}
-					*		}
-					* ]
-					*/
-					.map(function(ord,key)){
+					.map(function(ord,key){
 						return new Promise(function(resolve){
-							ord.nodes = $node.querySelectorAll(ord.name);
-							ord.key = key;
-							resolve(ord);
+							var nodes = $node.querySelectorAll(ord.selector);
+							// cthe _.get() path for the ordinance object in Compiler.ordinances
+							var path = ord.selector + '.' + key;
+							var nodeMap = _.map(nodes,function(node){
+								return {
+									node: node,
+									ordinance: ord
+								};
+							});
+							resolve(nodeMap);
 						});
 					})
-					.tap(Promise.all)
+					.thru(function(arr){
+						return Promise.all(arr);
+					})
 					.value()
-					.map(function(ord){
-						var name = ord.name;
-						var key = ord.key;
-						return _.map(ord.nodes,function(node){
-							return {
-								node: node,
-								name: name,
-								key: key
+					.then(_.flatten)
+					.reduce(function(scopes,result){
+						var scopeObject;
+						var domPath = result.node.dataset.octaneScope;
+						console.log('DOM PATH',domPath);
+						if(scopeObject = _.get(scopes,domPath)){
+							// add the ordinance key to a path nested in the
+							// temporary scopes tree
+							// we're assuming for comparison that the key has been compiled on node
+							// If there's a discrepancy with the actual Compiler.scopes when we diff,
+							// we recompile the node.
+							(scopeObject.didCompile || (scopeObject.didCompile = [])).push(result.ordinance);
+						} else {
+							// create a new scopeObejct for the temp scope tree at scopePath
+							scopeObject = {
+								didCompile: [result.ordinance],
 							};
-						})
-					})
-					.then(_.flatten);
-					})
-					.reduce(function(scopes,result)){
-							var scopeObject;
-							var domPath = res.node.dataset.octaneScope;
-							var path = Compiler.convertToScopesPath(domPath);
-
-							if(scopeObject = _.get(scopes,path)){
-								// add the ordinance key to a path nested in the
-								// temporary scopes tree
-								// we're assuming for comparison that the key has been compiled on node
-								// If there's a discrepancy with the actual Compiler.scopes when we diff,
-								// we recompile the node.
-								scopeObject.didCompile.push(res.key);
-							} else {
-								// create a new scopeObejct for the temp scope tree at scopePath
-								scopeObject = {
-									children: {},
-									didCompile: [key],
-									DOMnode: function(){
+						}
+							if(!scopeObject.DOMnode){
+								Object.defineProperty(scopeObject,'DOMnode',{
+									get: function(){
 										return Compiler.find(domPath);
 									}
-								};
+								});
 							}
-							// set the scopeObject into the temp scope tree
-							_.set(scopes,path,scopeObject);
-
-							return scopes;
-						})
+						// set the scopeObject into the temp scope tree
+						_.set(scopes,domPath,scopeObject);
+						return scopes;
 					},{});
+				});
 		},
 
-		compareDiffTree: function($node){
-			return this.getDiffTree($node)
-			.bind(this)
-			.then(function(cur){
-				var prev = _.get(this.scopes,this.convertToScopesPath($node.dataset.octaneScope));
-				if(cur !== prev){
-					return this.compileAll($node);
-				}
-			})
-			.catch(function(failedNode){
-				return this.compileAll(failedNode);
-			})
-		},
 
-		// teardown anything left from a previous compile using the onDispose handler passed by .assign
-		tearDown: function(node){
-			return new Promise(function(resolve){
-				var lastCompile;
-				if(node.dataset && (lastCompile = _.get(this.scopes,node.dataset.octaneScope+'.compiled')) && lastCompile.nodeId !== this.guid(node) ){
-					_.each(lastCompile.onDispose,function(fn){
-						fn(lastCompile.element);
+		/**
+		*
+		* @param diffTree {object} A temporary scope object created from a node with `.getDiffTree`
+		* @param atPath {string} The data-octane-scope path of a node, ex. `0.0.0.1.2`
+		*/
+		diff: function(diffTree,path){
+			//console.log('diffTree',diffTree);
+			console.log('path',path);
+			var prevScope = _.get(Compiler.scopes,path);
+
+			if(diffTree == prevScope || _.isEmpty(diffTree)) {
+				return Promise.resolve();
+			}else{
+
+				//console.log('diffing');
+				// else the tree is not the same as what's on the DOM at this level, diff it in 4 steps
+				return new Promise(function(resolve){
+
+
+
+					// (2) apply applicable ordinances at root level of the diffTree
+					_.each(diffTree.didCompile,function(ord){
+						if(!prevScope || (prevScope && !_.contains(prevScope.didCompile,ord))){
+							if(prevScope){
+
+								// (1) drop the data-octane-scope's handlers from the Event system to manage memory and performance
+								Compiler.forgetFrom({octane_id:path});
+								// call any additional dispose handlers defined by ordinances
+								prevScope && _.each(prevScope.didCompile,function(ord){
+									//var onDisposeFunc = _.get(Compiler.ordinances,ordId +'.onDispose');
+									//onDisposeFunc.call();
+									ord.onDispose && ord.onDispose();
+								});
+								//console.log('prevScope.didCompile',prevScope.didCompile);
+								//console.log('difftree.didCompile',diffTree.didCompile);
+							}
+							var onCompileFunc = ord.onCompile;
+							var elem,attr,val;
+
+							if( elem = diffTree.DOMnode ){
+								// elem now equals the current element at 0.x.x.x position on the DOM
+								// TODO: leaving pseudo-guid for now but will replace with data-octane-scope use in Quarterback
+								elem.octane_id = path;
+								if(attr = ord.selector.match(/^\[(.*)\]$/)){
+										attr = attr[1];
+										val = elem.getAttribute(attr);
+								}
+
+								// polymorph elem's native `.addEventListener` and `.removeEventListener`
+								// methods to use the Octane Event API
+								elem.addEventListener = function(event,handler,useCapture){
+									//console.log('event listener added',event);
+									//console.log('path',path);
+									//console.log('id',elem.octane_id);
+									console.log(path);
+									Compiler.on(event,{octane_id:path},handler);
+								};
+								elem.removeEventListener = function(event,handler){
+									Compiler.forget(event,{octane_id:path},handler);
+								};
+
+								// call the compiler function with on the current node
+								onCompileFunc(elem,val);
+							}
+						}
 					});
-					// clear the onDispose handlers, they will be replenished at the next compile
-					lastCompile.applied = [];
-					lastCompile.onDispose = [];
-					lastCompile.rendered = null;
-				}
-				resolve();
-			}.bind(this));
+					// (3) recursively apply diffs to children of this scope
+					// maybe this takes some time, so let's do it async
+					//console.log('diffTree',diffTree);
+					_(diffTree)
+					.chain()
+					.map(function(child,key){
+						//console.log('key',key);
+						//console.log('parsed int',parseInt(key));
+						if(key != 'didCompile' && key != 'DOMnode'){
+							var $path = path +'.'+key;
+							return Compiler.diff(child,$path);
+						}
+					})
+					.thru(function(arr){
+						return Promise.all(arr);
+					})
+					.value()
+					// (4) replace the Compiler.scopes tree with the diffTree
+					.then(function(){
+						diffTree = _.toPlainObject(diffTree);
+						//console.log('object ensured diffTree',diffTree)
+						//console.log(_.get(Compiler.scopes,path));
+
+						_.set(Compiler.scopes,path,diffTree);
+					})
+					// resolve this diff operation
+					.then(resolve);
+				}.bind(this));
+			}
 		},
+
 
 		compileAll: function($node){
-			//console.log('compiling',$node);
-			return new Promise(function(resolve){
-
-				$node || ($node = document);
-				var ready = this.tearDown($node);
-
-				// reconcile the scope
-				this.traverse($node);
-
-				var scopedNodes;
-				return ready.bind(this)
-				.then(function(){
-					return scopedNodes = this.getScopedNodes($node);
-				})
-				.bind(this)
-				.then(this._compileChildScopes)
-				.then(function(childScopes){
-					if(childScopes.length){
-						_.each(scopedNodes,function(nodeObject){
-							nodeObject.nodes = _.difference(nodeObject.nodes,childScopes);
-						});
-					}
-					return _.map(scopedNodes,function(nodeObj){
-						return Compiler._compile(nodeObj);
-					});
-				}).then(function(compiled){
-					resolve(Promise.all(
-						_(compiled)
-						.chain()
-						.flattenDeep()
-						.compact()
-						.value()
-					));
-				});
-			}.bind(this));
-		},
-
-		// recursively run compilation on nodes to create child scopes
-		_compileChildScopes: function(scopes){
-			return Promise.all(
-				_(scopes)
-				.chain()
-				.map(function(scope){
-					if(scope.nodes && scope.nodes.length){
-						return _(scope.nodes)
-						.chain()
-						.map(Compiler.compileAll,Compiler)
-						.compact()
-						.flattenDeep()
-						.value();
-					}
-				})
-				.flatten()
-				.compact()
-				.value()
-			).then(function(res){
-				return Promise.all(_(res)
-				.chain()
-				.flattenDeep()
-				.compact()
-				.value());
+			console.log($node);
+			$node || ($node = document);
+			var diffTree = this.getDiffTree($node);
+			// $node.dataset.octaneScope will be set on $node when `Compiler.traverseAsync`
+			return diffTree.bind(this).then(function(tree){
+				return this.diff(tree,$node.dataset.octaneScope);
 			});
 		},
 
-		_compile: function(obj){
-			return _(Compiler.ordinances)
-				.chain()
-				.map(function(arr,qselector){
-					return arr;
-				})
-				.flatten()
-				.map(function(fnGroup){
-
-					if(obj.id === fnGroup.groupName){
-						return _.map(obj.nodes,function(node){
-							return new Promise(function(resolve){
-
-								var fnGroupId = Compiler.guid(fnGroup);
-								var $scopes = Compiler.scopes;
-								var octaneScope = node.dataset.octaneScope;
-								var nodeId = Compiler.guid(node);
-								var path = octaneScope+'.compiled';
-								var compiled = _.get($scopes,path);
-								var val,attr;
-
-								if(compiled && compiled.nodeId === nodeId && _.contains(compiled.applied,fnGroupId)){
-									// already compiled, return early
-									resolve(node);
-								} else {
-
-									if(attr = fnGroup.groupName.match(/\[(.*)\]/)){
-										attr = attr[1];
-										val = node.getAttribute(attr);
-									}
-									var rendered = fnGroup.onCompile(node,val);
-
-									if(!compiled){
-										_.set($scopes,path,{
-											applied: [],
-											onDispose: [],
-											get element(){
-												return Compiler.find(octaneScope);
-											}
-										});
-										compiled = _.get(Compiler.scopes,path);
-									}
-
-									compiled.nodeId = nodeId;
-									compiled.rendered = rendered;
-									compiled.applied.push(fnGroupId);
-									fnGroup.onDispose && compiled.onDispose.push(fnGroup.onDispose);
-									if(_.isObject(rendered) && rendered.onDispose) compiled.onDispose.push(rendered.onDispose);
-									resolve(node);
-								}
-							});
-						});
-					}
-				})
-				.flatten()
-				.value();
-		},
-
-		flush: function($node){
-
-			var toDispose = this.getScopedNodes($node);
-			return Promise.all(
-				_(toDispose)
-				.chain()
-				.map(function(obj){
-					return obj.nodes;
-				})
-				.flatten()
-				.map(function(node){
-					return this.tearDown(node);
-				},this)
-				.value()
-			)
-			.bind(this)
-			.then(function(){
-				return this.tearDown($node);
-			});
-		},
 
 		/* document.querySelector('[data-octane-scope="0.0.1"][data-octane-scope="0.0.1.2"]') */
 		// precision querySelection
@@ -399,6 +294,7 @@
 		},
 	});
 
+	/*
 	Compiler
 	.any('page:exiting',function(e){
 		if(e.detail){
@@ -414,6 +310,8 @@
 			Compiler.compileAll(scope);
 		}
 	});
+	*/
+
 
 	global.Compiler = Compiler;
 

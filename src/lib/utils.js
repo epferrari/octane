@@ -175,11 +175,11 @@ var utils = {
 		if(obj.octane_id) return obj.octane_id;
 
 		var random4 = function() {
-			return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toUpperCase();
+			return (((1 + Math.random()) * 0x10000)|0).toString(16).substring(1).toLowerCase();
 		};
 
 		Object.defineProperty(obj,'octane_id',{
-			value : random4() +'-'+ random4() +'-'+ random4() + random4(),
+			value : 'o' + random4() + random4() + random4() + random4(),
 			writable : false,
 			configurable : false,
 			enumerable : false
