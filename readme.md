@@ -1,5 +1,7 @@
-#Octane.js
 
+If you find yourself here in the hopes of using this as a framework, look elsewhere, as there are MUCH better alternatives. This is not scalable, not maintained, and never will be. Just a fun little experiment when I started programming and didn't know any better.
+
+# Octane.js
 
 
 ###An MVCVM focused on UI Routing and Uni-directional Data Flow.
